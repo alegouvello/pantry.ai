@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Warehouse, Snowflake, Package, Wine, Coffee, Plus, Trash2, Upload, ListChecks, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { useStorageLocations, useCreateStorageLocation } from '@/hooks/useOnboarding';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StepProps {
   currentStep: number;
@@ -70,8 +71,10 @@ export function Step4StorageSetup(props: StepProps) {
   const [inventoryCounts, setInventoryCounts] = useState<Record<string, number>>({});
   const [notStocked, setNotStocked] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  
+  const isLocalUpdateRef = useRef(false);
 
-  const { data: existingLocations } = useStorageLocations(props.restaurantId || undefined);
+  const { data: existingLocations, refetch } = useStorageLocations(props.restaurantId || undefined);
   const createStorageLocation = useCreateStorageLocation();
 
   // Initialize from database if locations exist
@@ -91,6 +94,38 @@ export function Step4StorageSetup(props: StepProps) {
       setActiveStorageTab(mappedLocations[0]?.id || 'default-1');
     }
   }, [existingLocations]);
+
+  // Real-time sync for multi-tab support
+  useEffect(() => {
+    if (!props.restaurantId) return;
+
+    const channel = supabase
+      .channel(`storage-locations-${props.restaurantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'storage_locations',
+          filter: `restaurant_id=eq.${props.restaurantId}`,
+        },
+        (payload) => {
+          // Skip if this was a local update
+          if (isLocalUpdateRef.current) {
+            isLocalUpdateRef.current = false;
+            return;
+          }
+
+          console.log('Storage locations realtime update:', payload);
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [props.restaurantId, refetch]);
 
   const addStorageLocation = () => {
     if (newLocationName.trim()) {
@@ -196,6 +231,8 @@ export function Step4StorageSetup(props: StepProps) {
               }
               
               setIsSaving(true);
+              isLocalUpdateRef.current = true;
+              
               try {
                 // Save new storage locations to database
                 const newLocations = storageLocations.filter(loc => loc.isNew);
@@ -210,6 +247,7 @@ export function Step4StorageSetup(props: StepProps) {
                 setPhase('method');
               } catch (error) {
                 console.error('Failed to save storage locations:', error);
+                isLocalUpdateRef.current = false;
                 toast({
                   title: 'Error saving',
                   description: 'Failed to save storage locations.',
