@@ -15,6 +15,8 @@ import Alerts from "./pages/Alerts";
 import Integrations from "./pages/Integrations";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
+import Onboarding from "./pages/Onboarding";
+import OnboardingWelcome from "./pages/OnboardingWelcome";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +30,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/onboarding/welcome" element={<OnboardingWelcome />} />
+            <Route path="/onboarding" element={<Onboarding />} />
             <Route
               path="/*"
               element={
