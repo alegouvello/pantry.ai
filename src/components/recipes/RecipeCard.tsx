@@ -12,9 +12,11 @@ import { Recipe } from '@/types/inventory';
 
 interface RecipeCardProps {
   recipe: Recipe;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-export function RecipeCard({ recipe }: RecipeCardProps) {
+export function RecipeCard({ recipe, onEdit, onDelete }: RecipeCardProps) {
   return (
     <Card variant="interactive" className="p-5 group">
       <div className="flex items-start justify-between mb-4">
@@ -38,11 +40,11 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={onEdit}>
               <Edit2 className="h-4 w-4 mr-2" />
               Edit Recipe
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive">
+            <DropdownMenuItem className="text-destructive" onClick={onDelete}>
               <Trash2 className="h-4 w-4 mr-2" />
               Delete
             </DropdownMenuItem>

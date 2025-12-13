@@ -2,17 +2,23 @@ import { Plus, Upload, Search, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RecipeCard } from '@/components/recipes/RecipeCard';
+import { RecipeEditorDialog } from '@/components/recipes/RecipeEditorDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
-import { useRecipes } from '@/hooks/useRecipes';
+import { useRecipes, useDeleteRecipe, RecipeWithIngredients } from '@/hooks/useRecipes';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 
 export default function Recipes() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingRecipe, setEditingRecipe] = useState<RecipeWithIngredients | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const { data: recipes, isLoading, error } = useRecipes();
+  const deleteRecipe = useDeleteRecipe();
+  const { toast } = useToast();
 
   if (!authLoading && !user) {
     return (
@@ -39,8 +45,29 @@ export default function Recipes() {
       recipe.category.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
+  const handleEdit = (recipe: RecipeWithIngredients) => {
+    setEditingRecipe(recipe);
+    setEditorOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteRecipe.mutateAsync(id);
+      toast({
+        title: 'Recipe deleted',
+        description: 'The recipe has been removed.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error deleting recipe',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Map recipes to the format expected by RecipeCard
-  const mappedRecipes = filteredRecipes.map(recipe => ({
+  const mapRecipeForCard = (recipe: RecipeWithIngredients) => ({
     id: recipe.id,
     name: recipe.name,
     category: recipe.category,
@@ -55,7 +82,7 @@ export default function Recipes() {
     })) || [],
     prepTime: recipe.prep_time_minutes || undefined,
     isActive: recipe.is_active ?? true,
-  }));
+  });
 
   return (
     <div className="space-y-6">
@@ -106,7 +133,7 @@ export default function Recipes() {
         <Card variant="elevated" className="p-8 text-center">
           <p className="text-destructive">Error loading recipes: {error.message}</p>
         </Card>
-      ) : mappedRecipes.length === 0 ? (
+      ) : filteredRecipes.length === 0 ? (
         <Card variant="elevated" className="p-8 text-center">
           <div className="space-y-4">
             <p className="text-muted-foreground">
@@ -122,17 +149,28 @@ export default function Recipes() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {mappedRecipes.map((recipe, index) => (
+          {filteredRecipes.map((recipe, index) => (
             <div
               key={recipe.id}
               className="animate-slide-up"
               style={{ animationDelay: `${index * 50}ms` }}
             >
-              <RecipeCard recipe={recipe} />
+              <RecipeCard
+                recipe={mapRecipeForCard(recipe)}
+                onEdit={() => handleEdit(recipe)}
+                onDelete={() => handleDelete(recipe.id)}
+              />
             </div>
           ))}
         </div>
       )}
+
+      {/* Recipe Editor Dialog */}
+      <RecipeEditorDialog
+        recipe={editingRecipe}
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+      />
     </div>
   );
 }
