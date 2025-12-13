@@ -11,10 +11,12 @@ import {
   Settings,
   Menu,
   X,
+  LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -31,6 +33,10 @@ const navItems = [
 export function AppSidebar() {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { user, profile, signOut } = useAuth();
+  
+  const displayName = profile?.full_name || user?.email?.split('@')[0] || 'User';
+  const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
     <>
@@ -121,21 +127,30 @@ export function AppSidebar() {
           </div>
 
           {/* User section */}
-          <div className="border-t border-sidebar-border p-3">
+          <div className="border-t border-sidebar-border p-3 space-y-2">
             <div className={cn(
               "flex items-center gap-3 rounded-lg bg-sidebar-accent/30 px-3 py-2",
               isCollapsed && "justify-center"
             )}>
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-accent text-accent-foreground font-medium text-sm">
-                JD
+                {initials}
               </div>
               {!isCollapsed && (
-                <div className="animate-fade-in overflow-hidden">
-                  <p className="text-sm font-medium text-foreground truncate">John Doe</p>
-                  <p className="text-xs text-muted-foreground">Manager</p>
+                <div className="animate-fade-in overflow-hidden flex-1">
+                  <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
               )}
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn("w-full gap-2 text-muted-foreground hover:text-destructive", isCollapsed && "px-2")}
+              onClick={signOut}
+            >
+              <LogOut className="h-4 w-4" />
+              {!isCollapsed && <span>Sign Out</span>}
+            </Button>
           </div>
         </div>
       </aside>
