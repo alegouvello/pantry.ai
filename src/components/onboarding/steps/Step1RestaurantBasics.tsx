@@ -10,6 +10,7 @@ import { ServiceChips } from '../ServiceChips';
 import { useCreateRestaurant, useRestaurant, useUpdateRestaurant } from '@/hooks/useOnboarding';
 import { useOnboardingContext } from '@/contexts/OnboardingContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import type { ConceptType, ServiceType, RestaurantAddress } from '@/types/onboarding';
 
 const sectionVariants = {
@@ -78,32 +79,58 @@ export function Step1RestaurantBasics({
 
     setIsSearching(true);
     
-    // Simulate AI search - TODO: Integrate with real AI enrichment API
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Mock data for "Le French Diner" or similar
-    if (name.toLowerCase().includes('french')) {
+    try {
+      const { data, error } = await supabase.functions.invoke('enrich-restaurant', {
+        body: {
+          restaurantName: name,
+          city: address.city,
+          state: address.state,
+        },
+      });
+
+      if (error) throw error;
+      
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to enrich restaurant data');
+      }
+
+      const enriched = data.data;
+      
+      // Update form with enriched data
       setAddress(prev => ({
-        ...prev,
-        street: prev.street || '123 Bistro Lane',
-        city: prev.city || 'New York',
-        state: prev.state || 'NY',
-        zip: prev.zip || '10014',
+        street: prev.street || enriched.address?.street || '',
+        city: prev.city || enriched.address?.city || '',
+        state: prev.state || enriched.address?.state || '',
+        zip: prev.zip || enriched.address?.zip || '',
       }));
-      setPhone(prev => prev || '(212) 555-0123');
-      setWebsite(prev => prev || 'https://lefrenchdiner.com');
-      setInstagram(prev => prev || '@lefrenchdiner');
-      setConceptType('fine_dining');
-      setServices(['lunch', 'dinner', 'catering']);
+      setPhone(prev => prev || enriched.phone || '');
+      setWebsite(prev => prev || enriched.website || '');
+      setInstagram(prev => prev || enriched.instagram || '');
+      
+      if (enriched.conceptType && !conceptType) {
+        setConceptType(enriched.conceptType as ConceptType);
+      }
+      
+      if (enriched.services && services.length === 0) {
+        setServices(enriched.services as ServiceType[]);
+      }
+      
+      toast({
+        title: 'Details found!',
+        description: `AI found information with ${enriched.confidence} confidence. Please review and adjust as needed.`,
+      });
+      updateHealthScore(5);
+      
+    } catch (error) {
+      console.error('Error enriching restaurant:', error);
+      toast({
+        title: 'Search failed',
+        description: error instanceof Error ? error.message : 'Could not find restaurant details. Please fill in manually.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSearching(false);
     }
-    
-    setIsSearching(false);
-    
-    toast({
-      title: 'Details found!',
-      description: 'We found some information about your restaurant. Please review and adjust as needed.',
-    });
-    updateHealthScore(5);
   };
 
   const handleContinue = async () => {
