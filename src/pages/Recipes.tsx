@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RecipeCard } from '@/components/recipes/RecipeCard';
 import { RecipeEditorDialog } from '@/components/recipes/RecipeEditorDialog';
+import { NewRecipeDialog } from '@/components/recipes/NewRecipeDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import { useRecipes, useDeleteRecipe, RecipeWithIngredients } from '@/hooks/useRecipes';
@@ -15,6 +16,7 @@ export default function Recipes() {
   const [searchQuery, setSearchQuery] = useState('');
   const [editingRecipe, setEditingRecipe] = useState<RecipeWithIngredients | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [newRecipeOpen, setNewRecipeOpen] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const { data: recipes, isLoading, error } = useRecipes();
   const deleteRecipe = useDeleteRecipe();
@@ -99,7 +101,7 @@ export default function Recipes() {
             <Upload className="h-4 w-4 mr-2" />
             Import
           </Button>
-          <Button variant="accent">
+          <Button variant="accent" onClick={() => setNewRecipeOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             New Recipe
           </Button>
@@ -140,7 +142,7 @@ export default function Recipes() {
               {searchQuery ? 'No recipes found matching your search.' : 'No recipes yet. Create your first recipe to get started!'}
             </p>
             {!searchQuery && (
-              <Button variant="accent">
+              <Button variant="accent" onClick={() => setNewRecipeOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create First Recipe
               </Button>
@@ -170,6 +172,12 @@ export default function Recipes() {
         recipe={editingRecipe}
         open={editorOpen}
         onOpenChange={setEditorOpen}
+      />
+
+      {/* New Recipe Dialog */}
+      <NewRecipeDialog
+        open={newRecipeOpen}
+        onOpenChange={setNewRecipeOpen}
       />
     </div>
   );
