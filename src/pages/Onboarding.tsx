@@ -8,14 +8,12 @@ import { OnboardingProvider } from '@/contexts/OnboardingContext';
 // Step components
 import { Step1RestaurantBasics } from '@/components/onboarding/steps/Step1RestaurantBasics';
 import { Step2MenuImport } from '@/components/onboarding/steps/Step2MenuImport';
-import { 
-  Step3RecipeApproval, 
-  Step4StorageSetup, 
-  Step5VendorSetup, 
-  Step6POSConnect, 
-  Step7Automation, 
-  Step8GoLive 
-} from '@/components/onboarding/steps/RemainingSteps';
+import { Step3RecipeApproval } from '@/components/onboarding/steps/Step3RecipeApproval';
+import { Step4StorageSetup } from '@/components/onboarding/steps/Step4StorageSetup';
+import { Step5VendorSetup } from '@/components/onboarding/steps/Step5VendorSetup';
+import { Step6POSConnect } from '@/components/onboarding/steps/Step6POSConnect';
+import { Step7Automation } from '@/components/onboarding/steps/Step7Automation';
+import { Step8GoLive } from '@/components/onboarding/steps/Step8GoLive';
 
 export default function Onboarding() {
   const navigate = useNavigate();
