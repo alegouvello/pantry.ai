@@ -1,9 +1,39 @@
 import { ReactNode } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Save, ChefHat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { OnboardingProgressBar } from './OnboardingProgressBar';
 import { SetupHealthScore } from './SetupHealthScore';
 import { cn } from '@/lib/utils';
+
+const contentVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut" as const,
+    }
+  },
+  exit: { 
+    opacity: 0, 
+    y: -20,
+    transition: { duration: 0.3 }
+  }
+};
+
+const headerVariants = {
+  initial: { opacity: 0, y: -10 },
+  animate: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.4,
+      delay: 0.1,
+    }
+  }
+};
 
 interface OnboardingLayoutProps {
   children: ReactNode;
@@ -94,38 +124,75 @@ export function OnboardingLayout({
       <main className="flex-1 py-8 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto">
           {/* Step Header */}
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-sm font-medium px-4 py-1.5 rounded-full mb-4">
+          <motion.div 
+            key={`header-${currentStep}`}
+            initial="initial"
+            animate="animate"
+            variants={headerVariants}
+            className="text-center mb-10"
+          >
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className="inline-flex items-center gap-2 bg-primary/10 text-primary text-sm font-medium px-4 py-1.5 rounded-full mb-4"
+            >
               Step {currentStep} of {totalSteps}
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+            </motion.div>
+            <motion.h2 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="text-3xl md:text-4xl font-bold text-foreground mb-3"
+            >
               {title}
-            </h2>
+            </motion.h2>
             {subtitle && (
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              <motion.p 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+                className="text-lg text-muted-foreground max-w-2xl mx-auto"
+              >
                 {subtitle}
-              </p>
+              </motion.p>
             )}
-          </div>
+          </motion.div>
 
           {/* Content */}
-          <div className={cn("mb-8", className)}>
-            {children}
-          </div>
+          <AnimatePresence mode="wait">
+            <motion.div 
+              key={`content-${currentStep}-${title}`}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              variants={contentVariants}
+              className={cn("mb-8", className)}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
 
       {/* Footer Navigation */}
       {(onBack || onNext) && (
-        <footer className="border-t bg-background/80 backdrop-blur-sm sticky bottom-0">
+        <motion.footer 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.3 }}
+          className="border-t bg-background/80 backdrop-blur-sm sticky bottom-0"
+        >
           <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
                 {onBack && (
-                  <Button variant="ghost" onClick={onBack} className="gap-2">
-                    <ArrowLeft className="w-4 h-4" />
-                    Back
-                  </Button>
+                  <motion.div whileHover={{ x: -3 }} whileTap={{ scale: 0.95 }}>
+                    <Button variant="ghost" onClick={onBack} className="gap-2">
+                      <ArrowLeft className="w-4 h-4" />
+                      Back
+                    </Button>
+                  </motion.div>
                 )}
               </div>
               
@@ -134,19 +201,24 @@ export function OnboardingLayout({
               </div>
               
               {onNext && (
-                <Button 
-                  onClick={onNext} 
-                  disabled={nextDisabled}
-                  className="gap-2 px-6"
-                  size="lg"
+                <motion.div 
+                  whileHover={{ x: 3 }} 
+                  whileTap={{ scale: 0.95 }}
                 >
-                  {nextLabel}
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
+                  <Button 
+                    onClick={onNext} 
+                    disabled={nextDisabled}
+                    className="gap-2 px-6"
+                    size="lg"
+                  >
+                    {nextLabel}
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </motion.div>
               )}
             </div>
           </div>
-        </footer>
+        </motion.footer>
       )}
     </div>
   );

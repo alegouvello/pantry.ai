@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { CONCEPT_IMAGES, CONCEPT_LABELS, type ConceptType } from '@/types/onboarding';
 import { Check } from 'lucide-react';
@@ -18,20 +19,51 @@ const concepts: ConceptType[] = [
   'multi',
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: 0.1,
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    transition: {
+      duration: 0.3,
+      ease: "easeOut" as const,
+    }
+  }
+};
+
 export function ConceptSelector({ selected, onSelect }: ConceptSelectorProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {concepts.map((concept) => (
-        <button
+    <motion.div 
+      className="grid grid-cols-2 md:grid-cols-4 gap-4"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {concepts.map((concept, index) => (
+        <motion.button
           key={concept}
+          variants={itemVariants}
+          whileHover={{ scale: 1.03, y: -4 }}
+          whileTap={{ scale: 0.97 }}
           onClick={() => onSelect(concept)}
           className={cn(
-            "relative rounded-2xl overflow-hidden aspect-[4/3] group transition-all duration-300",
-            "border-2 hover:border-primary/60 hover:shadow-lg",
-            "focus:outline-none focus:ring-2 focus:ring-primary/50",
+            "relative rounded-2xl overflow-hidden aspect-[4/3] group transition-colors duration-300",
+            "border-2 focus:outline-none focus:ring-2 focus:ring-primary/50",
             selected === concept 
-              ? "border-primary ring-4 ring-primary/20 shadow-lg scale-[1.02]" 
-              : "border-transparent"
+              ? "border-primary ring-4 ring-primary/20 shadow-lg" 
+              : "border-transparent hover:border-primary/60 hover:shadow-lg"
           )}
         >
           <img
@@ -46,17 +78,22 @@ export function ConceptSelector({ selected, onSelect }: ConceptSelectorProps) {
             </span>
           </div>
           {selected === concept && (
-            <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-primary flex items-center justify-center shadow-lg">
+            <motion.div 
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 500, damping: 25 }}
+              className="absolute top-3 right-3 w-7 h-7 rounded-full bg-primary flex items-center justify-center shadow-lg"
+            >
               <Check className="w-4 h-4 text-primary-foreground" />
-            </div>
+            </motion.div>
           )}
           {/* Hover overlay */}
           <div className={cn(
             "absolute inset-0 bg-primary/10 opacity-0 transition-opacity duration-300",
             "group-hover:opacity-100"
           )} />
-        </button>
+        </motion.button>
       ))}
-    </div>
+    </motion.div>
   );
 }

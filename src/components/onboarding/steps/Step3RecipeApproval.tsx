@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { AIConfidenceCard } from '../AIConfidenceCard';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Check, Clock, Trash2, Plus, ArrowRight, ArrowLeft, Sparkles, Copy } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.98 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1,
+    transition: { duration: 0.4, ease: "easeOut" as const }
+  },
+  exit: { 
+    opacity: 0, 
+    y: -20, 
+    scale: 0.98,
+    transition: { duration: 0.3 }
+  }
+};
 
 // Dish images
 import dishMargherita from '@/assets/onboarding/dish-margherita.jpg';
@@ -210,17 +227,36 @@ export function Step3RecipeApproval(props: StepProps) {
   if (isComplete) {
     return (
       <OnboardingLayout {...props} title="Recipe Review Complete" subtitle="Great progress on your recipes!">
-        <div className="max-w-2xl mx-auto text-center space-y-6">
-          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+        <motion.div 
+          className="max-w-2xl mx-auto text-center space-y-6"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        >
+          <motion.div 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.2 }}
+            className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto"
+          >
             <Check className="w-10 h-10 text-primary" />
-          </div>
-          <div>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
             <h3 className="text-2xl font-semibold mb-2">All recipes reviewed!</h3>
             <p className="text-muted-foreground">
               {approvedRecipes.length} recipes approved, {needsLaterRecipes.length} need attention later
             </p>
-          </div>
-          <div className="flex gap-4 justify-center">
+          </motion.div>
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="flex gap-4 justify-center"
+          >
             <Button variant="outline" onClick={() => setPhase('settings')}>
               Review Settings
             </Button>
@@ -228,164 +264,208 @@ export function Step3RecipeApproval(props: StepProps) {
               Continue to Storage Setup
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </OnboardingLayout>
     );
   }
 
   return (
     <OnboardingLayout {...props} title="Recipe Approval Studio" subtitle={`Recipe ${currentRecipeIndex + 1} of ${totalRecipes}`}>
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Left: Recipe Card */}
-        <Card className="lg:col-span-1">
-          <CardContent className="pt-6">
-            <div className="aspect-video bg-muted rounded-lg overflow-hidden mb-4">
-              <img 
-                src={currentRecipe.image} 
-                alt={currentRecipe.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">{currentRecipe.name}</h3>
-            <p className="text-sm text-muted-foreground mb-3">{currentRecipe.section}</p>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {currentRecipe.tags.map(tag => (
-                <Badge key={tag} variant="secondary">{tag}</Badge>
-              ))}
-            </div>
-            <AIConfidenceCard
-              title="Recipe Confidence"
-              value={currentRecipe.name}
-              confidence={currentRecipe.confidence}
-              reason="Based on menu description and common preparations"
-            />
-          </CardContent>
-        </Card>
+      <AnimatePresence mode="wait">
+        <motion.div 
+          key={currentRecipe.id}
+          className="grid lg:grid-cols-3 gap-6"
+          initial="hidden"
+          animate="visible"
+          exit="exit"
+          variants={{
+            hidden: { opacity: 0 },
+            visible: { 
+              opacity: 1,
+              transition: { staggerChildren: 0.1, delayChildren: 0.05 }
+            },
+            exit: { opacity: 0, transition: { duration: 0.2 } }
+          }}
+        >
+          {/* Left: Recipe Card */}
+          <motion.div variants={cardVariants}>
+            <Card className="lg:col-span-1 h-full">
+              <CardContent className="pt-6">
+                <motion.div 
+                  className="aspect-video bg-muted rounded-lg overflow-hidden mb-4"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <img 
+                    src={currentRecipe.image} 
+                    alt={currentRecipe.name}
+                    className="w-full h-full object-cover"
+                  />
+                </motion.div>
+                <h3 className="text-xl font-semibold mb-2">{currentRecipe.name}</h3>
+                <p className="text-sm text-muted-foreground mb-3">{currentRecipe.section}</p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {currentRecipe.tags.map((tag, index) => (
+                    <motion.div
+                      key={tag}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.2 + index * 0.05 }}
+                    >
+                      <Badge variant="secondary">{tag}</Badge>
+                    </motion.div>
+                  ))}
+                </div>
+                <AIConfidenceCard
+                  title="Recipe Confidence"
+                  value={currentRecipe.name}
+                  confidence={currentRecipe.confidence}
+                  reason="Based on menu description and common preparations"
+                />
+              </CardContent>
+            </Card>
+          </motion.div>
 
-        {/* Right: Ingredient Table */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Ingredients</CardTitle>
-            <Button variant="outline" size="sm" onClick={addIngredient}>
-              <Plus className="w-4 h-4 mr-1" />
-              Add
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Ingredient</TableHead>
-                  <TableHead className="w-24">Qty</TableHead>
-                  <TableHead className="w-24">Unit</TableHead>
-                  <TableHead className="w-20">Optional</TableHead>
-                  <TableHead className="w-12"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {editingIngredients.map(ingredient => (
-                  <TableRow key={ingredient.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          value={ingredient.name}
-                          onChange={(e) => updateIngredient(ingredient.id, 'name', e.target.value)}
-                          className="h-8"
-                        />
-                        {ingredient.confidence !== 'high' && (
-                          <Badge variant={ingredient.confidence === 'medium' ? 'secondary' : 'destructive'} className="text-xs">
-                            {ingredient.confidence}
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        value={ingredient.quantity}
-                        onChange={(e) => updateIngredient(ingredient.id, 'quantity', parseFloat(e.target.value))}
-                        className="h-8"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        value={ingredient.unit}
-                        onValueChange={(value) => updateIngredient(ingredient.id, 'unit', value)}
-                      >
-                        <SelectTrigger className="h-8">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="g">g</SelectItem>
-                          <SelectItem value="kg">kg</SelectItem>
-                          <SelectItem value="ml">ml</SelectItem>
-                          <SelectItem value="L">L</SelectItem>
-                          <SelectItem value="oz">oz</SelectItem>
-                          <SelectItem value="lb">lb</SelectItem>
-                          <SelectItem value="piece">piece</SelectItem>
-                          <SelectItem value="leaves">leaves</SelectItem>
-                          <SelectItem value="fillets">fillets</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={ingredient.optional}
-                        onCheckedChange={(checked) => updateIngredient(ingredient.id, 'optional', checked)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive"
-                        onClick={() => removeIngredient(ingredient.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          {/* Right: Ingredient Table */}
+          <motion.div variants={cardVariants} className="lg:col-span-2">
+            <Card className="h-full">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Ingredients</CardTitle>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button variant="outline" size="sm" onClick={addIngredient}>
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add
+                  </Button>
+                </motion.div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Ingredient</TableHead>
+                      <TableHead className="w-24">Qty</TableHead>
+                      <TableHead className="w-24">Unit</TableHead>
+                      <TableHead className="w-20">Optional</TableHead>
+                      <TableHead className="w-12"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {editingIngredients.map(ingredient => (
+                      <TableRow key={ingredient.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={ingredient.name}
+                              onChange={(e) => updateIngredient(ingredient.id, 'name', e.target.value)}
+                              className="h-8"
+                            />
+                            {ingredient.confidence !== 'high' && (
+                              <Badge variant={ingredient.confidence === 'medium' ? 'secondary' : 'destructive'} className="text-xs">
+                                {ingredient.confidence}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            value={ingredient.quantity}
+                            onChange={(e) => updateIngredient(ingredient.id, 'quantity', parseFloat(e.target.value))}
+                            className="h-8"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={ingredient.unit}
+                            onValueChange={(value) => updateIngredient(ingredient.id, 'unit', value)}
+                          >
+                            <SelectTrigger className="h-8">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="g">g</SelectItem>
+                              <SelectItem value="kg">kg</SelectItem>
+                              <SelectItem value="ml">ml</SelectItem>
+                              <SelectItem value="L">L</SelectItem>
+                              <SelectItem value="oz">oz</SelectItem>
+                              <SelectItem value="lb">lb</SelectItem>
+                              <SelectItem value="piece">piece</SelectItem>
+                              <SelectItem value="leaves">leaves</SelectItem>
+                              <SelectItem value="fillets">fillets</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <Switch
+                            checked={ingredient.optional}
+                            onCheckedChange={(checked) => updateIngredient(ingredient.id, 'optional', checked)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive"
+                            onClick={() => removeIngredient(ingredient.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
 
-            <div className="flex gap-2 mt-4">
-              <Button variant="outline" size="sm">
-                <Plus className="w-4 h-4 mr-1" />
-                Create Prep Batch
-              </Button>
-              <Button variant="outline" size="sm">
-                <Copy className="w-4 h-4 mr-1" />
-                Duplicate & Edit
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                <div className="flex gap-2 mt-4">
+                  <Button variant="outline" size="sm">
+                    <Plus className="w-4 h-4 mr-1" />
+                    Create Prep Batch
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Copy className="w-4 h-4 mr-1" />
+                    Duplicate & Edit
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between mt-6">
-        <Button
-          variant="outline"
-          onClick={moveToPrevRecipe}
-          disabled={currentRecipeIndex === 0}
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Previous
-        </Button>
+      <motion.div 
+        className="flex items-center justify-between mt-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <motion.div whileHover={{ x: -3 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            variant="outline"
+            onClick={moveToPrevRecipe}
+            disabled={currentRecipeIndex === 0}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Previous
+          </Button>
+        </motion.div>
 
         <div className="flex gap-3">
-          <Button variant="outline" onClick={handleNeedsLater}>
-            <Clock className="w-4 h-4 mr-2" />
-            Needs Later
-          </Button>
-          <Button onClick={handleApprove}>
-            <Check className="w-4 h-4 mr-2" />
-            Approve & Next
-          </Button>
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.95 }}>
+            <Button variant="outline" onClick={handleNeedsLater}>
+              <Clock className="w-4 h-4 mr-2" />
+              Needs Later
+            </Button>
+          </motion.div>
+          <motion.div whileHover={{ scale: 1.02, x: 3 }} whileTap={{ scale: 0.95 }}>
+            <Button onClick={handleApprove}>
+              <Check className="w-4 h-4 mr-2" />
+              Approve & Next
+            </Button>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     </OnboardingLayout>
   );
 }
