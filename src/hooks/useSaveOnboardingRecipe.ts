@@ -6,13 +6,14 @@ interface SaveRecipeParams {
   dish: ParsedDish;
   ingredients: ParsedDish['ingredients'];
   restaurantId?: string | null;
+  imageUrl?: string | null;
 }
 
 export function useSaveOnboardingRecipe() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ dish, ingredients, restaurantId }: SaveRecipeParams) => {
+    mutationFn: async ({ dish, ingredients, restaurantId, imageUrl }: SaveRecipeParams) => {
       console.log('Saving recipe:', dish.name, 'with', ingredients.length, 'ingredients');
 
       // Step 1: Create or find ingredients in the database
@@ -66,6 +67,7 @@ export function useSaveOnboardingRecipe() {
           recipe_type: 'Dish',
           yield_amount: 1,
           yield_unit: 'portion',
+          image_url: imageUrl || null,
         })
         .select('id')
         .single();
@@ -122,17 +124,18 @@ export function useSaveMultipleRecipes() {
 
   return useMutation({
     mutationFn: async (params: { 
-      recipes: Array<{ dish: ParsedDish; ingredients: ParsedDish['ingredients'] }>;
+      recipes: Array<{ dish: ParsedDish; ingredients: ParsedDish['ingredients']; imageUrl?: string | null }>;
       restaurantId?: string | null;
     }) => {
       const results = [];
       
-      for (const { dish, ingredients } of params.recipes) {
+      for (const { dish, ingredients, imageUrl } of params.recipes) {
         try {
           const result = await saveRecipe.mutateAsync({ 
             dish, 
             ingredients, 
-            restaurantId: params.restaurantId 
+            restaurantId: params.restaurantId,
+            imageUrl,
           });
           results.push({ success: true, dish: dish.name, ...result });
         } catch (error) {

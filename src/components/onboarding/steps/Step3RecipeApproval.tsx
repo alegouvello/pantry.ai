@@ -47,6 +47,7 @@ interface StepProps {
 interface ApprovedRecipeData {
   dish: ParsedDish;
   ingredients: ParsedDish['ingredients'];
+  imageUrl?: string | null;
 }
 
 export function Step3RecipeApproval(props: StepProps) {
@@ -156,10 +157,11 @@ export function Step3RecipeApproval(props: StepProps) {
     // Save current editing state
     recipeIngredientsRef.current[currentRecipe.id] = editingIngredients;
     
-    // Track approved recipe with its ingredients
+    // Track approved recipe with its ingredients and image
     const recipeData: ApprovedRecipeData = {
       dish: currentRecipe,
       ingredients: editingIngredients,
+      imageUrl: currentRecipe.imageUrl,
     };
     
     setApprovedRecipes([...approvedRecipes, currentRecipe.id]);
@@ -234,12 +236,13 @@ export function Step3RecipeApproval(props: StepProps) {
     let successCount = 0;
     let errorCount = 0;
 
-    for (const { dish, ingredients } of approvedRecipeData) {
+    for (const { dish, ingredients, imageUrl } of approvedRecipeData) {
       try {
         await saveRecipe.mutateAsync({
           dish,
           ingredients,
           restaurantId: props.restaurantId,
+          imageUrl,
         });
         successCount++;
       } catch (error) {

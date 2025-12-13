@@ -980,6 +980,7 @@ export type Database = {
           confidence: string | null
           created_at: string
           id: string
+          image_url: string | null
           instructions: string | null
           is_active: boolean | null
           menu_item_id: string | null
@@ -999,6 +1000,7 @@ export type Database = {
           confidence?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
           instructions?: string | null
           is_active?: boolean | null
           menu_item_id?: string | null
@@ -1018,6 +1020,7 @@ export type Database = {
           confidence?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
           instructions?: string | null
           is_active?: boolean | null
           menu_item_id?: string | null
