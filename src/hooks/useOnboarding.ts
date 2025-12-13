@@ -37,12 +37,22 @@ export function useCreateOnboarding() {
   
   return useMutation({
     mutationFn: async ({ userId }: { userId: string }) => {
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Creating onboarding - session exists:', !!session, 'userId:', userId);
+      
+      if (!session) {
+        throw new Error('User not authenticated');
+      }
+      
       // Create organization
       const { data: org, error: orgError } = await supabase
         .from('organizations')
         .insert({})
         .select()
         .single();
+      
+      console.log('Org creation result:', { org, orgError });
       
       if (orgError) throw orgError;
 
