@@ -354,6 +354,7 @@ export type Database = {
           id: string
           instructions: string | null
           is_active: boolean | null
+          menu_price: number | null
           name: string
           pos_item_id: string | null
           prep_time_minutes: number | null
@@ -367,6 +368,7 @@ export type Database = {
           id?: string
           instructions?: string | null
           is_active?: boolean | null
+          menu_price?: number | null
           name: string
           pos_item_id?: string | null
           prep_time_minutes?: number | null
@@ -380,6 +382,7 @@ export type Database = {
           id?: string
           instructions?: string | null
           is_active?: boolean | null
+          menu_price?: number | null
           name?: string
           pos_item_id?: string | null
           prep_time_minutes?: number | null

@@ -27,6 +27,8 @@ export interface Recipe {
   isActive: boolean;
   totalCost?: number;
   costPerUnit?: number;
+  menuPrice?: number;
+  foodCostPercentage?: number;
 }
 
 export interface RecipeIngredient {
