@@ -1,6 +1,25 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Clock, Sparkles, Check, ChefHat, Play } from 'lucide-react';
+import { ArrowRight, Clock, Sparkles, Check, ChefHat } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.12, delayChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as const } }
+};
+
+const videoVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { opacity: 1, scale: 1, transition: { duration: 0.7, ease: [0.25, 0.1, 0.25, 1] as const, delay: 0.3 } }
+};
 
 export default function OnboardingWelcome() {
   const features = [
@@ -45,35 +64,55 @@ export default function OnboardingWelcome() {
       <main className="min-h-screen flex flex-col lg:flex-row">
         {/* Left side - Text Content */}
         <div className="flex-1 flex items-center justify-center p-8 lg:p-16 pt-32 lg:pt-8">
-          <div className="max-w-xl">
+          <motion.div 
+            className="max-w-xl"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
             <div className="space-y-8">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+              <motion.div 
+                variants={itemVariants}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium"
+              >
                 <Sparkles className="w-4 h-4" />
                 AI does the work. You validate.
-              </div>
+              </motion.div>
               
-              <h2 className="text-5xl lg:text-6xl font-bold text-foreground leading-tight">
+              <motion.h2 
+                variants={itemVariants}
+                className="text-5xl lg:text-6xl font-bold text-foreground leading-tight"
+              >
                 Stop guessing.<br />
                 <span className="text-primary">Start knowing.</span>
-              </h2>
+              </motion.h2>
               
-              <p className="text-xl text-muted-foreground leading-relaxed">
+              <motion.p 
+                variants={itemVariants}
+                className="text-xl text-muted-foreground leading-relaxed"
+              >
                 AI-powered inventory management that learns your restaurant and 
                 keeps you ahead of shortages, waste, and ordering headaches.
-              </p>
+              </motion.p>
               
-              <div className="space-y-4 pt-4">
+              <motion.div variants={itemVariants} className="space-y-4 pt-4">
                 {features.map((feature, index) => (
-                  <div key={index} className="flex items-center gap-3">
+                  <motion.div 
+                    key={index} 
+                    className="flex items-center gap-3"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 + index * 0.1, duration: 0.4 }}
+                  >
                     <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
                       <Check className="w-4 h-4 text-primary" />
                     </div>
                     <span className="text-foreground">{feature}</span>
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
 
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Link to="/auth?signup=true">
                   <Button size="lg" className="w-full sm:w-auto gap-2 h-14 px-8 text-lg">
                     Create Free Account
@@ -85,20 +124,28 @@ export default function OnboardingWelcome() {
                     Sign In
                   </Button>
                 </Link>
-              </div>
+              </motion.div>
 
-              <div className="flex items-center gap-3 text-sm text-muted-foreground pt-4">
+              <motion.div 
+                variants={itemVariants}
+                className="flex items-center gap-3 text-sm text-muted-foreground pt-4"
+              >
                 <Clock className="w-4 h-4" />
                 <span>Setup takes ~15-25 minutes. You'll validate AI drafts.</span>
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Right side - Video */}
         <div className="flex-1 relative overflow-hidden bg-muted/30">
           <div className="absolute inset-0 flex items-center justify-center p-8 lg:p-12">
-            <div className="relative w-full max-w-2xl aspect-video rounded-2xl overflow-hidden shadow-2xl ring-1 ring-border/50">
+            <motion.div 
+              className="relative w-full max-w-2xl aspect-video rounded-2xl overflow-hidden shadow-2xl ring-1 ring-border/50"
+              variants={videoVariants}
+              initial="hidden"
+              animate="visible"
+            >
               <video 
                 src="/videos/hero-demo.mp4"
                 autoPlay
@@ -108,7 +155,7 @@ export default function OnboardingWelcome() {
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-white/10 rounded-2xl" />
-            </div>
+            </motion.div>
           </div>
           
           {/* Decorative gradient */}
