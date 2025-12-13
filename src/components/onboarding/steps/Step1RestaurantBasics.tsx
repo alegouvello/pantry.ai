@@ -25,6 +25,7 @@ interface Step1Props {
   completedSteps: number[];
   setupHealthScore: number;
   orgId: string | null;
+  restaurantId?: string | null;
   onNext: () => void;
   onBack?: () => void;
   onSave: () => void;
