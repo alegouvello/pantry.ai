@@ -68,23 +68,38 @@ export default function Recipes() {
     }
   };
 
-  // Map recipes to the format expected by RecipeCard
-  const mapRecipeForCard = (recipe: RecipeWithIngredients) => ({
-    id: recipe.id,
-    name: recipe.name,
-    category: recipe.category,
-    posItemId: recipe.pos_item_id || undefined,
-    yield: recipe.yield_amount,
-    yieldUnit: recipe.yield_unit,
-    ingredients: recipe.recipe_ingredients?.map(ri => ({
-      ingredientId: ri.ingredient_id,
-      ingredientName: ri.ingredients?.name || 'Unknown',
-      quantity: ri.quantity,
-      unit: ri.unit,
-    })) || [],
-    prepTime: recipe.prep_time_minutes || undefined,
-    isActive: recipe.is_active ?? true,
-  });
+  // Map recipes to the format expected by RecipeCard with cost calculation
+  const mapRecipeForCard = (recipe: RecipeWithIngredients) => {
+    const ingredientsWithCost = recipe.recipe_ingredients?.map(ri => {
+      const unitCost = ri.ingredients?.unit_cost || 0;
+      const lineCost = ri.quantity * unitCost;
+      return {
+        ingredientId: ri.ingredient_id,
+        ingredientName: ri.ingredients?.name || 'Unknown',
+        quantity: ri.quantity,
+        unit: ri.unit,
+        unitCost,
+        lineCost,
+      };
+    }) || [];
+
+    const totalCost = ingredientsWithCost.reduce((sum, ing) => sum + (ing.lineCost || 0), 0);
+    const costPerUnit = recipe.yield_amount > 0 ? totalCost / recipe.yield_amount : totalCost;
+
+    return {
+      id: recipe.id,
+      name: recipe.name,
+      category: recipe.category,
+      posItemId: recipe.pos_item_id || undefined,
+      yield: recipe.yield_amount,
+      yieldUnit: recipe.yield_unit,
+      ingredients: ingredientsWithCost,
+      prepTime: recipe.prep_time_minutes || undefined,
+      isActive: recipe.is_active ?? true,
+      totalCost,
+      costPerUnit,
+    };
+  };
 
   return (
     <div className="space-y-6">

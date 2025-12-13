@@ -25,6 +25,8 @@ export interface Recipe {
   ingredients: RecipeIngredient[];
   prepTime?: number;
   isActive: boolean;
+  totalCost?: number;
+  costPerUnit?: number;
 }
 
 export interface RecipeIngredient {
@@ -32,6 +34,8 @@ export interface RecipeIngredient {
   ingredientName: string;
   quantity: number;
   unit: string;
+  unitCost?: number;
+  lineCost?: number;
 }
 
 export interface Vendor {

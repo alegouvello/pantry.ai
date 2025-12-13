@@ -33,6 +33,7 @@ interface NewIngredient {
   ingredientName: string;
   quantity: number;
   unit: string;
+  unitCost: number;
 }
 
 const CATEGORIES = [
@@ -47,6 +48,14 @@ const CATEGORIES = [
   'Breakfast',
   'Other',
 ];
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+  }).format(value);
+};
 
 export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
   const { toast } = useToast();
@@ -107,6 +116,7 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
       ingredientName: ingredient.name,
       quantity: parseFloat(newQuantity),
       unit: newUnit,
+      unitCost: ingredient.unit_cost,
     };
 
     setIngredients([...ingredients, newIngredient]);
@@ -193,6 +203,10 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
     (i) => !ingredients.some((ri) => ri.ingredient_id === i.id)
   );
 
+  // Calculate total cost
+  const totalCost = ingredients.reduce((sum, ing) => sum + (ing.quantity * ing.unitCost), 0);
+  const costPerUnit = yieldAmount > 0 ? totalCost / yieldAmount : totalCost;
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
       if (!isOpen) resetForm();
@@ -274,47 +288,66 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
 
           {/* Current Ingredients */}
           <div className="space-y-3">
-            <Label>Ingredients ({ingredients.length})</Label>
+            <div className="flex items-center justify-between">
+              <Label>Ingredients ({ingredients.length})</Label>
+              {ingredients.length > 0 && (
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Total: </span>
+                  <span className="font-semibold text-primary">{formatCurrency(totalCost)}</span>
+                  {yieldAmount > 1 && (
+                    <span className="text-muted-foreground ml-2">
+                      ({formatCurrency(costPerUnit)}/{yieldUnit})
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
             {ingredients.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-lg">
                 No ingredients added yet. Add ingredients below.
               </p>
             ) : (
               <div className="space-y-2">
-                {ingredients.map((ing) => (
-                  <div
-                    key={ing.id}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border"
-                  >
-                    <div className="flex-1">
-                      <Badge variant="outline">{ing.ingredientName}</Badge>
-                    </div>
-                    <Input
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      value={ing.quantity}
-                      onChange={(e) =>
-                        handleUpdateQuantity(ing.id, parseFloat(e.target.value) || 0)
-                      }
-                      className="w-24"
-                    />
-                    <Input
-                      value={ing.unit}
-                      onChange={(e) => handleUpdateUnit(ing.id, e.target.value)}
-                      className="w-24"
-                      placeholder="unit"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => handleRemoveIngredient(ing.id)}
-                      className="text-destructive hover:text-destructive"
+                {ingredients.map((ing) => {
+                  const lineCost = ing.quantity * ing.unitCost;
+                  return (
+                    <div
+                      key={ing.id}
+                      className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border"
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                      <div className="flex-1">
+                        <Badge variant="outline">{ing.ingredientName}</Badge>
+                      </div>
+                      <Input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={ing.quantity}
+                        onChange={(e) =>
+                          handleUpdateQuantity(ing.id, parseFloat(e.target.value) || 0)
+                        }
+                        className="w-24"
+                      />
+                      <Input
+                        value={ing.unit}
+                        onChange={(e) => handleUpdateUnit(ing.id, e.target.value)}
+                        className="w-24"
+                        placeholder="unit"
+                      />
+                      <span className="text-sm text-muted-foreground w-20 text-right">
+                        {formatCurrency(lineCost)}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => handleRemoveIngredient(ing.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

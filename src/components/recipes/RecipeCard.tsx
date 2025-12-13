@@ -1,4 +1,4 @@
-import { ChefHat, Package, Clock, MoreHorizontal, Edit2, Trash2 } from 'lucide-react';
+import { ChefHat, Package, Clock, MoreHorizontal, Edit2, Trash2, DollarSign } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,14 @@ interface RecipeCardProps {
   onEdit?: () => void;
   onDelete?: () => void;
 }
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+  }).format(value);
+};
 
 export function RecipeCard({ recipe, onEdit, onDelete }: RecipeCardProps) {
   return (
@@ -64,6 +72,21 @@ export function RecipeCard({ recipe, onEdit, onDelete }: RecipeCardProps) {
             Yields {recipe.yield} {recipe.yieldUnit}
           </span>
         </div>
+
+        {/* Cost Display */}
+        {recipe.totalCost !== undefined && recipe.totalCost > 0 && (
+          <div className="flex items-center gap-2 text-sm">
+            <DollarSign className="h-4 w-4 text-primary" />
+            <span className="text-foreground font-medium">
+              {formatCurrency(recipe.totalCost)}
+            </span>
+            {recipe.costPerUnit !== undefined && recipe.yield > 1 && (
+              <span className="text-muted-foreground">
+                ({formatCurrency(recipe.costPerUnit)}/{recipe.yieldUnit})
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="pt-3 border-t border-border">
           <p className="text-xs text-muted-foreground mb-2">Ingredients:</p>
