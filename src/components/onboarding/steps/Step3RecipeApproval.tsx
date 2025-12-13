@@ -106,6 +106,7 @@ export function Step3RecipeApproval(props: StepProps) {
           description: recipe.description,
           section: recipe.section,
           tags: recipe.tags,
+          recipeId: recipe.id,
         }),
       });
 
