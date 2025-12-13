@@ -9,8 +9,8 @@ import { Check, AlertTriangle, ArrowRight, Rocket, FileText, Package, Sparkles, 
 import { useRestaurant, useStorageLocations, useMenus, useIntegrations, useForecastConfig } from '@/hooks/useOnboarding';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useVendors } from '@/hooks/useVendors';
-import { useUpdateOnboardingProgress } from '@/hooks/useOnboarding';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StepProps {
   currentStep: number;
@@ -40,14 +40,33 @@ export function Step8GoLive(props: StepProps) {
   const [isLaunching, setIsLaunching] = useState(false);
 
   // Fetch actual setup status
-  const { data: restaurant } = useRestaurant(props.orgId || undefined);
-  const { data: storageLocations } = useStorageLocations(props.restaurantId || undefined);
-  const { data: menus } = useMenus(props.restaurantId || undefined);
-  const { data: recipes } = useRecipes();
-  const { data: vendors } = useVendors();
-  const { data: integrations } = useIntegrations(props.restaurantId || undefined);
-  const { data: forecastConfig } = useForecastConfig(props.restaurantId || undefined);
+  const { data: restaurant, refetch: refetchRestaurant } = useRestaurant(props.orgId || undefined);
+  const { data: storageLocations, refetch: refetchStorage } = useStorageLocations(props.restaurantId || undefined);
+  const { data: menus, refetch: refetchMenus } = useMenus(props.restaurantId || undefined);
+  const { data: recipes, refetch: refetchRecipes } = useRecipes();
+  const { data: vendors, refetch: refetchVendors } = useVendors();
+  const { data: integrations, refetch: refetchIntegrations } = useIntegrations(props.restaurantId || undefined);
+  const { data: forecastConfig, refetch: refetchForecast } = useForecastConfig(props.restaurantId || undefined);
 
+  // Real-time sync for all setup status tables
+  useEffect(() => {
+    if (!props.restaurantId) return;
+
+    const channel = supabase
+      .channel('go-live-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurants' }, () => refetchRestaurant())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'storage_locations', filter: `restaurant_id=eq.${props.restaurantId}` }, () => refetchStorage())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'menus', filter: `restaurant_id=eq.${props.restaurantId}` }, () => refetchMenus())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'recipes' }, () => refetchRecipes())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vendors' }, () => refetchVendors())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'integrations', filter: `restaurant_id=eq.${props.restaurantId}` }, () => refetchIntegrations())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'forecast_configs', filter: `restaurant_id=eq.${props.restaurantId}` }, () => refetchForecast())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [props.restaurantId, refetchRestaurant, refetchStorage, refetchMenus, refetchRecipes, refetchVendors, refetchIntegrations, refetchForecast]);
   // Calculate actual setup status
   const getSetupItems = (): SetupItem[] => {
     const hasRestaurant = !!restaurant?.name;
