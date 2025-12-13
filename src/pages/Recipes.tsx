@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { RecipeCard } from '@/components/recipes/RecipeCard';
 import { RecipeEditorDialog } from '@/components/recipes/RecipeEditorDialog';
 import { NewRecipeDialog } from '@/components/recipes/NewRecipeDialog';
+import { ImportRecipeDialog } from '@/components/recipes/ImportRecipeDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import { useRecipes, useDeleteRecipe, RecipeWithIngredients } from '@/hooks/useRecipes';
@@ -17,6 +18,7 @@ export default function Recipes() {
   const [editingRecipe, setEditingRecipe] = useState<RecipeWithIngredients | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [newRecipeOpen, setNewRecipeOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const { data: recipes, isLoading, error } = useRecipes();
   const deleteRecipe = useDeleteRecipe();
@@ -112,7 +114,7 @@ export default function Recipes() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
             <Upload className="h-4 w-4 mr-2" />
             Import
           </Button>
@@ -193,6 +195,12 @@ export default function Recipes() {
       <NewRecipeDialog
         open={newRecipeOpen}
         onOpenChange={setNewRecipeOpen}
+      />
+
+      {/* Import Dialog */}
+      <ImportRecipeDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
       />
     </div>
   );
