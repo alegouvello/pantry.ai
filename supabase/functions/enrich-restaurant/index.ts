@@ -95,15 +95,23 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a restaurant data extraction assistant. Extract real restaurant information from web search results. If specific information is not found, leave it blank or make a reasonable inference clearly marked with low confidence.`
+            content: `You are a restaurant data extraction assistant. Extract REAL restaurant information from web search results. 
+            
+CRITICAL RULES:
+- ONLY include data that you actually find in the search results
+- If a field is not found, use an EMPTY STRING "" - never put placeholder text like "low confidence" or "not found"
+- For zip codes, only include actual 5-digit zip codes, otherwise leave empty
+- For phone numbers, only include real phone numbers found, otherwise leave empty
+- For websites, only include real URLs found, otherwise leave empty
+- Confidence should be "high" if data is found in search results, "low" if inferred from name alone`
           },
           {
             role: 'user',
             content: `Extract restaurant details for "${restaurantName}"${location ? ` in ${location}` : ''} from the following web search results:
 
-${scrapedContent || 'No search results available. Please provide your best inference based on the restaurant name.'}
+${scrapedContent || 'No search results available.'}
 
-Extract and return structured data. Only include information you find in the search results. If you cannot find specific details, you may infer based on the restaurant name but mark confidence as "low".`
+IMPORTANT: Only return actual data found. Leave fields EMPTY (empty string "") if not found - do not put placeholder text.`
           }
         ],
         tools: [
@@ -111,23 +119,23 @@ Extract and return structured data. Only include information you find in the sea
             type: 'function',
             function: {
               name: 'return_restaurant_data',
-              description: 'Return extracted restaurant data',
+              description: 'Return extracted restaurant data. Use empty strings for missing fields.',
               parameters: {
                 type: 'object',
                 properties: {
                   address: {
                     type: 'object',
                     properties: {
-                      street: { type: 'string' },
-                      city: { type: 'string' },
-                      state: { type: 'string' },
-                      zip: { type: 'string' }
+                      street: { type: 'string', description: 'Street address or empty string if not found' },
+                      city: { type: 'string', description: 'City name or empty string if not found' },
+                      state: { type: 'string', description: 'State abbreviation or empty string if not found' },
+                      zip: { type: 'string', description: '5-digit ZIP code ONLY or empty string if not found' }
                     },
                     required: ['street', 'city', 'state', 'zip']
                   },
-                  phone: { type: 'string', description: 'Phone number in format (XXX) XXX-XXXX' },
-                  website: { type: 'string', description: 'Restaurant website URL' },
-                  instagram: { type: 'string', description: 'Instagram handle starting with @' },
+                  phone: { type: 'string', description: 'Phone number in (XXX) XXX-XXXX format or empty string' },
+                  website: { type: 'string', description: 'Website URL or empty string if not found' },
+                  instagram: { type: 'string', description: 'Instagram handle with @ or empty string if not found' },
                   conceptType: { 
                     type: 'string',
                     enum: ['fine_dining', 'casual', 'quick_service', 'bar', 'coffee', 'bakery'],
@@ -149,12 +157,12 @@ Extract and return structured data. Only include information you find in the sea
                   confidence: {
                     type: 'string',
                     enum: ['high', 'medium', 'low'],
-                    description: 'How confident you are in the extracted data. "high" if found in search results, "medium" if partially found, "low" if inferred'
+                    description: 'high if data found in search results, low if inferred'
                   },
                   sources: {
                     type: 'array',
                     items: { type: 'string' },
-                    description: 'URLs of sources used to extract data'
+                    description: 'URLs of sources used'
                   }
                 },
                 required: ['address', 'conceptType', 'services', 'cuisineTags', 'confidence']
@@ -201,7 +209,32 @@ Extract and return structured data. Only include information you find in the sea
     }
 
     const enrichedData = JSON.parse(toolCall.function.arguments);
-    console.log('Enriched data:', enrichedData);
+    
+    // Sanitize: remove any fields that contain placeholder text instead of real data
+    const placeholderPatterns = ['low confidence', 'not found', 'unknown', 'n/a', 'none'];
+    const sanitize = (value: string | undefined): string => {
+      if (!value) return '';
+      const lower = value.toLowerCase().trim();
+      if (placeholderPatterns.some(p => lower.includes(p))) return '';
+      return value;
+    };
+    
+    // Clean up the data
+    if (enrichedData.address) {
+      enrichedData.address.street = sanitize(enrichedData.address.street);
+      enrichedData.address.city = sanitize(enrichedData.address.city);
+      enrichedData.address.state = sanitize(enrichedData.address.state);
+      enrichedData.address.zip = sanitize(enrichedData.address.zip);
+      // Validate zip is actually a number
+      if (enrichedData.address.zip && !/^\d{5}(-\d{4})?$/.test(enrichedData.address.zip)) {
+        enrichedData.address.zip = '';
+      }
+    }
+    enrichedData.phone = sanitize(enrichedData.phone);
+    enrichedData.website = sanitize(enrichedData.website);
+    enrichedData.instagram = sanitize(enrichedData.instagram);
+    
+    console.log('Sanitized enriched data:', enrichedData);
 
     return new Response(
       JSON.stringify({ success: true, data: enrichedData }),
