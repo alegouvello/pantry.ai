@@ -118,6 +118,10 @@ export function Step4StorageSetup(props: StepProps) {
 
           console.log('Storage locations realtime update:', payload);
           refetch();
+          toast({
+            title: 'Synced from another tab',
+            description: 'Storage locations updated',
+          });
         }
       )
       .subscribe();
@@ -125,7 +129,7 @@ export function Step4StorageSetup(props: StepProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [props.restaurantId, refetch]);
+  }, [props.restaurantId, refetch, toast]);
 
   const addStorageLocation = () => {
     if (newLocationName.trim()) {

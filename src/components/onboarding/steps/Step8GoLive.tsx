@@ -54,19 +54,40 @@ export function Step8GoLive(props: StepProps) {
 
     const channel = supabase
       .channel('go-live-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurants' }, () => refetchRestaurant())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'storage_locations', filter: `restaurant_id=eq.${props.restaurantId}` }, () => refetchStorage())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'menus', filter: `restaurant_id=eq.${props.restaurantId}` }, () => refetchMenus())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'recipes' }, () => refetchRecipes())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'vendors' }, () => refetchVendors())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'integrations', filter: `restaurant_id=eq.${props.restaurantId}` }, () => refetchIntegrations())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'forecast_configs', filter: `restaurant_id=eq.${props.restaurantId}` }, () => refetchForecast())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurants' }, () => {
+        refetchRestaurant();
+        toast({ title: 'Synced from another tab', description: 'Restaurant details updated' });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'storage_locations', filter: `restaurant_id=eq.${props.restaurantId}` }, () => {
+        refetchStorage();
+        toast({ title: 'Synced from another tab', description: 'Storage locations updated' });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'menus', filter: `restaurant_id=eq.${props.restaurantId}` }, () => {
+        refetchMenus();
+        toast({ title: 'Synced from another tab', description: 'Menus updated' });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'recipes' }, () => {
+        refetchRecipes();
+        toast({ title: 'Synced from another tab', description: 'Recipes updated' });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vendors' }, () => {
+        refetchVendors();
+        toast({ title: 'Synced from another tab', description: 'Vendors updated' });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'integrations', filter: `restaurant_id=eq.${props.restaurantId}` }, () => {
+        refetchIntegrations();
+        toast({ title: 'Synced from another tab', description: 'Integrations updated' });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'forecast_configs', filter: `restaurant_id=eq.${props.restaurantId}` }, () => {
+        refetchForecast();
+        toast({ title: 'Synced from another tab', description: 'Automation settings updated' });
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [props.restaurantId, refetchRestaurant, refetchStorage, refetchMenus, refetchRecipes, refetchVendors, refetchIntegrations, refetchForecast]);
+  }, [props.restaurantId, refetchRestaurant, refetchStorage, refetchMenus, refetchRecipes, refetchVendors, refetchIntegrations, refetchForecast, toast]);
   // Calculate actual setup status
   const getSetupItems = (): SetupItem[] => {
     const hasRestaurant = !!restaurant?.name;

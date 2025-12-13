@@ -129,6 +129,10 @@ export function Step5VendorSetup(props: StepProps) {
 
           console.log('Vendors realtime update:', payload);
           refetchVendors();
+          toast({
+            title: 'Synced from another tab',
+            description: 'Vendors updated',
+          });
         }
       )
       .subscribe();
@@ -136,7 +140,7 @@ export function Step5VendorSetup(props: StepProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [refetchVendors]);
+  }, [refetchVendors, toast]);
 
   // Real-time sync for ingredient-vendor mappings
   useEffect(() => {
@@ -156,6 +160,10 @@ export function Step5VendorSetup(props: StepProps) {
           }
           console.log('Ingredient-vendor maps realtime update:', payload);
           refetchMappings();
+          toast({
+            title: 'Synced from another tab',
+            description: 'Ingredient mappings updated',
+          });
         }
       )
       .on(
@@ -179,7 +187,7 @@ export function Step5VendorSetup(props: StepProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [refetchMappings]);
+  }, [refetchMappings, toast]);
 
   // Initialize ingredient mappings from database
   useEffect(() => {
