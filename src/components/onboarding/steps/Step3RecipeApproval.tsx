@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Check, Clock, Trash2, Plus, ArrowRight, ArrowLeft, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
+import { Check, Clock, Trash2, Plus, ArrowRight, ArrowLeft, Sparkles, AlertCircle, Loader2, ImageIcon } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useOnboardingContext, ParsedDish } from '@/contexts/OnboardingContext';
 import { useSaveOnboardingRecipe } from '@/hooks/useSaveOnboardingRecipe';
@@ -59,6 +59,7 @@ export function Step3RecipeApproval(props: StepProps) {
   const [assumePortions, setAssumePortions] = useState(true);
   const [currentRecipeIndex, setCurrentRecipeIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [generatingImageFor, setGeneratingImageFor] = useState<string | null>(null);
   
   const layoutProps = { ...props, conceptType };
   const [approvedRecipes, setApprovedRecipes] = useState<string[]>([]);
@@ -85,6 +86,48 @@ export function Step3RecipeApproval(props: StepProps) {
 
   const currentRecipe = recipes[currentRecipeIndex];
   const totalRecipes = recipes.length;
+
+  // Generate image for current recipe if it doesn't have one
+  const generateImageForRecipe = async (recipeId: string) => {
+    const recipe = recipes.find(r => r.id === recipeId);
+    if (!recipe || recipe.imageUrl) return;
+
+    setGeneratingImageFor(recipeId);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-recipe-image`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dishName: recipe.name,
+          description: recipe.description,
+          section: recipe.section,
+          tags: recipe.tags,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.imageUrl) {
+          setRecipes(prev => prev.map(r => 
+            r.id === recipeId ? { ...r, imageUrl: data.imageUrl } : r
+          ));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to generate image:', error);
+    } finally {
+      setGeneratingImageFor(null);
+    }
+  };
+
+  // Auto-generate image when viewing a recipe
+  useEffect(() => {
+    if (phase === 'approval' && currentRecipe && !currentRecipe.imageUrl && generatingImageFor !== currentRecipe.id) {
+      generateImageForRecipe(currentRecipe.id);
+    }
+  }, [currentRecipeIndex, phase, currentRecipe?.id]);
 
   const handleGenerateRecipes = () => {
     if (recipes.length > 0) {
@@ -399,8 +442,32 @@ export function Step3RecipeApproval(props: StepProps) {
           <motion.div variants={cardVariants}>
             <Card className="lg:col-span-1 h-full">
               <CardContent className="pt-6">
-                <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg overflow-hidden mb-4 flex items-center justify-center">
-                  <span className="text-4xl">🍽️</span>
+                <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg overflow-hidden mb-4 flex items-center justify-center relative">
+                  {currentRecipe.imageUrl ? (
+                    <img 
+                      src={currentRecipe.imageUrl} 
+                      alt={currentRecipe.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : generatingImageFor === currentRecipe.id ? (
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                      <span className="text-xs">Generating image...</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <ImageIcon className="w-8 h-8" />
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => generateImageForRecipe(currentRecipe.id)}
+                        className="text-xs"
+                      >
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        Generate Image
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <h3 className="text-xl font-semibold mb-2">{currentRecipe.name}</h3>
                 <p className="text-sm text-muted-foreground mb-1">{currentRecipe.section}</p>
