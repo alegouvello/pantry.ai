@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Search, Sparkles, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +10,15 @@ import { ServiceChips } from '../ServiceChips';
 import { useCreateRestaurant, useRestaurant, useUpdateRestaurant } from '@/hooks/useOnboarding';
 import { useToast } from '@/hooks/use-toast';
 import type { ConceptType, ServiceType, RestaurantAddress } from '@/types/onboarding';
+
+const sectionVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.4, ease: "easeOut" as const }
+  }
+};
 
 interface Step1Props {
   currentStep: number;
@@ -130,9 +140,20 @@ export function Step1RestaurantBasics({
       nextLabel={isLoading ? 'Saving...' : 'Continue'}
       nextDisabled={isLoading || !name.trim() || !address.city}
     >
-      <div className="space-y-8">
+      <motion.div 
+        className="space-y-8"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: {
+            opacity: 1,
+            transition: { staggerChildren: 0.1, delayChildren: 0.1 }
+          }
+        }}
+      >
         {/* Basic Info */}
-        <div className="grid gap-6 md:grid-cols-2">
+        <motion.div variants={sectionVariants} className="grid gap-6 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="name">Restaurant Name *</Label>
             <Input
@@ -215,37 +236,39 @@ export function Step1RestaurantBasics({
               placeholder="@yourrestaurant"
             />
           </div>
-        </div>
+        </motion.div>
 
         {/* AI Search Button */}
-        <div className="flex justify-center">
-          <Button
-            variant="outline"
-            onClick={handleFindDetails}
-            disabled={isSearching || !name || !address.city}
-            className="gap-2"
-          >
-            {isSearching ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Sparkles className="w-4 h-4" />
-            )}
-            {isSearching ? 'Searching...' : 'Find details online'}
-          </Button>
-        </div>
+        <motion.div variants={sectionVariants} className="flex justify-center">
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+            <Button
+              variant="outline"
+              onClick={handleFindDetails}
+              disabled={isSearching || !name || !address.city}
+              className="gap-2"
+            >
+              {isSearching ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+              {isSearching ? 'Searching...' : 'Find details online'}
+            </Button>
+          </motion.div>
+        </motion.div>
 
         {/* Concept Type */}
-        <div className="space-y-4">
+        <motion.div variants={sectionVariants} className="space-y-4">
           <Label>What type of establishment?</Label>
           <ConceptSelector selected={conceptType} onSelect={setConceptType} />
-        </div>
+        </motion.div>
 
         {/* Services */}
-        <div className="space-y-4">
+        <motion.div variants={sectionVariants} className="space-y-4">
           <Label>What services do you offer?</Label>
           <ServiceChips selected={services} onChange={setServices} />
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </OnboardingLayout>
   );
 }
