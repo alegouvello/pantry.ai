@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 // Step components
+import { Step0Welcome } from '@/components/onboarding/steps/Step0Welcome';
 import { Step1RestaurantBasics } from '@/components/onboarding/steps/Step1RestaurantBasics';
 import { Step2MenuImport } from '@/components/onboarding/steps/Step2MenuImport';
 import { Step3RecipeApproval } from '@/components/onboarding/steps/Step3RecipeApproval';
@@ -21,7 +22,7 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [setupHealthScore, setSetupHealthScore] = useState(0);
   const [orgId, setOrgId] = useState<string | null>(null);
@@ -234,6 +235,8 @@ export default function Onboarding() {
 
   const renderStep = () => {
     switch (currentStep) {
+      case 0:
+        return <Step0Welcome onNext={handleNext} />;
       case 1:
         return <Step1RestaurantBasics {...stepProps} />;
       case 2:
@@ -251,7 +254,7 @@ export default function Onboarding() {
       case 8:
         return <Step8GoLive {...stepProps} />;
       default:
-        return <Step1RestaurantBasics {...stepProps} />;
+        return <Step0Welcome onNext={handleNext} />;
     }
   };
 
