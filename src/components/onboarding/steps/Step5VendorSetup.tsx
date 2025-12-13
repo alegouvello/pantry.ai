@@ -11,6 +11,7 @@ import { Truck, Plus, Trash2, Building2, Mail, Phone, Clock, DollarSign, Loader2
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useVendors, useCreateVendor, useDeleteVendor } from '@/hooks/useVendors';
 import { useUpsertIngredientVendorMapping } from '@/hooks/useVendorItems';
+import { useIngredients } from '@/hooks/useIngredients';
 import { useToast } from '@/hooks/use-toast';
 
 interface StepProps {
@@ -39,14 +40,14 @@ interface LocalVendor {
 
 const deliveryDayOptions = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-// Mock high-impact ingredients for mapping
-const topIngredients = [
-  { id: '1', name: 'Fresh Mozzarella', category: 'Dairy', unit: 'kg' },
-  { id: '2', name: 'San Marzano Tomatoes', category: 'Canned Goods', unit: 'cans' },
-  { id: '3', name: 'Olive Oil', category: 'Oils', unit: 'L' },
-  { id: '4', name: 'Salmon Fillet', category: 'Seafood', unit: 'kg' },
-  { id: '5', name: 'Romaine Lettuce', category: 'Produce', unit: 'heads' },
-  { id: '6', name: 'Parmesan', category: 'Dairy', unit: 'kg' },
+// Fallback mock ingredients when no real data exists
+const fallbackIngredients = [
+  { id: 'mock-1', name: 'Fresh Mozzarella', category: 'Dairy', unit: 'kg' },
+  { id: 'mock-2', name: 'San Marzano Tomatoes', category: 'Canned Goods', unit: 'cans' },
+  { id: 'mock-3', name: 'Olive Oil', category: 'Oils', unit: 'L' },
+  { id: 'mock-4', name: 'Salmon Fillet', category: 'Seafood', unit: 'kg' },
+  { id: 'mock-5', name: 'Romaine Lettuce', category: 'Produce', unit: 'heads' },
+  { id: 'mock-6', name: 'Parmesan', category: 'Dairy', unit: 'kg' },
 ];
 
 export function Step5VendorSetup(props: StepProps) {
@@ -60,9 +61,20 @@ export function Step5VendorSetup(props: StepProps) {
   const [isSavingMappings, setIsSavingMappings] = useState(false);
 
   const { data: existingVendors } = useVendors();
+  const { data: dbIngredients, isLoading: ingredientsLoading } = useIngredients();
   const createVendor = useCreateVendor();
   const deleteVendor = useDeleteVendor();
   const upsertMapping = useUpsertIngredientVendorMapping();
+  
+  // Use real ingredients from DB if available, otherwise fallback to mock data
+  const topIngredients = (dbIngredients && dbIngredients.length > 0)
+    ? dbIngredients.slice(0, 25).map(ing => ({
+        id: ing.id,
+        name: ing.name,
+        category: ing.category,
+        unit: ing.unit,
+      }))
+    : fallbackIngredients;
 
   const [formData, setFormData] = useState<Partial<LocalVendor>>({
     name: '',
@@ -388,32 +400,43 @@ export function Step5VendorSetup(props: StepProps) {
   }
 
   return (
-    <OnboardingLayout {...props} title="Map Ingredients to Vendors" subtitle="Start with your top 25 high-impact ingredients">
+    <OnboardingLayout {...props} title="Map Ingredients to Vendors" subtitle={`Map your top ${topIngredients.length} high-impact ingredients`}>
       <div className="space-y-6">
-        <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
-          💡 These are your most-used ingredients based on menu analysis. Map them first for accurate ordering.
-        </div>
+        {dbIngredients && dbIngredients.length > 0 ? (
+          <div className="bg-primary/10 rounded-lg p-4 text-sm text-primary">
+            ✓ Found {dbIngredients.length} ingredients in your database. Showing top 25 for mapping.
+          </div>
+        ) : (
+          <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
+            💡 No ingredients found yet. Showing sample ingredients - add real ingredients in Recipes step.
+          </div>
+        )}
 
-        <Card>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Ingredient</TableHead>
-                <TableHead>Vendor</TableHead>
-                <TableHead>SKU</TableHead>
-                <TableHead>Pack Size</TableHead>
-                <TableHead>Unit Cost</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {topIngredients.map(ingredient => (
-                <TableRow key={ingredient.id}>
-                  <TableCell>
-                    <div>
-                      <span className="font-medium">{ingredient.name}</span>
-                      <p className="text-xs text-muted-foreground">{ingredient.category}</p>
-                    </div>
-                  </TableCell>
+        {ingredientsLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Ingredient</TableHead>
+                  <TableHead>Vendor</TableHead>
+                  <TableHead>SKU</TableHead>
+                  <TableHead>Pack Size</TableHead>
+                  <TableHead>Unit Cost</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {topIngredients.map(ingredient => (
+                  <TableRow key={ingredient.id}>
+                    <TableCell>
+                      <div>
+                        <span className="font-medium">{ingredient.name}</span>
+                        <p className="text-xs text-muted-foreground">{ingredient.category}</p>
+                      </div>
+                    </TableCell>
                   <TableCell>
                     <Select
                       value={ingredientMappings[ingredient.id]?.vendorId || ''}
@@ -462,6 +485,7 @@ export function Step5VendorSetup(props: StepProps) {
             </TableBody>
           </Table>
         </Card>
+        )}
 
         <div className="flex justify-between">
           <Button variant="outline" onClick={() => setPhase('vendors')}>
