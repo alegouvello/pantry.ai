@@ -9,7 +9,6 @@ import { ServiceChips } from '../ServiceChips';
 import { useCreateRestaurant, useRestaurant, useUpdateRestaurant } from '@/hooks/useOnboarding';
 import { useToast } from '@/hooks/use-toast';
 import type { ConceptType, ServiceType, RestaurantAddress } from '@/types/onboarding';
-import { CONCEPT_IMAGES } from '@/types/onboarding';
 
 interface Step1Props {
   currentStep: number;
@@ -118,7 +117,6 @@ export function Step1RestaurantBasics({
   };
 
   const isLoading = createRestaurant.isPending || updateRestaurant.isPending;
-  const heroImage = conceptType ? CONCEPT_IMAGES[conceptType] : undefined;
 
   return (
     <OnboardingLayout
@@ -131,7 +129,6 @@ export function Step1RestaurantBasics({
       onSave={onSave}
       nextLabel={isLoading ? 'Saving...' : 'Continue'}
       nextDisabled={isLoading || !name.trim() || !address.city}
-      heroImage={heroImage}
     >
       <div className="space-y-8">
         {/* Basic Info */}

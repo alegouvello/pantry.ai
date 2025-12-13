@@ -264,16 +264,23 @@ export interface DraftRecipe {
   reason: string;
 }
 
-// Concept imagery mapping
+// Concept imagery mapping - use imported images for better quality
+import conceptFineDining from '@/assets/onboarding/concept-fine-dining.jpg';
+import conceptCasual from '@/assets/onboarding/concept-casual.jpg';
+import conceptQuickService from '@/assets/onboarding/concept-quick-service.jpg';
+import conceptBar from '@/assets/onboarding/concept-bar.jpg';
+import conceptCoffee from '@/assets/onboarding/concept-coffee.jpg';
+import conceptBakery from '@/assets/onboarding/concept-bakery.jpg';
+
 export const CONCEPT_IMAGES: Record<ConceptType, string> = {
-  fine_dining: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400',
-  casual: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400',
-  quick_service: 'https://images.unsplash.com/photo-1561758033-d89a9ad46330?w=400',
-  bar: 'https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=400',
-  coffee: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400',
-  bakery: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400',
-  cocktail: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400',
-  multi: 'https://images.unsplash.com/photo-1552566626-52f8b828add9?w=400',
+  fine_dining: conceptFineDining,
+  casual: conceptCasual,
+  quick_service: conceptQuickService,
+  bar: conceptBar,
+  coffee: conceptCoffee,
+  bakery: conceptBakery,
+  cocktail: conceptBar, // Use bar image for cocktail
+  multi: conceptCasual, // Use casual image for multi
 };
 
 export const CONCEPT_LABELS: Record<ConceptType, string> = {
