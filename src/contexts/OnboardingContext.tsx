@@ -1,6 +1,24 @@
 import { useState, createContext, useContext, ReactNode } from 'react';
 import type { OnboardingProgress, Restaurant, ConceptType } from '@/types/onboarding';
 
+export interface ParsedDish {
+  id: string;
+  name: string;
+  section: string;
+  description?: string;
+  price?: number | null;
+  confidence: 'high' | 'medium' | 'low';
+  tags: string[];
+  ingredients: {
+    id: string;
+    name: string;
+    quantity: number;
+    unit: string;
+    optional: boolean;
+    confidence: 'high' | 'medium' | 'low';
+  }[];
+}
+
 interface OnboardingContextType {
   progress: OnboardingProgress | null;
   setProgress: (progress: OnboardingProgress | null) => void;
@@ -12,6 +30,8 @@ interface OnboardingContextType {
   updateHealthScore: (delta: number) => void;
   conceptType: ConceptType | null;
   setConceptType: (type: ConceptType | null) => void;
+  parsedDishes: ParsedDish[];
+  setParsedDishes: (dishes: ParsedDish[]) => void;
 }
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
@@ -22,6 +42,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [setupHealthScore, setSetupHealthScore] = useState(0);
   const [conceptType, setConceptType] = useState<ConceptType | null>(null);
+  const [parsedDishes, setParsedDishes] = useState<ParsedDish[]>([]);
 
   const updateHealthScore = (delta: number) => {
     setSetupHealthScore(prev => Math.min(100, Math.max(0, prev + delta)));
@@ -39,6 +60,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       updateHealthScore,
       conceptType,
       setConceptType,
+      parsedDishes,
+      setParsedDishes,
     }}>
       {children}
     </OnboardingContext.Provider>

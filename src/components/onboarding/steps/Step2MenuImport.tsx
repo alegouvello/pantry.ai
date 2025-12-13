@@ -9,6 +9,7 @@ import { OnboardingLayout } from '../OnboardingLayout';
 import { useOnboardingContext } from '@/contexts/OnboardingContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Step2Props {
   currentStep: number;
@@ -62,11 +63,12 @@ export function Step2MenuImport({
   updateHealthScore,
 }: Step2Props) {
   const { toast } = useToast();
-  const { conceptType } = useOnboardingContext();
+  const { conceptType, setParsedDishes } = useOnboardingContext();
   const [method, setMethod] = useState<ImportMethod | null>(null);
   const [menuUrl, setMenuUrl] = useState('');
   const [isMonitored, setIsMonitored] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,8 +82,41 @@ export function Step2MenuImport({
     }
   };
 
+  const extractTextFromFile = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      if (file.type === 'application/pdf') {
+        // For PDFs, we'll read as text (basic extraction)
+        // In production, you'd use a PDF parsing library
+        reader.onload = (e) => {
+          const text = e.target?.result as string;
+          resolve(text);
+        };
+        reader.onerror = reject;
+        reader.readAsText(file);
+      } else if (file.type.startsWith('image/')) {
+        // For images, convert to base64 for AI vision processing
+        reader.onload = (e) => {
+          const base64 = e.target?.result as string;
+          // Extract base64 data without the prefix
+          resolve(`[IMAGE MENU]\nBase64 image data provided for OCR/vision processing.\n${base64}`);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      } else {
+        reader.onload = (e) => {
+          resolve(e.target?.result as string);
+        };
+        reader.onerror = reject;
+        reader.readAsText(file);
+      }
+    });
+  };
+
   const handleContinue = async () => {
     if (method === 'manual') {
+      setParsedDishes([]);
       onNext();
       return;
     }
@@ -105,13 +140,59 @@ export function Step2MenuImport({
     }
 
     setIsProcessing(true);
-    
-    // TODO: Implement actual menu parsing with AI
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    setIsProcessing(false);
-    updateHealthScore(15);
-    onNext();
+    setProcessingStatus('Extracting menu content...');
+
+    try {
+      let menuContent = '';
+
+      if (method === 'upload' && uploadedFile) {
+        menuContent = await extractTextFromFile(uploadedFile);
+        setProcessingStatus('Analyzing menu with AI...');
+      } else if (method === 'url') {
+        setProcessingStatus('Fetching menu from URL...');
+        // For URL, we'd ideally scrape the page, but for now we pass the URL to AI
+        menuContent = `Please analyze the menu at this URL: ${menuUrl}`;
+      }
+
+      // Call the parse-menu edge function
+      const { data, error } = await supabase.functions.invoke('parse-menu', {
+        body: { 
+          menuContent, 
+          menuType: method,
+          detailLevel: 'standard'
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to parse menu');
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to parse menu');
+      }
+
+      const dishes = data.dishes || [];
+      setParsedDishes(dishes);
+
+      toast({
+        title: 'Menu parsed successfully!',
+        description: `Found ${dishes.length} dishes. Review and approve recipes next.`,
+      });
+
+      updateHealthScore(15);
+      onNext();
+
+    } catch (error) {
+      console.error('Menu parsing error:', error);
+      toast({
+        title: 'Failed to parse menu',
+        description: error instanceof Error ? error.message : 'Please try again or use manual entry.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessing(false);
+      setProcessingStatus('');
+    }
   };
 
   return (
@@ -135,11 +216,13 @@ export function Step2MenuImport({
             <button
               key={m.id}
               onClick={() => setMethod(m.id)}
+              disabled={isProcessing}
               className={cn(
                 "relative p-6 rounded-xl border-2 text-left transition-all hover:border-primary/50",
                 method === m.id 
                   ? "border-primary bg-primary/5" 
-                  : "border-border"
+                  : "border-border",
+                isProcessing && "opacity-50 cursor-not-allowed"
               )}
             >
               {m.recommended && (
@@ -158,13 +241,13 @@ export function Step2MenuImport({
         </div>
 
         {/* Upload Area */}
-        {method === 'upload' && (
+        {method === 'upload' && !isProcessing && (
           <Card variant="elevated" className="p-8">
             <div className="flex flex-col items-center">
               <input
                 type="file"
                 id="menu-upload"
-                accept=".pdf,.jpg,.jpeg,.png"
+                accept=".pdf,.jpg,.jpeg,.png,.txt"
                 onChange={handleFileUpload}
                 className="hidden"
               />
@@ -187,7 +270,7 @@ export function Step2MenuImport({
                       Drop your menu here or click to browse
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      PDF, JPG, or PNG up to 10MB
+                      PDF, JPG, PNG, or TXT up to 10MB
                     </p>
                   </>
                 )}
@@ -197,7 +280,7 @@ export function Step2MenuImport({
         )}
 
         {/* URL Input */}
-        {method === 'url' && (
+        {method === 'url' && !isProcessing && (
           <Card variant="elevated" className="p-6">
             <div className="space-y-4">
               <div className="space-y-2">
@@ -227,7 +310,7 @@ export function Step2MenuImport({
         )}
 
         {/* POS Connect */}
-        {method === 'pos' && (
+        {method === 'pos' && !isProcessing && (
           <Card variant="elevated" className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center">
@@ -245,7 +328,7 @@ export function Step2MenuImport({
         )}
 
         {/* Manual Entry */}
-        {method === 'manual' && (
+        {method === 'manual' && !isProcessing && (
           <Card variant="elevated" className="p-6 text-center">
             <PenLine className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="font-semibold text-foreground mb-2">Manual Entry</h3>
@@ -261,7 +344,7 @@ export function Step2MenuImport({
           <div className="flex flex-col items-center py-8">
             <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
             <p className="font-medium text-foreground">Processing your menu...</p>
-            <p className="text-sm text-muted-foreground">This may take a moment</p>
+            <p className="text-sm text-muted-foreground">{processingStatus || 'This may take a moment'}</p>
           </div>
         )}
       </div>

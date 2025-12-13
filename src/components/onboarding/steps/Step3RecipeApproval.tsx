@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { AIConfidenceCard } from '../AIConfidenceCard';
@@ -10,9 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Check, Clock, Trash2, Plus, ArrowRight, ArrowLeft, Sparkles, Copy } from 'lucide-react';
+import { Check, Clock, Trash2, Plus, ArrowRight, ArrowLeft, Sparkles, AlertCircle } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useOnboardingContext } from '@/contexts/OnboardingContext';
+import { useOnboardingContext, ParsedDish } from '@/contexts/OnboardingContext';
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.98 },
@@ -30,11 +30,6 @@ const cardVariants = {
   }
 };
 
-// Dish images
-import dishMargherita from '@/assets/onboarding/dish-margherita.jpg';
-import dishCaesarSalad from '@/assets/onboarding/dish-caesar-salad.jpg';
-import dishSalmon from '@/assets/onboarding/dish-salmon.jpg';
-
 interface StepProps {
   currentStep: number;
   completedSteps: number[];
@@ -47,82 +42,51 @@ interface StepProps {
   updateHealthScore: (delta: number) => void;
 }
 
-// Mock draft recipes for demonstration
-const mockDraftRecipes = [
-  {
-    id: '1',
-    name: 'Classic Margherita Pizza',
-    section: 'Pizzas',
-    confidence: 'high' as const,
-    tags: ['vegetarian', 'popular'],
-    image: dishMargherita,
-    ingredients: [
-      { id: '1', name: 'Pizza dough', quantity: 250, unit: 'g', optional: false, confidence: 'high' as const },
-      { id: '2', name: 'San Marzano tomatoes', quantity: 100, unit: 'g', optional: false, confidence: 'high' as const },
-      { id: '3', name: 'Fresh mozzarella', quantity: 150, unit: 'g', optional: false, confidence: 'high' as const },
-      { id: '4', name: 'Fresh basil', quantity: 10, unit: 'leaves', optional: true, confidence: 'medium' as const },
-      { id: '5', name: 'Olive oil', quantity: 15, unit: 'ml', optional: false, confidence: 'high' as const },
-    ],
-  },
-  {
-    id: '2',
-    name: 'Caesar Salad',
-    section: 'Salads',
-    confidence: 'medium' as const,
-    tags: ['classic'],
-    image: dishCaesarSalad,
-    ingredients: [
-      { id: '1', name: 'Romaine lettuce', quantity: 200, unit: 'g', optional: false, confidence: 'high' as const },
-      { id: '2', name: 'Caesar dressing', quantity: 60, unit: 'ml', optional: false, confidence: 'medium' as const },
-      { id: '3', name: 'Parmesan cheese', quantity: 30, unit: 'g', optional: false, confidence: 'high' as const },
-      { id: '4', name: 'Croutons', quantity: 50, unit: 'g', optional: false, confidence: 'high' as const },
-      { id: '5', name: 'Anchovy', quantity: 2, unit: 'fillets', optional: true, confidence: 'low' as const },
-    ],
-  },
-  {
-    id: '3',
-    name: 'Grilled Salmon',
-    section: 'Mains',
-    confidence: 'high' as const,
-    tags: ['seafood', 'healthy'],
-    image: dishSalmon,
-    ingredients: [
-      { id: '1', name: 'Salmon fillet', quantity: 180, unit: 'g', optional: false, confidence: 'high' as const },
-      { id: '2', name: 'Lemon', quantity: 0.5, unit: 'piece', optional: false, confidence: 'high' as const },
-      { id: '3', name: 'Dill', quantity: 5, unit: 'g', optional: true, confidence: 'medium' as const },
-      { id: '4', name: 'Butter', quantity: 20, unit: 'g', optional: false, confidence: 'high' as const },
-    ],
-  },
-];
-
 export function Step3RecipeApproval(props: StepProps) {
-  const { conceptType } = useOnboardingContext();
+  const { conceptType, parsedDishes } = useOnboardingContext();
   const [phase, setPhase] = useState<'settings' | 'approval'>('settings');
   const [detailLevel, setDetailLevel] = useState('standard');
   const [assumePortions, setAssumePortions] = useState(true);
   const [currentRecipeIndex, setCurrentRecipeIndex] = useState(0);
   
-  // Merge conceptType with props for OnboardingLayout
   const layoutProps = { ...props, conceptType };
   const [approvedRecipes, setApprovedRecipes] = useState<string[]>([]);
   const [needsLaterRecipes, setNeedsLaterRecipes] = useState<string[]>([]);
-  const [editingIngredients, setEditingIngredients] = useState(mockDraftRecipes[0].ingredients);
+  const [editingIngredients, setEditingIngredients] = useState<ParsedDish['ingredients']>([]);
+  const [recipes, setRecipes] = useState<ParsedDish[]>([]);
 
-  const currentRecipe = mockDraftRecipes[currentRecipeIndex];
-  const totalRecipes = mockDraftRecipes.length;
+  // Use parsed dishes from context or empty array
+  useEffect(() => {
+    if (parsedDishes.length > 0) {
+      setRecipes(parsedDishes);
+      // Skip settings phase if we already have dishes
+      setPhase('approval');
+      setEditingIngredients(parsedDishes[0]?.ingredients || []);
+    }
+  }, [parsedDishes]);
+
+  const currentRecipe = recipes[currentRecipeIndex];
+  const totalRecipes = recipes.length;
 
   const handleGenerateRecipes = () => {
-    setPhase('approval');
-    setEditingIngredients(mockDraftRecipes[0].ingredients);
+    if (recipes.length > 0) {
+      setPhase('approval');
+      setEditingIngredients(recipes[0]?.ingredients || []);
+    } else {
+      // No dishes parsed - go back or show message
+      props.onBack?.();
+    }
   };
 
   const handleApprove = () => {
+    if (!currentRecipe) return;
     setApprovedRecipes([...approvedRecipes, currentRecipe.id]);
     props.updateHealthScore(5);
     moveToNextRecipe();
   };
 
   const handleNeedsLater = () => {
+    if (!currentRecipe) return;
     setNeedsLaterRecipes([...needsLaterRecipes, currentRecipe.id]);
     moveToNextRecipe();
   };
@@ -131,7 +95,7 @@ export function Step3RecipeApproval(props: StepProps) {
     if (currentRecipeIndex < totalRecipes - 1) {
       const nextIndex = currentRecipeIndex + 1;
       setCurrentRecipeIndex(nextIndex);
-      setEditingIngredients(mockDraftRecipes[nextIndex].ingredients);
+      setEditingIngredients(recipes[nextIndex]?.ingredients || []);
     }
   };
 
@@ -139,7 +103,7 @@ export function Step3RecipeApproval(props: StepProps) {
     if (currentRecipeIndex > 0) {
       const prevIndex = currentRecipeIndex - 1;
       setCurrentRecipeIndex(prevIndex);
-      setEditingIngredients(mockDraftRecipes[prevIndex].ingredients);
+      setEditingIngredients(recipes[prevIndex]?.ingredients || []);
     }
   };
 
@@ -155,7 +119,7 @@ export function Step3RecipeApproval(props: StepProps) {
 
   const addIngredient = () => {
     const newIngredient = {
-      id: Date.now().toString(),
+      id: `new-${Date.now()}`,
       name: '',
       quantity: 0,
       unit: 'g',
@@ -165,7 +129,36 @@ export function Step3RecipeApproval(props: StepProps) {
     setEditingIngredients([...editingIngredients, newIngredient]);
   };
 
-  const isComplete = approvedRecipes.length + needsLaterRecipes.length === totalRecipes;
+  const isComplete = totalRecipes > 0 && approvedRecipes.length + needsLaterRecipes.length === totalRecipes;
+
+  // No dishes parsed - show empty state
+  if (phase === 'approval' && recipes.length === 0) {
+    return (
+      <OnboardingLayout {...layoutProps} title="No Dishes Found" subtitle="We couldn't extract any dishes from your menu">
+        <div className="max-w-2xl mx-auto text-center space-y-6">
+          <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto">
+            <AlertCircle className="w-10 h-10 text-muted-foreground" />
+          </div>
+          <div>
+            <h3 className="text-2xl font-semibold mb-2">No dishes found</h3>
+            <p className="text-muted-foreground">
+              We couldn't extract any dishes from your menu. This might happen with image-based menus or complex layouts.
+            </p>
+          </div>
+          <div className="flex gap-4 justify-center">
+            <Button variant="outline" onClick={props.onBack}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Try Different Menu
+            </Button>
+            <Button onClick={props.onNext}>
+              Continue to Manual Entry
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      </OnboardingLayout>
+    );
+  }
 
   if (phase === 'settings') {
     return (
@@ -217,13 +210,20 @@ export function Step3RecipeApproval(props: StepProps) {
             </CardContent>
           </Card>
 
+          {recipes.length > 0 && (
+            <div className="bg-primary/10 rounded-lg p-4 text-sm">
+              <p className="font-medium text-primary">✓ {recipes.length} dishes ready for review</p>
+              <p className="text-muted-foreground mt-1">Your menu has been parsed. Click below to review and approve recipes.</p>
+            </div>
+          )}
+
           <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
             <p>💡 We'll estimate quantities—you can confirm and adjust them as you review each recipe.</p>
           </div>
 
-          <Button onClick={handleGenerateRecipes} className="w-full" size="lg">
+          <Button onClick={handleGenerateRecipes} className="w-full" size="lg" disabled={recipes.length === 0}>
             <Sparkles className="w-4 h-4 mr-2" />
-            Generate Recipes
+            {recipes.length > 0 ? 'Review Recipes' : 'No Recipes to Review'}
           </Button>
         </div>
       </OnboardingLayout>
@@ -263,8 +263,13 @@ export function Step3RecipeApproval(props: StepProps) {
             transition={{ delay: 0.4 }}
             className="flex gap-4 justify-center"
           >
-            <Button variant="outline" onClick={() => setPhase('settings')}>
-              Review Settings
+            <Button variant="outline" onClick={() => {
+              setCurrentRecipeIndex(0);
+              setApprovedRecipes([]);
+              setNeedsLaterRecipes([]);
+              setEditingIngredients(recipes[0]?.ingredients || []);
+            }}>
+              Review Again
             </Button>
             <Button onClick={props.onNext}>
               Continue to Storage Setup
@@ -274,6 +279,10 @@ export function Step3RecipeApproval(props: StepProps) {
         </motion.div>
       </OnboardingLayout>
     );
+  }
+
+  if (!currentRecipe) {
+    return null;
   }
 
   return (
@@ -298,19 +307,17 @@ export function Step3RecipeApproval(props: StepProps) {
           <motion.div variants={cardVariants}>
             <Card className="lg:col-span-1 h-full">
               <CardContent className="pt-6">
-                <motion.div 
-                  className="aspect-video bg-muted rounded-lg overflow-hidden mb-4"
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <img 
-                    src={currentRecipe.image} 
-                    alt={currentRecipe.name}
-                    className="w-full h-full object-cover"
-                  />
-                </motion.div>
+                <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg overflow-hidden mb-4 flex items-center justify-center">
+                  <span className="text-4xl">🍽️</span>
+                </div>
                 <h3 className="text-xl font-semibold mb-2">{currentRecipe.name}</h3>
-                <p className="text-sm text-muted-foreground mb-3">{currentRecipe.section}</p>
+                <p className="text-sm text-muted-foreground mb-1">{currentRecipe.section}</p>
+                {currentRecipe.description && (
+                  <p className="text-sm text-muted-foreground mb-3 italic">{currentRecipe.description}</p>
+                )}
+                {currentRecipe.price && (
+                  <p className="text-sm font-medium text-primary mb-3">${currentRecipe.price.toFixed(2)}</p>
+                )}
                 <div className="flex flex-wrap gap-2 mb-4">
                   {currentRecipe.tags.map((tag, index) => (
                     <motion.div
@@ -337,7 +344,7 @@ export function Step3RecipeApproval(props: StepProps) {
           <motion.div variants={cardVariants} className="lg:col-span-2">
             <Card className="h-full">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Ingredients</CardTitle>
+                <CardTitle>Ingredients ({editingIngredients.length})</CardTitle>
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Button variant="outline" size="sm" onClick={addIngredient}>
                     <Plus className="w-4 h-4 mr-1" />
@@ -377,7 +384,7 @@ export function Step3RecipeApproval(props: StepProps) {
                           <Input
                             type="number"
                             value={ingredient.quantity}
-                            onChange={(e) => updateIngredient(ingredient.id, 'quantity', parseFloat(e.target.value))}
+                            onChange={(e) => updateIngredient(ingredient.id, 'quantity', parseFloat(e.target.value) || 0)}
                             className="h-8"
                           />
                         </TableCell>
@@ -397,8 +404,9 @@ export function Step3RecipeApproval(props: StepProps) {
                               <SelectItem value="oz">oz</SelectItem>
                               <SelectItem value="lb">lb</SelectItem>
                               <SelectItem value="piece">piece</SelectItem>
-                              <SelectItem value="leaves">leaves</SelectItem>
-                              <SelectItem value="fillets">fillets</SelectItem>
+                              <SelectItem value="tbsp">tbsp</SelectItem>
+                              <SelectItem value="tsp">tsp</SelectItem>
+                              <SelectItem value="cup">cup</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
@@ -423,15 +431,33 @@ export function Step3RecipeApproval(props: StepProps) {
                   </TableBody>
                 </Table>
 
-                <div className="flex gap-2 mt-4">
-                  <Button variant="outline" size="sm">
-                    <Plus className="w-4 h-4 mr-1" />
-                    Create Prep Batch
+                {editingIngredients.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No ingredients yet. Click "Add" to add ingredients manually.</p>
+                  </div>
+                )}
+
+                {/* Navigation & Actions */}
+                <div className="mt-6 flex items-center justify-between">
+                  <Button
+                    variant="ghost"
+                    onClick={moveToPrevRecipe}
+                    disabled={currentRecipeIndex === 0}
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Previous
                   </Button>
-                  <Button variant="outline" size="sm">
-                    <Copy className="w-4 h-4 mr-1" />
-                    Duplicate & Edit
-                  </Button>
+                  
+                  <div className="flex gap-3">
+                    <Button variant="outline" onClick={handleNeedsLater}>
+                      <Clock className="w-4 h-4 mr-2" />
+                      Later
+                    </Button>
+                    <Button onClick={handleApprove}>
+                      <Check className="w-4 h-4 mr-2" />
+                      Approve
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -439,39 +465,23 @@ export function Step3RecipeApproval(props: StepProps) {
         </motion.div>
       </AnimatePresence>
 
-      {/* Navigation */}
-      <motion.div 
-        className="flex items-center justify-between mt-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        <motion.div whileHover={{ x: -3 }} whileTap={{ scale: 0.95 }}>
-          <Button
-            variant="outline"
-            onClick={moveToPrevRecipe}
-            disabled={currentRecipeIndex === 0}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Previous
-          </Button>
-        </motion.div>
-
-        <div className="flex gap-3">
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.95 }}>
-            <Button variant="outline" onClick={handleNeedsLater}>
-              <Clock className="w-4 h-4 mr-2" />
-              Needs Later
-            </Button>
-          </motion.div>
-          <motion.div whileHover={{ scale: 1.02, x: 3 }} whileTap={{ scale: 0.95 }}>
-            <Button onClick={handleApprove}>
-              <Check className="w-4 h-4 mr-2" />
-              Approve & Next
-            </Button>
-          </motion.div>
-        </div>
-      </motion.div>
+      {/* Progress indicator */}
+      <div className="mt-6 flex justify-center gap-2">
+        {recipes.map((_, index) => (
+          <div
+            key={index}
+            className={`w-2 h-2 rounded-full transition-colors ${
+              index === currentRecipeIndex
+                ? 'bg-primary'
+                : approvedRecipes.includes(recipes[index]?.id)
+                ? 'bg-green-500'
+                : needsLaterRecipes.includes(recipes[index]?.id)
+                ? 'bg-yellow-500'
+                : 'bg-muted'
+            }`}
+          />
+        ))}
+      </div>
     </OnboardingLayout>
   );
 }
