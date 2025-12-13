@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.parse-menu]
 verify_jwt = false
+
+[functions.scrape-menu-url]
+verify_jwt = false
