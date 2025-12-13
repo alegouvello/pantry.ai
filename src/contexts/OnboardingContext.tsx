@@ -9,6 +9,7 @@ export interface ParsedDish {
   price?: number | null;
   confidence: 'high' | 'medium' | 'low';
   tags: string[];
+  imageUrl?: string;
   ingredients: {
     id: string;
     name: string;
