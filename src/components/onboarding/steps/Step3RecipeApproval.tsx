@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { AIConfidenceCard } from '../AIConfidenceCard';
@@ -10,9 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Check, Clock, Trash2, Plus, ArrowRight, ArrowLeft, Sparkles, AlertCircle } from 'lucide-react';
+import { Check, Clock, Trash2, Plus, ArrowRight, ArrowLeft, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useOnboardingContext, ParsedDish } from '@/contexts/OnboardingContext';
+import { useSaveOnboardingRecipe } from '@/hooks/useSaveOnboardingRecipe';
+import { useToast } from '@/hooks/use-toast';
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.98 },
@@ -42,26 +44,42 @@ interface StepProps {
   updateHealthScore: (delta: number) => void;
 }
 
+interface ApprovedRecipeData {
+  dish: ParsedDish;
+  ingredients: ParsedDish['ingredients'];
+}
+
 export function Step3RecipeApproval(props: StepProps) {
+  const { toast } = useToast();
   const { conceptType, parsedDishes } = useOnboardingContext();
+  const saveRecipe = useSaveOnboardingRecipe();
+  
   const [phase, setPhase] = useState<'settings' | 'approval'>('settings');
   const [detailLevel, setDetailLevel] = useState('standard');
   const [assumePortions, setAssumePortions] = useState(true);
   const [currentRecipeIndex, setCurrentRecipeIndex] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
   
   const layoutProps = { ...props, conceptType };
   const [approvedRecipes, setApprovedRecipes] = useState<string[]>([]);
+  const [approvedRecipeData, setApprovedRecipeData] = useState<ApprovedRecipeData[]>([]);
   const [needsLaterRecipes, setNeedsLaterRecipes] = useState<string[]>([]);
   const [editingIngredients, setEditingIngredients] = useState<ParsedDish['ingredients']>([]);
   const [recipes, setRecipes] = useState<ParsedDish[]>([]);
+
+  // Track ingredients per recipe for saving
+  const recipeIngredientsRef = useRef<Record<string, ParsedDish['ingredients']>>({});
 
   // Use parsed dishes from context or empty array
   useEffect(() => {
     if (parsedDishes.length > 0) {
       setRecipes(parsedDishes);
-      // Skip settings phase if we already have dishes
       setPhase('approval');
       setEditingIngredients(parsedDishes[0]?.ingredients || []);
+      // Initialize ingredients tracking
+      parsedDishes.forEach(dish => {
+        recipeIngredientsRef.current[dish.id] = dish.ingredients;
+      });
     }
   }, [parsedDishes]);
 
@@ -73,20 +91,32 @@ export function Step3RecipeApproval(props: StepProps) {
       setPhase('approval');
       setEditingIngredients(recipes[0]?.ingredients || []);
     } else {
-      // No dishes parsed - go back or show message
       props.onBack?.();
     }
   };
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
     if (!currentRecipe) return;
+    
+    // Save current editing state
+    recipeIngredientsRef.current[currentRecipe.id] = editingIngredients;
+    
+    // Track approved recipe with its ingredients
+    const recipeData: ApprovedRecipeData = {
+      dish: currentRecipe,
+      ingredients: editingIngredients,
+    };
+    
     setApprovedRecipes([...approvedRecipes, currentRecipe.id]);
+    setApprovedRecipeData([...approvedRecipeData, recipeData]);
     props.updateHealthScore(5);
     moveToNextRecipe();
   };
 
   const handleNeedsLater = () => {
     if (!currentRecipe) return;
+    // Save current editing state
+    recipeIngredientsRef.current[currentRecipe.id] = editingIngredients;
     setNeedsLaterRecipes([...needsLaterRecipes, currentRecipe.id]);
     moveToNextRecipe();
   };
@@ -95,15 +125,22 @@ export function Step3RecipeApproval(props: StepProps) {
     if (currentRecipeIndex < totalRecipes - 1) {
       const nextIndex = currentRecipeIndex + 1;
       setCurrentRecipeIndex(nextIndex);
-      setEditingIngredients(recipes[nextIndex]?.ingredients || []);
+      // Restore ingredients for next recipe
+      const nextRecipe = recipes[nextIndex];
+      setEditingIngredients(recipeIngredientsRef.current[nextRecipe.id] || nextRecipe.ingredients);
     }
   };
 
   const moveToPrevRecipe = () => {
     if (currentRecipeIndex > 0) {
+      // Save current editing state before moving
+      if (currentRecipe) {
+        recipeIngredientsRef.current[currentRecipe.id] = editingIngredients;
+      }
       const prevIndex = currentRecipeIndex - 1;
       setCurrentRecipeIndex(prevIndex);
-      setEditingIngredients(recipes[prevIndex]?.ingredients || []);
+      const prevRecipe = recipes[prevIndex];
+      setEditingIngredients(recipeIngredientsRef.current[prevRecipe.id] || prevRecipe.ingredients);
     }
   };
 
@@ -130,6 +167,51 @@ export function Step3RecipeApproval(props: StepProps) {
   };
 
   const isComplete = totalRecipes > 0 && approvedRecipes.length + needsLaterRecipes.length === totalRecipes;
+
+  // Save all approved recipes when user continues
+  const handleContinue = async () => {
+    if (approvedRecipeData.length === 0) {
+      props.onNext();
+      return;
+    }
+
+    setIsSaving(true);
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const { dish, ingredients } of approvedRecipeData) {
+      try {
+        await saveRecipe.mutateAsync({
+          dish,
+          ingredients,
+          restaurantId: props.restaurantId,
+        });
+        successCount++;
+      } catch (error) {
+        console.error('Failed to save recipe:', dish.name, error);
+        errorCount++;
+      }
+    }
+
+    setIsSaving(false);
+
+    if (successCount > 0) {
+      toast({
+        title: 'Recipes saved!',
+        description: `${successCount} recipe${successCount > 1 ? 's' : ''} saved to your database.`,
+      });
+    }
+
+    if (errorCount > 0) {
+      toast({
+        title: 'Some recipes failed to save',
+        description: `${errorCount} recipe${errorCount > 1 ? 's' : ''} couldn't be saved. You can add them later.`,
+        variant: 'destructive',
+      });
+    }
+
+    props.onNext();
+  };
 
   // No dishes parsed - show empty state
   if (phase === 'approval' && recipes.length === 0) {
@@ -266,14 +348,24 @@ export function Step3RecipeApproval(props: StepProps) {
             <Button variant="outline" onClick={() => {
               setCurrentRecipeIndex(0);
               setApprovedRecipes([]);
+              setApprovedRecipeData([]);
               setNeedsLaterRecipes([]);
               setEditingIngredients(recipes[0]?.ingredients || []);
             }}>
               Review Again
             </Button>
-            <Button onClick={props.onNext}>
-              Continue to Storage Setup
-              <ArrowRight className="w-4 h-4 ml-2" />
+            <Button onClick={handleContinue} disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving Recipes...
+                </>
+              ) : (
+                <>
+                  Continue to Storage Setup
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </>
+              )}
             </Button>
           </motion.div>
         </motion.div>
