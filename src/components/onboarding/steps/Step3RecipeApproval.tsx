@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Check, Clock, Trash2, Plus, ArrowRight, ArrowLeft, Sparkles, Copy } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useOnboardingContext } from '@/contexts/OnboardingContext';
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.98 },
@@ -95,10 +96,14 @@ const mockDraftRecipes = [
 ];
 
 export function Step3RecipeApproval(props: StepProps) {
+  const { conceptType } = useOnboardingContext();
   const [phase, setPhase] = useState<'settings' | 'approval'>('settings');
   const [detailLevel, setDetailLevel] = useState('standard');
   const [assumePortions, setAssumePortions] = useState(true);
   const [currentRecipeIndex, setCurrentRecipeIndex] = useState(0);
+  
+  // Merge conceptType with props for OnboardingLayout
+  const layoutProps = { ...props, conceptType };
   const [approvedRecipes, setApprovedRecipes] = useState<string[]>([]);
   const [needsLaterRecipes, setNeedsLaterRecipes] = useState<string[]>([]);
   const [editingIngredients, setEditingIngredients] = useState(mockDraftRecipes[0].ingredients);
@@ -164,7 +169,7 @@ export function Step3RecipeApproval(props: StepProps) {
 
   if (phase === 'settings') {
     return (
-      <OnboardingLayout {...props} title="AI Recipe Generation" subtitle="Configure how detailed your recipes should be">
+      <OnboardingLayout {...layoutProps} title="AI Recipe Generation" subtitle="Configure how detailed your recipes should be">
         <div className="max-w-2xl mx-auto space-y-8">
           <Card>
             <CardHeader>
@@ -227,7 +232,7 @@ export function Step3RecipeApproval(props: StepProps) {
 
   if (isComplete) {
     return (
-      <OnboardingLayout {...props} title="Recipe Review Complete" subtitle="Great progress on your recipes!">
+      <OnboardingLayout {...layoutProps} title="Recipe Review Complete" subtitle="Great progress on your recipes!">
         <motion.div 
           className="max-w-2xl mx-auto text-center space-y-6"
           initial={{ opacity: 0, scale: 0.95 }}
@@ -272,7 +277,7 @@ export function Step3RecipeApproval(props: StepProps) {
   }
 
   return (
-    <OnboardingLayout {...props} title="Recipe Approval Studio" subtitle={`Recipe ${currentRecipeIndex + 1} of ${totalRecipes}`}>
+    <OnboardingLayout {...layoutProps} title="Recipe Approval Studio" subtitle={`Recipe ${currentRecipeIndex + 1} of ${totalRecipes}`}>
       <AnimatePresence mode="wait">
         <motion.div 
           key={currentRecipe.id}

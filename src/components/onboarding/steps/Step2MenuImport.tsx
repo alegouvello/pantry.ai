@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { OnboardingLayout } from '../OnboardingLayout';
+import { useOnboardingContext } from '@/contexts/OnboardingContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -61,6 +62,7 @@ export function Step2MenuImport({
   updateHealthScore,
 }: Step2Props) {
   const { toast } = useToast();
+  const { conceptType } = useOnboardingContext();
   const [method, setMethod] = useState<ImportMethod | null>(null);
   const [menuUrl, setMenuUrl] = useState('');
   const [isMonitored, setIsMonitored] = useState(false);
@@ -124,6 +126,7 @@ export function Step2MenuImport({
       onSave={onSave}
       nextLabel={isProcessing ? 'Processing...' : 'Continue'}
       nextDisabled={!method || isProcessing}
+      conceptType={conceptType}
     >
       <div className="space-y-8">
         {/* Method Selection */}

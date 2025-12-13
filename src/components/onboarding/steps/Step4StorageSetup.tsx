@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Warehouse, Snowflake, Package, Wine, Coffee, Plus, Trash2, Upload, ListChecks, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { useStorageLocations, useCreateStorageLocation } from '@/hooks/useOnboarding';
+import { useOnboardingContext } from '@/contexts/OnboardingContext';
 import { useToast } from '@/hooks/use-toast';
 import { useSyncNotification } from '@/hooks/useSyncNotification';
 import { supabase } from '@/integrations/supabase/client';
@@ -64,6 +65,7 @@ const mockIngredients = [
 
 export function Step4StorageSetup(props: StepProps) {
   const { toast } = useToast();
+  const { conceptType } = useOnboardingContext();
   const { notify: syncNotify } = useSyncNotification();
   const [phase, setPhase] = useState<'storage' | 'method' | 'count'>('storage');
   const [storageLocations, setStorageLocations] = useState<StorageLocationItem[]>(defaultStorageLocations);
@@ -75,6 +77,9 @@ export function Step4StorageSetup(props: StepProps) {
   const [isSaving, setIsSaving] = useState(false);
   
   const isLocalUpdateRef = useRef(false);
+  
+  // Merge conceptType with props for OnboardingLayout
+  const layoutProps = { ...props, conceptType };
 
   const { data: existingLocations, refetch } = useStorageLocations(props.restaurantId || undefined);
   const createStorageLocation = useCreateStorageLocation();
@@ -178,7 +183,7 @@ export function Step4StorageSetup(props: StepProps) {
 
   if (phase === 'storage') {
     return (
-      <OnboardingLayout {...props} title="Set Up Storage Locations" subtitle="Define where ingredients are stored">
+      <OnboardingLayout {...layoutProps} title="Set Up Storage Locations" subtitle="Define where ingredients are stored">
         <div className="max-w-2xl mx-auto space-y-6">
           <p className="text-muted-foreground">
             We've suggested common storage locations. Add, edit, or remove as needed.
@@ -274,7 +279,7 @@ export function Step4StorageSetup(props: StepProps) {
 
   if (phase === 'method') {
     return (
-      <OnboardingLayout {...props} title="Baseline Inventory" subtitle="Choose how to enter your current inventory">
+      <OnboardingLayout {...layoutProps} title="Baseline Inventory" subtitle="Choose how to enter your current inventory">
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="grid gap-4">
             <Card
@@ -357,7 +362,7 @@ export function Step4StorageSetup(props: StepProps) {
   }
 
   return (
-    <OnboardingLayout {...props} title="Guided Inventory Count" subtitle={`${countedItems} of ${totalItems} items counted`}>
+    <OnboardingLayout {...layoutProps} title="Guided Inventory Count" subtitle={`${countedItems} of ${totalItems} items counted`}>
       <div className="space-y-6">
         <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
           💡 We've prioritized the top items based on your menu. Focus on these first for 80/20 accuracy.
