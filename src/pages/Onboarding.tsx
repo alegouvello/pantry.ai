@@ -26,10 +26,12 @@ export default function Onboarding() {
   const [setupHealthScore, setSetupHealthScore] = useState(0);
   const [orgId, setOrgId] = useState<string | null>(null);
   const [progressId, setProgressId] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
   
   // Track if initial load is complete and if update is from local action
   const initializedRef = useRef(false);
   const isLocalUpdateRef = useRef(false);
+  const createAttemptedRef = useRef(false);
 
   const { data: progress, isLoading: progressLoading } = useOnboardingProgress(user?.id);
   const { data: restaurant } = useRestaurant(orgId || undefined);
@@ -52,13 +54,23 @@ export default function Onboarding() {
       setOrgId(progress.org_id);
       setProgressId(progress.id);
       initializedRef.current = true;
-    } else if (user && !progressLoading && !progress && !createOnboarding.isPending) {
-      // Create new onboarding progress
+    } else if (user && !progressLoading && !progress && !createOnboarding.isPending && !createAttemptedRef.current) {
+      // Create new onboarding progress - only attempt once
+      createAttemptedRef.current = true;
       createOnboarding.mutate({ userId: user.id }, {
         onSuccess: (data) => {
           setOrgId(data.org.id);
           setProgressId(data.progress.id);
           initializedRef.current = true;
+          setCreateError(null);
+        },
+        onError: (error: Error) => {
+          console.error('Failed to create onboarding:', error);
+          setCreateError(error.message);
+          // Reset attempt flag after a delay to allow retry
+          setTimeout(() => {
+            createAttemptedRef.current = false;
+          }, 5000);
         },
       });
     }
@@ -128,6 +140,26 @@ export default function Onboarding() {
       isLocalUpdateRef.current = false;
     }
   }, [progressId, updateProgress]);
+
+  if (createError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center max-w-md px-4">
+          <p className="text-destructive mb-4">Failed to set up your workspace</p>
+          <p className="text-muted-foreground text-sm mb-6">{createError}</p>
+          <button 
+            onClick={() => {
+              setCreateError(null);
+              createAttemptedRef.current = false;
+            }}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (authLoading || progressLoading || createOnboarding.isPending) {
     return (
