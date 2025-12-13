@@ -87,8 +87,6 @@ export function Step2MenuImport({
       const reader = new FileReader();
       
       if (file.type === 'application/pdf') {
-        // For PDFs, we'll read as text (basic extraction)
-        // In production, you'd use a PDF parsing library
         reader.onload = (e) => {
           const text = e.target?.result as string;
           resolve(text);
@@ -96,10 +94,8 @@ export function Step2MenuImport({
         reader.onerror = reject;
         reader.readAsText(file);
       } else if (file.type.startsWith('image/')) {
-        // For images, convert to base64 for AI vision processing
         reader.onload = (e) => {
           const base64 = e.target?.result as string;
-          // Extract base64 data without the prefix
           resolve(`[IMAGE MENU]\nBase64 image data provided for OCR/vision processing.\n${base64}`);
         };
         reader.onerror = reject;
@@ -112,6 +108,22 @@ export function Step2MenuImport({
         reader.readAsText(file);
       }
     });
+  };
+
+  const scrapeMenuUrl = async (url: string): Promise<string> => {
+    const { data, error } = await supabase.functions.invoke('scrape-menu-url', {
+      body: { url },
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to fetch menu from URL');
+    }
+
+    if (!data?.success) {
+      throw new Error(data?.error || 'Failed to fetch menu from URL');
+    }
+
+    return data.content;
   };
 
   const handleContinue = async () => {
@@ -140,18 +152,18 @@ export function Step2MenuImport({
     }
 
     setIsProcessing(true);
-    setProcessingStatus('Extracting menu content...');
 
     try {
       let menuContent = '';
 
       if (method === 'upload' && uploadedFile) {
+        setProcessingStatus('Extracting menu content...');
         menuContent = await extractTextFromFile(uploadedFile);
         setProcessingStatus('Analyzing menu with AI...');
       } else if (method === 'url') {
-        setProcessingStatus('Fetching menu from URL...');
-        // For URL, we'd ideally scrape the page, but for now we pass the URL to AI
-        menuContent = `Please analyze the menu at this URL: ${menuUrl}`;
+        setProcessingStatus('Fetching menu from website...');
+        menuContent = await scrapeMenuUrl(menuUrl);
+        setProcessingStatus('Analyzing menu with AI...');
       }
 
       // Call the parse-menu edge function
@@ -292,6 +304,9 @@ export function Step2MenuImport({
                   onChange={(e) => setMenuUrl(e.target.value)}
                   placeholder="https://yourrestaurant.com/menu"
                 />
+                <p className="text-xs text-muted-foreground">
+                  We'll scrape the menu content from your website
+                </p>
               </div>
               <div className="flex items-center justify-between">
                 <div>
