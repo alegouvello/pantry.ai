@@ -10,6 +10,7 @@ import { CreditCard, FileSpreadsheet, Check, AlertCircle, Link, ArrowRight, Sear
 import { useIntegrations, useCreateIntegration } from '@/hooks/useOnboarding';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useToast } from '@/hooks/use-toast';
+import { useSyncNotification } from '@/hooks/useSyncNotification';
 import { supabase } from '@/integrations/supabase/client';
 
 interface StepProps {
@@ -35,6 +36,7 @@ const mockPosItems = [
 
 export function Step6POSConnect(props: StepProps) {
   const { toast } = useToast();
+  const { notify: syncNotify } = useSyncNotification();
   const [phase, setPhase] = useState<'select' | 'connect' | 'mapping'>('select');
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -80,10 +82,7 @@ export function Step6POSConnect(props: StepProps) {
           }
           console.log('Integrations realtime update:', payload);
           refetchIntegrations();
-          toast({
-            title: 'Synced from another tab',
-            description: 'POS integration updated',
-          });
+          syncNotify('POS integration updated');
         }
       )
       .subscribe();
@@ -91,7 +90,7 @@ export function Step6POSConnect(props: StepProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [props.restaurantId, refetchIntegrations, toast]);
+  }, [props.restaurantId, refetchIntegrations, syncNotify]);
 
   // Generate AI-suggested mappings based on recipe names
   useEffect(() => {
