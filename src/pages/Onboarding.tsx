@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useOnboardingProgress, useCreateOnboarding, useUpdateOnboardingProgress, useRestaurant } from '@/hooks/useOnboarding';
 import { OnboardingProvider } from '@/contexts/OnboardingContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 // Step components
 import { Step1RestaurantBasics } from '@/components/onboarding/steps/Step1RestaurantBasics';
@@ -26,8 +27,9 @@ export default function Onboarding() {
   const [orgId, setOrgId] = useState<string | null>(null);
   const [progressId, setProgressId] = useState<string | null>(null);
   
-  // Track if initial load is complete
+  // Track if initial load is complete and if update is from local action
   const initializedRef = useRef(false);
+  const isLocalUpdateRef = useRef(false);
 
   const { data: progress, isLoading: progressLoading } = useOnboardingProgress(user?.id);
   const { data: restaurant } = useRestaurant(orgId || undefined);
@@ -62,6 +64,47 @@ export default function Onboarding() {
     }
   }, [user, authLoading, progress, progressLoading, createOnboarding.isPending]);
 
+  // Real-time sync for multi-tab support
+  useEffect(() => {
+    if (!progressId) return;
+
+    const channel = supabase
+      .channel(`onboarding-progress-${progressId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'onboarding_progress',
+          filter: `id=eq.${progressId}`,
+        },
+        (payload) => {
+          // Skip if this was a local update
+          if (isLocalUpdateRef.current) {
+            isLocalUpdateRef.current = false;
+            return;
+          }
+
+          const newData = payload.new as {
+            current_step: number;
+            completed_steps: number[];
+            setup_health_score: number;
+          };
+
+          console.log('Realtime update received:', newData);
+          
+          setCurrentStep(newData.current_step);
+          setCompletedSteps(newData.completed_steps || []);
+          setSetupHealthScore(newData.setup_health_score);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [progressId]);
+
   // Persist progress changes to database
   const saveProgress = useCallback(async (updates: {
     currentStep?: number;
@@ -69,6 +112,9 @@ export default function Onboarding() {
     setupHealthScore?: number;
   }) => {
     if (!progressId) return;
+    
+    // Mark as local update to prevent realtime echo
+    isLocalUpdateRef.current = true;
     
     try {
       await updateProgress.mutateAsync({
@@ -79,7 +125,7 @@ export default function Onboarding() {
       });
     } catch (error) {
       console.error('Failed to save progress:', error);
-      // Don't show toast for every save, only on critical failures
+      isLocalUpdateRef.current = false;
     }
   }, [progressId, updateProgress]);
 
