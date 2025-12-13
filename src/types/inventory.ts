@@ -29,6 +29,7 @@ export interface Recipe {
   costPerUnit?: number;
   menuPrice?: number;
   foodCostPercentage?: number;
+  imageUrl?: string;
 }
 
 export interface RecipeIngredient {

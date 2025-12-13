@@ -104,6 +104,7 @@ export default function Recipes() {
       costPerUnit,
       menuPrice,
       foodCostPercentage,
+      imageUrl: recipe.image_url || undefined,
     };
   };
 
