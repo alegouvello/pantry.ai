@@ -38,8 +38,17 @@ interface EditableIngredient {
   ingredientName: string;
   quantity: number;
   unit: string;
+  unitCost: number;
   isNew?: boolean;
 }
+
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+  }).format(value);
+};
 
 export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorDialogProps) {
   const { toast } = useToast();
@@ -72,6 +81,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
           ingredientName: ri.ingredients?.name || 'Unknown',
           quantity: ri.quantity,
           unit: ri.unit,
+          unitCost: ri.ingredients?.unit_cost || 0,
         })) || []
       );
     }
@@ -106,6 +116,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
       ingredientName: ingredient.name,
       quantity: parseFloat(newQuantity),
       unit: newUnit,
+      unitCost: ingredient.unit_cost,
       isNew: true,
     };
 
@@ -205,6 +216,10 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
     (i) => !ingredients.some((ri) => ri.ingredient_id === i.id)
   );
 
+  // Calculate total cost
+  const totalCost = ingredients.reduce((sum, ing) => sum + (ing.quantity * ing.unitCost), 0);
+  const costPerUnit = yieldAmount > 0 ? totalCost / yieldAmount : totalCost;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -257,50 +272,69 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
 
           {/* Current Ingredients */}
           <div className="space-y-3">
-            <Label>Ingredients</Label>
+            <div className="flex items-center justify-between">
+              <Label>Ingredients</Label>
+              {ingredients.length > 0 && (
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Total: </span>
+                  <span className="font-semibold text-primary">{formatCurrency(totalCost)}</span>
+                  {yieldAmount > 1 && (
+                    <span className="text-muted-foreground ml-2">
+                      ({formatCurrency(costPerUnit)}/{yieldUnit})
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
             {ingredients.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-lg">
                 No ingredients added yet
               </p>
             ) : (
               <div className="space-y-2">
-                {ingredients.map((ing) => (
-                  <div
-                    key={ing.id}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border"
-                  >
-                    <div className="flex-1 flex items-center gap-2">
-                      <Badge variant="outline">{ing.ingredientName}</Badge>
-                      {ing.isNew && (
-                        <Badge variant="success" className="text-xs">New</Badge>
-                      )}
-                    </div>
-                    <Input
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      value={ing.quantity}
-                      onChange={(e) =>
-                        handleUpdateQuantity(ing.id, parseFloat(e.target.value) || 0)
-                      }
-                      className="w-24"
-                    />
-                    <Input
-                      value={ing.unit}
-                      onChange={(e) => handleUpdateUnit(ing.id, e.target.value)}
-                      className="w-24"
-                      placeholder="unit"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => handleRemoveIngredient(ing.id)}
-                      className="text-destructive hover:text-destructive"
+                {ingredients.map((ing) => {
+                  const lineCost = ing.quantity * ing.unitCost;
+                  return (
+                    <div
+                      key={ing.id}
+                      className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border"
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                      <div className="flex-1 flex items-center gap-2">
+                        <Badge variant="outline">{ing.ingredientName}</Badge>
+                        {ing.isNew && (
+                          <Badge variant="success" className="text-xs">New</Badge>
+                        )}
+                      </div>
+                      <Input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={ing.quantity}
+                        onChange={(e) =>
+                          handleUpdateQuantity(ing.id, parseFloat(e.target.value) || 0)
+                        }
+                        className="w-24"
+                      />
+                      <Input
+                        value={ing.unit}
+                        onChange={(e) => handleUpdateUnit(ing.id, e.target.value)}
+                        className="w-24"
+                        placeholder="unit"
+                      />
+                      <span className="text-sm text-muted-foreground w-20 text-right">
+                        {formatCurrency(lineCost)}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => handleRemoveIngredient(ing.id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
