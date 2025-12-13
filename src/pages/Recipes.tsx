@@ -87,6 +87,8 @@ export default function Recipes() {
 
     const totalCost = ingredientsWithCost.reduce((sum, ing) => sum + (ing.lineCost || 0), 0);
     const costPerUnit = recipe.yield_amount > 0 ? totalCost / recipe.yield_amount : totalCost;
+    const menuPrice = recipe.menu_price || undefined;
+    const foodCostPercentage = menuPrice && menuPrice > 0 ? (totalCost / menuPrice) * 100 : undefined;
 
     return {
       id: recipe.id,
@@ -100,6 +102,8 @@ export default function Recipes() {
       isActive: recipe.is_active ?? true,
       totalCost,
       costPerUnit,
+      menuPrice,
+      foodCostPercentage,
     };
   };
 

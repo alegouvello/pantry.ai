@@ -62,6 +62,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
   const [category, setCategory] = useState('');
   const [yieldAmount, setYieldAmount] = useState(1);
   const [yieldUnit, setYieldUnit] = useState('portion');
+  const [menuPrice, setMenuPrice] = useState<number | undefined>();
   const [ingredients, setIngredients] = useState<EditableIngredient[]>([]);
   const [selectedIngredient, setSelectedIngredient] = useState('');
   const [newQuantity, setNewQuantity] = useState('1');
@@ -74,6 +75,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
       setCategory(recipe.category);
       setYieldAmount(recipe.yield_amount);
       setYieldUnit(recipe.yield_unit);
+      setMenuPrice(recipe.menu_price || undefined);
       setIngredients(
         recipe.recipe_ingredients?.map((ri) => ({
           id: ri.id,
@@ -154,6 +156,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
         category,
         yield_amount: yieldAmount,
         yield_unit: yieldUnit,
+        menu_price: menuPrice || null,
       });
 
       // Get original ingredient IDs
@@ -219,6 +222,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
   // Calculate total cost
   const totalCost = ingredients.reduce((sum, ing) => sum + (ing.quantity * ing.unitCost), 0);
   const costPerUnit = yieldAmount > 0 ? totalCost / yieldAmount : totalCost;
+  const foodCostPercentage = menuPrice && menuPrice > 0 ? (totalCost / menuPrice) * 100 : undefined;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -267,6 +271,31 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
                 onChange={(e) => setYieldUnit(e.target.value)}
                 placeholder="portion, serving, etc."
               />
+            </div>
+            <div className="space-y-2 col-span-2">
+              <Label htmlFor="menuPrice">Menu Price ($)</Label>
+              <div className="flex items-center gap-4">
+                <Input
+                  id="menuPrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={menuPrice || ''}
+                  onChange={(e) => setMenuPrice(e.target.value ? parseFloat(e.target.value) : undefined)}
+                  placeholder="Enter selling price"
+                  className="flex-1"
+                />
+                {foodCostPercentage !== undefined && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Food Cost:</span>
+                    <Badge 
+                      variant={foodCostPercentage <= 30 ? 'success' : foodCostPercentage <= 35 ? 'warning' : 'destructive'}
+                    >
+                      {foodCostPercentage.toFixed(1)}%
+                    </Badge>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

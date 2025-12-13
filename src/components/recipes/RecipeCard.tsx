@@ -1,4 +1,4 @@
-import { ChefHat, Package, Clock, MoreHorizontal, Edit2, Trash2, DollarSign } from 'lucide-react';
+import { ChefHat, Package, Clock, MoreHorizontal, Edit2, Trash2, DollarSign, TrendingUp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -85,6 +85,23 @@ export function RecipeCard({ recipe, onEdit, onDelete }: RecipeCardProps) {
                 ({formatCurrency(recipe.costPerUnit)}/{recipe.yieldUnit})
               </span>
             )}
+          </div>
+        )}
+
+        {/* Food Cost Percentage */}
+        {recipe.foodCostPercentage !== undefined && (
+          <div className="flex items-center gap-2 text-sm">
+            <TrendingUp className="h-4 w-4" />
+            <span className="text-muted-foreground">Menu:</span>
+            <span className="text-foreground font-medium">
+              {formatCurrency(recipe.menuPrice || 0)}
+            </span>
+            <Badge 
+              variant={recipe.foodCostPercentage <= 30 ? 'success' : recipe.foodCostPercentage <= 35 ? 'warning' : 'destructive'}
+              className="text-xs ml-1"
+            >
+              {recipe.foodCostPercentage.toFixed(1)}% FC
+            </Badge>
           </div>
         )}
 

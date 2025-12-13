@@ -69,6 +69,7 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
   const [yieldUnit, setYieldUnit] = useState('portion');
   const [prepTime, setPrepTime] = useState<number | undefined>();
   const [posItemId, setPosItemId] = useState('');
+  const [menuPrice, setMenuPrice] = useState<number | undefined>();
   const [ingredients, setIngredients] = useState<NewIngredient[]>([]);
   const [selectedIngredient, setSelectedIngredient] = useState('');
   const [newQuantity, setNewQuantity] = useState('1');
@@ -82,6 +83,7 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
     setYieldUnit('portion');
     setPrepTime(undefined);
     setPosItemId('');
+    setMenuPrice(undefined);
     setIngredients([]);
     setSelectedIngredient('');
     setNewQuantity('1');
@@ -170,6 +172,7 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
         yield_unit: yieldUnit,
         prep_time_minutes: prepTime || null,
         pos_item_id: posItemId.trim() || null,
+        menu_price: menuPrice || null,
       });
 
       // Add all ingredients
@@ -206,6 +209,7 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
   // Calculate total cost
   const totalCost = ingredients.reduce((sum, ing) => sum + (ing.quantity * ing.unitCost), 0);
   const costPerUnit = yieldAmount > 0 ? totalCost / yieldAmount : totalCost;
+  const foodCostPercentage = menuPrice && menuPrice > 0 ? (totalCost / menuPrice) * 100 : undefined;
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
@@ -275,7 +279,7 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
                 placeholder="portion, serving, etc."
               />
             </div>
-            <div className="space-y-2 col-span-2">
+            <div className="space-y-2">
               <Label htmlFor="posItemId">POS Item ID (optional)</Label>
               <Input
                 id="posItemId"
@@ -283,6 +287,27 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
                 onChange={(e) => setPosItemId(e.target.value)}
                 placeholder="Link to POS system"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="menuPrice">Menu Price ($)</Label>
+              <div className="flex items-center gap-4">
+                <Input
+                  id="menuPrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={menuPrice || ''}
+                  onChange={(e) => setMenuPrice(e.target.value ? parseFloat(e.target.value) : undefined)}
+                  placeholder="Selling price"
+                />
+                {foodCostPercentage !== undefined && (
+                  <Badge 
+                    variant={foodCostPercentage <= 30 ? 'success' : foodCostPercentage <= 35 ? 'warning' : 'destructive'}
+                  >
+                    {foodCostPercentage.toFixed(1)}% FC
+                  </Badge>
+                )}
+              </div>
             </div>
           </div>
 
