@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Clock, Sparkles, Check, ChefHat } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import heroImage from '@/assets/onboarding/hero-welcome.jpg';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -137,14 +138,28 @@ export default function OnboardingWelcome() {
           </motion.div>
         </div>
 
-        {/* Right side - Video */}
-        <div className="flex-1 relative overflow-hidden bg-muted/30">
+        {/* Right side - Video with Background */}
+        <div className="flex-1 relative overflow-hidden">
+          {/* Background image */}
+          <img 
+            src={heroImage} 
+            alt="" 
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Gradient overlays for blending */}
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/60 to-background/30" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-background/40" />
+          
+          {/* Video container */}
           <div className="absolute inset-0 flex items-center justify-center p-8 lg:p-12">
             <motion.div 
-              className="relative w-full max-w-2xl aspect-video rounded-2xl overflow-hidden shadow-2xl ring-1 ring-border/50"
+              className="relative w-full max-w-2xl aspect-video rounded-2xl overflow-hidden shadow-2xl backdrop-blur-sm"
               variants={videoVariants}
               initial="hidden"
               animate="visible"
+              style={{
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)'
+              }}
             >
               <video 
                 src="/videos/hero-demo.mp4"
@@ -154,12 +169,9 @@ export default function OnboardingWelcome() {
                 playsInline
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-white/10 rounded-2xl" />
+              <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-white/20 rounded-2xl" />
             </motion.div>
           </div>
-          
-          {/* Decorative gradient */}
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-transparent lg:hidden" />
         </div>
       </main>
     </div>
