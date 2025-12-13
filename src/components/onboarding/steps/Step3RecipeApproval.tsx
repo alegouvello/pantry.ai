@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Check, Clock, Trash2, Plus, ArrowRight, ArrowLeft, Sparkles, AlertCircle, Loader2, ImageIcon } from 'lucide-react';
+import { Check, Clock, Trash2, Plus, ArrowRight, ArrowLeft, Sparkles, AlertCircle, Loader2, ImageIcon, RefreshCw } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useOnboardingContext, ParsedDish } from '@/contexts/OnboardingContext';
 import { useSaveOnboardingRecipe } from '@/hooks/useSaveOnboardingRecipe';
@@ -87,10 +87,10 @@ export function Step3RecipeApproval(props: StepProps) {
   const currentRecipe = recipes[currentRecipeIndex];
   const totalRecipes = recipes.length;
 
-  // Generate image for current recipe if it doesn't have one
-  const generateImageForRecipe = async (recipeId: string) => {
+  // Generate image for current recipe
+  const generateImageForRecipe = async (recipeId: string, forceRegenerate = false) => {
     const recipe = recipes.find(r => r.id === recipeId);
-    if (!recipe || recipe.imageUrl) return;
+    if (!recipe || (recipe.imageUrl && !forceRegenerate)) return;
 
     setGeneratingImageFor(recipeId);
     try {
@@ -442,18 +442,31 @@ export function Step3RecipeApproval(props: StepProps) {
           <motion.div variants={cardVariants}>
             <Card className="lg:col-span-1 h-full">
               <CardContent className="pt-6">
-                <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg overflow-hidden mb-4 flex items-center justify-center relative">
-                  {currentRecipe.imageUrl ? (
-                    <img 
-                      src={currentRecipe.imageUrl} 
-                      alt={currentRecipe.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : generatingImageFor === currentRecipe.id ? (
+                <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg overflow-hidden mb-4 flex items-center justify-center relative group">
+                  {generatingImageFor === currentRecipe.id ? (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Loader2 className="w-8 h-8 animate-spin text-primary" />
                       <span className="text-xs">Generating image...</span>
                     </div>
+                  ) : currentRecipe.imageUrl ? (
+                    <>
+                      <img 
+                        src={currentRecipe.imageUrl} 
+                        alt={currentRecipe.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Button 
+                          variant="secondary" 
+                          size="sm" 
+                          onClick={() => generateImageForRecipe(currentRecipe.id, true)}
+                          className="text-xs"
+                        >
+                          <RefreshCw className="w-3 h-3 mr-1" />
+                          Regenerate
+                        </Button>
+                      </div>
+                    </>
                   ) : (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <ImageIcon className="w-8 h-8" />
