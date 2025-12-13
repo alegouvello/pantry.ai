@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Truck, Plus, Trash2, Building2, Mail, Phone, Clock, DollarSign, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useVendors, useCreateVendor, useDeleteVendor } from '@/hooks/useVendors';
+import { useUpsertIngredientVendorMapping } from '@/hooks/useVendorItems';
 import { useToast } from '@/hooks/use-toast';
 
 interface StepProps {
@@ -56,10 +57,12 @@ export function Step5VendorSetup(props: StepProps) {
   const [editingVendor, setEditingVendor] = useState<LocalVendor | null>(null);
   const [ingredientMappings, setIngredientMappings] = useState<Record<string, { vendorId: string; sku?: string; packSize?: string; unitCost?: number }>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingMappings, setIsSavingMappings] = useState(false);
 
   const { data: existingVendors } = useVendors();
   const createVendor = useCreateVendor();
   const deleteVendor = useDeleteVendor();
+  const upsertMapping = useUpsertIngredientVendorMapping();
 
   const [formData, setFormData] = useState<Partial<LocalVendor>>({
     name: '',
@@ -468,11 +471,41 @@ export function Step5VendorSetup(props: StepProps) {
             <Button variant="outline" onClick={props.onNext}>
               Finish Later
             </Button>
-            <Button onClick={() => {
-              props.updateHealthScore(10);
-              props.onNext();
-            }}>
-              Save Mappings & Continue
+            <Button 
+              onClick={async () => {
+                setIsSavingMappings(true);
+                try {
+                  // Save all mappings that have a vendor selected
+                  const mappingsToSave = Object.entries(ingredientMappings)
+                    .filter(([_, mapping]) => mapping.vendorId && !mapping.vendorId.startsWith('new-'));
+                  
+                  for (const [ingredientId, mapping] of mappingsToSave) {
+                    await upsertMapping.mutateAsync({
+                      ingredientId,
+                      vendorId: mapping.vendorId,
+                      sku: mapping.sku,
+                      packSize: mapping.packSize,
+                      unitCost: mapping.unitCost,
+                    });
+                  }
+                  
+                  props.updateHealthScore(10);
+                  props.onNext();
+                } catch (error) {
+                  console.error('Failed to save mappings:', error);
+                  toast({
+                    title: 'Error',
+                    description: 'Failed to save ingredient mappings.',
+                    variant: 'destructive',
+                  });
+                } finally {
+                  setIsSavingMappings(false);
+                }
+              }}
+              disabled={isSavingMappings}
+            >
+              {isSavingMappings ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              {isSavingMappings ? 'Saving...' : 'Save Mappings & Continue'}
             </Button>
           </div>
         </div>
