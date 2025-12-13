@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Truck, Plus, Trash2, Building2, Mail, Phone, Clock, DollarSign, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useVendors, useCreateVendor, useDeleteVendor } from '@/hooks/useVendors';
-import { useUpsertIngredientVendorMapping } from '@/hooks/useVendorItems';
+import { useUpsertIngredientVendorMapping, useIngredientVendorMaps } from '@/hooks/useVendorItems';
 import { useIngredients } from '@/hooks/useIngredients';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -65,6 +65,8 @@ export function Step5VendorSetup(props: StepProps) {
 
   const { data: existingVendors, refetch: refetchVendors } = useVendors();
   const { data: dbIngredients, isLoading: ingredientsLoading } = useIngredients();
+  const ingredientIds = dbIngredients?.slice(0, 25).map(ing => ing.id);
+  const { data: existingMappings, refetch: refetchMappings } = useIngredientVendorMaps(ingredientIds);
   const createVendor = useCreateVendor();
   const deleteVendor = useDeleteVendor();
   const upsertMapping = useUpsertIngredientVendorMapping();
@@ -135,6 +137,70 @@ export function Step5VendorSetup(props: StepProps) {
       supabase.removeChannel(channel);
     };
   }, [refetchVendors]);
+
+  // Real-time sync for ingredient-vendor mappings
+  useEffect(() => {
+    const channel = supabase
+      .channel('ingredient-vendor-maps-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ingredient_vendor_maps',
+        },
+        (payload) => {
+          if (isLocalUpdateRef.current) {
+            isLocalUpdateRef.current = false;
+            return;
+          }
+          console.log('Ingredient-vendor maps realtime update:', payload);
+          refetchMappings();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'vendor_items',
+        },
+        (payload) => {
+          if (isLocalUpdateRef.current) {
+            isLocalUpdateRef.current = false;
+            return;
+          }
+          console.log('Vendor items realtime update:', payload);
+          refetchMappings();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetchMappings]);
+
+  // Initialize ingredient mappings from database
+  useEffect(() => {
+    if (existingMappings && existingMappings.length > 0) {
+      const mappings: Record<string, { vendorId: string; sku?: string; packSize?: string; unitCost?: number }> = {};
+      
+      for (const map of existingMappings) {
+        const vendorItem = map.vendor_items as any;
+        if (vendorItem) {
+          mappings[map.ingredient_id] = {
+            vendorId: vendorItem.vendor_id,
+            sku: vendorItem.sku || '',
+            packSize: vendorItem.pack_size || '',
+            unitCost: vendorItem.unit_cost || undefined,
+          };
+        }
+      }
+      
+      setIngredientMappings(prev => ({ ...prev, ...mappings }));
+    }
+  }, [existingMappings]);
 
   const handleSaveVendor = () => {
     if (!formData.name || !formData.email) return;
