@@ -80,6 +80,10 @@ export function Step6POSConnect(props: StepProps) {
           }
           console.log('Integrations realtime update:', payload);
           refetchIntegrations();
+          toast({
+            title: 'Synced from another tab',
+            description: 'POS integration updated',
+          });
         }
       )
       .subscribe();
@@ -87,7 +91,7 @@ export function Step6POSConnect(props: StepProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [props.restaurantId, refetchIntegrations]);
+  }, [props.restaurantId, refetchIntegrations, toast]);
 
   // Generate AI-suggested mappings based on recipe names
   useEffect(() => {

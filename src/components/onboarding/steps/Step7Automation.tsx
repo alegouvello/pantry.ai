@@ -118,6 +118,10 @@ export function Step7Automation(props: StepProps) {
           }
           console.log('Forecast config realtime update:', payload);
           refetchConfig();
+          toast({
+            title: 'Synced from another tab',
+            description: 'Automation settings updated',
+          });
         }
       )
       .on(
@@ -135,6 +139,10 @@ export function Step7Automation(props: StepProps) {
           }
           console.log('Reorder rules realtime update:', payload);
           refetchRules();
+          toast({
+            title: 'Synced from another tab',
+            description: 'Par levels updated',
+          });
         }
       )
       .subscribe();
@@ -142,7 +150,7 @@ export function Step7Automation(props: StepProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [props.restaurantId, refetchConfig, refetchRules]);
+  }, [props.restaurantId, refetchConfig, refetchRules, toast]);
 
   const handleSaveSettings = async () => {
     if (!props.restaurantId) return;
