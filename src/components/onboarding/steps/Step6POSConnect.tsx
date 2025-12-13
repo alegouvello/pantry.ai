@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CreditCard, FileSpreadsheet, Check, AlertCircle, Link, ArrowRight, Search, Sparkles, RefreshCw } from 'lucide-react';
+import { CreditCard, FileSpreadsheet, Check, AlertCircle, Link, ArrowRight, Search, Sparkles, RefreshCw, Loader2 } from 'lucide-react';
+import { useIntegrations, useCreateIntegration } from '@/hooks/useOnboarding';
+import { useRecipes } from '@/hooks/useRecipes';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StepProps {
   currentStep: number;
@@ -20,7 +24,7 @@ interface StepProps {
   updateHealthScore: (delta: number) => void;
 }
 
-// Mock POS items for mapping demo
+// Mock POS items for mapping demo (would come from POS sync in production)
 const mockPosItems = [
   { id: '1', name: 'Margherita Pizza', category: 'Pizzas' },
   { id: '2', name: 'Caesar Salad', category: 'Salads' },
@@ -29,47 +33,120 @@ const mockPosItems = [
   { id: '5', name: 'House Wine - Glass', category: 'Beverages' },
 ];
 
-// Mock recipes for mapping
-const mockRecipes = [
-  { id: '1', name: 'Classic Margherita Pizza' },
-  { id: '2', name: 'Caesar Salad' },
-  { id: '3', name: 'Grilled Salmon' },
-  { id: '4', name: 'Prep: Caesar Dressing' },
-  { id: '5', name: 'Prep: Pizza Sauce' },
-];
-
-// AI-suggested mappings
-const suggestedMappings: Record<string, { recipeId: string; confidence: 'high' | 'medium' | 'low' }> = {
-  '1': { recipeId: '1', confidence: 'high' },
-  '2': { recipeId: '2', confidence: 'high' },
-  '3': { recipeId: '2', confidence: 'medium' },
-  '4': { recipeId: '3', confidence: 'high' },
-};
-
 export function Step6POSConnect(props: StepProps) {
+  const { toast } = useToast();
   const [phase, setPhase] = useState<'select' | 'connect' | 'mapping'>('select');
   const [selectedIntegration, setSelectedIntegration] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [mappings, setMappings] = useState<Record<string, string>>(
-    Object.fromEntries(
-      Object.entries(suggestedMappings).map(([posId, data]) => [posId, data.recipeId])
-    )
-  );
+  const [mappings, setMappings] = useState<Record<string, string>>({});
+  
+  const isLocalUpdateRef = useRef(false);
+
+  const { data: existingIntegrations, refetch: refetchIntegrations } = useIntegrations(props.restaurantId || undefined);
+  const { data: recipes } = useRecipes();
+  const createIntegration = useCreateIntegration();
+
+  // Check if already connected
+  const connectedIntegration = existingIntegrations?.find(i => i.status === 'connected');
+  const isConnected = !!connectedIntegration;
+
+  // Initialize state from existing data
+  useEffect(() => {
+    if (isConnected && phase === 'select') {
+      setSelectedIntegration(connectedIntegration.type);
+      setPhase('mapping');
+    }
+  }, [isConnected, connectedIntegration, phase]);
+
+  // Real-time sync for integrations
+  useEffect(() => {
+    if (!props.restaurantId) return;
+
+    const channel = supabase
+      .channel('integrations-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'integrations',
+          filter: `restaurant_id=eq.${props.restaurantId}`,
+        },
+        (payload) => {
+          if (isLocalUpdateRef.current) {
+            isLocalUpdateRef.current = false;
+            return;
+          }
+          console.log('Integrations realtime update:', payload);
+          refetchIntegrations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [props.restaurantId, refetchIntegrations]);
+
+  // Generate AI-suggested mappings based on recipe names
+  useEffect(() => {
+    if (recipes && recipes.length > 0) {
+      const suggestions: Record<string, string> = {};
+      mockPosItems.forEach(posItem => {
+        const match = recipes.find(r => 
+          r.name.toLowerCase().includes(posItem.name.split(' ')[0].toLowerCase()) ||
+          posItem.name.toLowerCase().includes(r.name.split(' ')[0].toLowerCase())
+        );
+        if (match) {
+          suggestions[posItem.id] = match.id;
+        }
+      });
+      setMappings(prev => ({ ...suggestions, ...prev }));
+    }
+  }, [recipes]);
 
   const handleConnect = async () => {
+    if (!props.restaurantId || !selectedIntegration) return;
+    
     setIsConnecting(true);
-    // Simulate connection delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsConnecting(false);
-    setIsConnected(true);
-    props.updateHealthScore(10);
-    setTimeout(() => setPhase('mapping'), 500);
+    isLocalUpdateRef.current = true;
+    
+    try {
+      await createIntegration.mutateAsync({
+        restaurant_id: props.restaurantId,
+        type: selectedIntegration,
+        status: 'connected',
+      });
+      
+      props.updateHealthScore(10);
+      toast({
+        title: 'Connected successfully',
+        description: `${selectedIntegration === 'toast' ? 'Toast POS' : 'CSV Import'} connected`,
+      });
+      
+      setTimeout(() => setPhase('mapping'), 500);
+    } catch (error) {
+      console.error('Failed to create integration:', error);
+      isLocalUpdateRef.current = false;
+      toast({
+        title: 'Connection failed',
+        description: 'Please try again',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsConnecting(false);
+    }
   };
 
   const updateMapping = (posItemId: string, recipeId: string) => {
     setMappings(prev => ({ ...prev, [posItemId]: recipeId }));
+  };
+
+  const handleSaveAndContinue = async () => {
+    // In production, would save POS recipe mappings here
+    props.updateHealthScore(10);
+    props.onNext();
   };
 
   const filteredPosItems = mockPosItems.filter(item =>
@@ -162,10 +239,12 @@ export function Step6POSConnect(props: StepProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-orange-500" />
-                Toast Integration
+                {selectedIntegration === 'toast' ? 'Toast Integration' : 'CSV Import'}
               </CardTitle>
               <CardDescription>
-                We'll request read-only access to your menu and sales data
+                {selectedIntegration === 'toast' 
+                  ? "We'll request read-only access to your menu and sales data"
+                  : "Set up CSV import for your sales data"}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -196,18 +275,18 @@ export function Step6POSConnect(props: StepProps) {
 
                   <div className="border-t pt-4">
                     <p className="text-sm text-muted-foreground mb-4">
-                      Click below to authorize with Toast. You'll be redirected back after.
+                      Click below to authorize. You'll be redirected back after.
                     </p>
                     <Button onClick={handleConnect} className="w-full" disabled={isConnecting}>
                       {isConnecting ? (
                         <>
-                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           Connecting...
                         </>
                       ) : (
                         <>
                           <Link className="w-4 h-4 mr-2" />
-                          Connect to Toast
+                          Connect to {selectedIntegration === 'toast' ? 'Toast' : 'CSV Import'}
                         </>
                       )}
                     </Button>
@@ -258,12 +337,11 @@ export function Step6POSConnect(props: StepProps) {
                 <TableHead>POS Item</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Mapped Recipe</TableHead>
-                <TableHead className="w-24">Confidence</TableHead>
+                <TableHead className="w-24">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredPosItems.map(posItem => {
-                const suggestion = suggestedMappings[posItem.id];
                 const currentMapping = mappings[posItem.id];
                 const isUnmapped = !currentMapping;
 
@@ -290,22 +368,17 @@ export function Step6POSConnect(props: StepProps) {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="">-- Unmapped --</SelectItem>
-                          {mockRecipes.map(recipe => (
+                          {recipes?.map(recipe => (
                             <SelectItem key={recipe.id} value={recipe.id}>{recipe.name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </TableCell>
                     <TableCell>
-                      {suggestion && currentMapping === suggestion.recipeId && (
-                        <Badge
-                          variant={
-                            suggestion.confidence === 'high' ? 'default' :
-                            suggestion.confidence === 'medium' ? 'secondary' : 'outline'
-                          }
-                        >
-                          {suggestion.confidence}
-                        </Badge>
+                      {currentMapping ? (
+                        <Badge variant="default">Mapped</Badge>
+                      ) : (
+                        <Badge variant="outline">Pending</Badge>
                       )}
                     </TableCell>
                   </TableRow>
@@ -338,10 +411,7 @@ export function Step6POSConnect(props: StepProps) {
           <Button variant="outline" onClick={() => setPhase('connect')}>
             Back
           </Button>
-          <Button onClick={() => {
-            props.updateHealthScore(10);
-            props.onNext();
-          }}>
+          <Button onClick={handleSaveAndContinue}>
             Save Mappings & Continue
           </Button>
         </div>
