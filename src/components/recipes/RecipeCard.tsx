@@ -2,6 +2,7 @@ import { ChefHat, Package, Clock, MoreHorizontal, Edit2, Trash2, DollarSign, Tre
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { OptimizedImage } from '@/components/ui/optimized-image';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,15 +29,15 @@ export function RecipeCard({ recipe, onEdit, onDelete }: RecipeCardProps) {
   return (
     <Card variant="interactive" className="overflow-hidden group">
       {/* Recipe Image */}
-      <div className="aspect-[16/9] relative bg-gradient-to-br from-primary/20 to-primary/5">
+      <div className="relative bg-gradient-to-br from-primary/20 to-primary/5">
         {recipe.imageUrl ? (
-          <img 
+          <OptimizedImage 
             src={recipe.imageUrl} 
             alt={recipe.name}
-            className="w-full h-full object-cover"
+            aspectRatio="video"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
+          <div className="aspect-[16/9] w-full flex items-center justify-center">
             <ImageIcon className="w-12 h-12 text-muted-foreground/30" />
           </div>
         )}
