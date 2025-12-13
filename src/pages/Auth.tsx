@@ -21,10 +21,23 @@ export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Redirect if already logged in
+  // Redirect if already logged in - check onboarding status
   useEffect(() => {
     if (user) {
-      navigate('/');
+      // Check if user has completed onboarding
+      const checkOnboardingStatus = async () => {
+        const { data } = await import('@/integrations/supabase/client').then(m => 
+          m.supabase.from('onboarding_progress').select('current_step').eq('user_id', user.id).maybeSingle()
+        );
+        
+        // If no progress or not completed (step 8), go to onboarding
+        if (!data || data.current_step < 8) {
+          navigate('/onboarding');
+        } else {
+          navigate('/');
+        }
+      };
+      checkOnboardingStatus();
     }
   }, [user, navigate]);
 
@@ -59,7 +72,7 @@ export default function Auth() {
             title: 'Welcome back!',
             description: 'You have successfully signed in.',
           });
-          navigate('/');
+          // Navigate handled by useEffect after user state updates
         }
       } else {
         if (password.length < 6) {
@@ -78,9 +91,9 @@ export default function Auth() {
         } else {
           toast({
             title: 'Account created!',
-            description: 'Welcome to Pantry. You can now start managing your inventory.',
+            description: 'Welcome to Pantry. Let\'s set up your workspace.',
           });
-          navigate('/');
+          // Navigate handled by useEffect after user state updates
         }
       }
     } catch (err) {
