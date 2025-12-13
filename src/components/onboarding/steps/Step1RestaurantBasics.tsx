@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { OnboardingLayout } from '../OnboardingLayout';
 import { ConceptSelector } from '../ConceptSelector';
 import { ServiceChips } from '../ServiceChips';
 import { useCreateRestaurant, useRestaurant, useUpdateRestaurant } from '@/hooks/useOnboarding';
+import { useOnboardingContext } from '@/contexts/OnboardingContext';
 import { useToast } from '@/hooks/use-toast';
 import type { ConceptType, ServiceType, RestaurantAddress } from '@/types/onboarding';
 
@@ -42,6 +43,7 @@ export function Step1RestaurantBasics({
   updateHealthScore,
 }: Step1Props) {
   const { toast } = useToast();
+  const { setConceptType: setContextConceptType } = useOnboardingContext();
   const { data: existingRestaurant } = useRestaurant(orgId || undefined);
   const createRestaurant = useCreateRestaurant();
   const updateRestaurant = useUpdateRestaurant();
@@ -58,6 +60,11 @@ export function Step1RestaurantBasics({
     (existingRestaurant?.services as ServiceType[]) || []
   );
   const [isSearching, setIsSearching] = useState(false);
+
+  // Sync conceptType to context whenever it changes
+  useEffect(() => {
+    setContextConceptType(conceptType);
+  }, [conceptType, setContextConceptType]);
 
   const handleFindDetails = async () => {
     if (!name || !address.city) {
@@ -140,6 +147,7 @@ export function Step1RestaurantBasics({
       onSave={onSave}
       nextLabel={isLoading ? 'Saving...' : 'Continue'}
       nextDisabled={isLoading || !name.trim() || !address.city}
+      conceptType={conceptType}
     >
       <motion.div 
         className="space-y-8"
