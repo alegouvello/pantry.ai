@@ -22,10 +22,11 @@ export default function Auth() {
   const { toast } = useToast();
 
   // Redirect if already logged in
-  if (user) {
-    navigate('/');
-    return null;
-  }
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
