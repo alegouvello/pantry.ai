@@ -1,64 +1,108 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Warehouse, Snowflake, Package, Wine, Coffee, Plus, Trash2, Upload, ListChecks, FileSpreadsheet } from 'lucide-react';
+import { Warehouse, Snowflake, Package, Wine, Coffee, Plus, Trash2, Upload, ListChecks, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { useStorageLocations, useCreateStorageLocation } from '@/hooks/useOnboarding';
+import { useToast } from '@/hooks/use-toast';
 
 interface StepProps {
   currentStep: number;
   completedSteps: number[];
   setupHealthScore: number;
   orgId: string | null;
+  restaurantId?: string | null;
   onNext: () => void;
   onBack?: () => void;
   onSave: () => void;
   updateHealthScore: (delta: number) => void;
 }
 
-const defaultStorageLocations = [
-  { id: '1', name: 'Walk-in Cooler', icon: Warehouse, color: 'text-blue-500' },
-  { id: '2', name: 'Freezer', icon: Snowflake, color: 'text-cyan-500' },
-  { id: '3', name: 'Dry Storage', icon: Package, color: 'text-amber-500' },
-  { id: '4', name: 'Bar', icon: Wine, color: 'text-purple-500' },
-  { id: '5', name: 'Coffee Station', icon: Coffee, color: 'text-orange-500' },
+interface StorageLocationItem {
+  id: string;
+  name: string;
+  icon: typeof Warehouse;
+  color: string;
+  isNew?: boolean;
+}
+
+const defaultStorageLocations: StorageLocationItem[] = [
+  { id: 'default-1', name: 'Walk-in Cooler', icon: Warehouse, color: 'text-blue-500', isNew: true },
+  { id: 'default-2', name: 'Freezer', icon: Snowflake, color: 'text-cyan-500', isNew: true },
+  { id: 'default-3', name: 'Dry Storage', icon: Package, color: 'text-amber-500', isNew: true },
+  { id: 'default-4', name: 'Bar', icon: Wine, color: 'text-purple-500', isNew: true },
 ];
+
+const getIconForName = (name: string) => {
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes('cooler') || lowerName.includes('fridge')) return { icon: Warehouse, color: 'text-blue-500' };
+  if (lowerName.includes('freezer')) return { icon: Snowflake, color: 'text-cyan-500' };
+  if (lowerName.includes('bar')) return { icon: Wine, color: 'text-purple-500' };
+  if (lowerName.includes('coffee')) return { icon: Coffee, color: 'text-orange-500' };
+  return { icon: Package, color: 'text-gray-500' };
+};
 
 // Mock ingredients for inventory count
 const mockIngredients = [
-  { id: '1', name: 'Fresh Mozzarella', category: 'Dairy', unit: 'kg', suggested: true, storageId: '1' },
-  { id: '2', name: 'San Marzano Tomatoes', category: 'Canned Goods', unit: 'cans', suggested: true, storageId: '3' },
-  { id: '3', name: 'Olive Oil', category: 'Oils', unit: 'L', suggested: true, storageId: '3' },
-  { id: '4', name: 'Fresh Basil', category: 'Herbs', unit: 'bunch', suggested: true, storageId: '1' },
-  { id: '5', name: 'Pizza Dough', category: 'Prepared', unit: 'portions', suggested: true, storageId: '1' },
-  { id: '6', name: 'Parmesan', category: 'Dairy', unit: 'kg', suggested: true, storageId: '1' },
-  { id: '7', name: 'Romaine Lettuce', category: 'Produce', unit: 'heads', suggested: true, storageId: '1' },
-  { id: '8', name: 'Salmon Fillet', category: 'Seafood', unit: 'kg', suggested: true, storageId: '2' },
-  { id: '9', name: 'Butter', category: 'Dairy', unit: 'kg', suggested: true, storageId: '1' },
-  { id: '10', name: 'Lemons', category: 'Produce', unit: 'pieces', suggested: false, storageId: '1' },
+  { id: '1', name: 'Fresh Mozzarella', category: 'Dairy', unit: 'kg', suggested: true, storageId: 'default-1' },
+  { id: '2', name: 'San Marzano Tomatoes', category: 'Canned Goods', unit: 'cans', suggested: true, storageId: 'default-3' },
+  { id: '3', name: 'Olive Oil', category: 'Oils', unit: 'L', suggested: true, storageId: 'default-3' },
+  { id: '4', name: 'Fresh Basil', category: 'Herbs', unit: 'bunch', suggested: true, storageId: 'default-1' },
+  { id: '5', name: 'Pizza Dough', category: 'Prepared', unit: 'portions', suggested: true, storageId: 'default-1' },
+  { id: '6', name: 'Parmesan', category: 'Dairy', unit: 'kg', suggested: true, storageId: 'default-1' },
+  { id: '7', name: 'Romaine Lettuce', category: 'Produce', unit: 'heads', suggested: true, storageId: 'default-1' },
+  { id: '8', name: 'Salmon Fillet', category: 'Seafood', unit: 'kg', suggested: true, storageId: 'default-2' },
+  { id: '9', name: 'Butter', category: 'Dairy', unit: 'kg', suggested: true, storageId: 'default-1' },
+  { id: '10', name: 'Lemons', category: 'Produce', unit: 'pieces', suggested: false, storageId: 'default-1' },
 ];
 
 export function Step4StorageSetup(props: StepProps) {
+  const { toast } = useToast();
   const [phase, setPhase] = useState<'storage' | 'method' | 'count'>('storage');
-  const [storageLocations, setStorageLocations] = useState(defaultStorageLocations);
+  const [storageLocations, setStorageLocations] = useState<StorageLocationItem[]>(defaultStorageLocations);
   const [newLocationName, setNewLocationName] = useState('');
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
-  const [activeStorageTab, setActiveStorageTab] = useState('1');
+  const [activeStorageTab, setActiveStorageTab] = useState('default-1');
   const [inventoryCounts, setInventoryCounts] = useState<Record<string, number>>({});
   const [notStocked, setNotStocked] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const { data: existingLocations } = useStorageLocations(props.restaurantId || undefined);
+  const createStorageLocation = useCreateStorageLocation();
+
+  // Initialize from database if locations exist
+  useEffect(() => {
+    if (existingLocations && existingLocations.length > 0) {
+      const mappedLocations = existingLocations.map(loc => {
+        const { icon, color } = getIconForName(loc.name);
+        return {
+          id: loc.id,
+          name: loc.name,
+          icon,
+          color,
+          isNew: false,
+        };
+      });
+      setStorageLocations(mappedLocations);
+      setActiveStorageTab(mappedLocations[0]?.id || 'default-1');
+    }
+  }, [existingLocations]);
 
   const addStorageLocation = () => {
     if (newLocationName.trim()) {
+      const { icon, color } = getIconForName(newLocationName);
       setStorageLocations([
         ...storageLocations,
         {
-          id: Date.now().toString(),
+          id: `new-${Date.now()}`,
           name: newLocationName.trim(),
-          icon: Package,
-          color: 'text-gray-500',
+          icon,
+          color,
+          isNew: true,
         },
       ]);
       setNewLocationName('');
@@ -140,8 +184,47 @@ export function Step4StorageSetup(props: StepProps) {
             </Button>
           </div>
 
-          <Button onClick={() => setPhase('method')} className="w-full" size="lg">
-            Continue to Inventory Count
+          <Button 
+            onClick={async () => {
+              if (!props.restaurantId) {
+                toast({
+                  title: 'Restaurant not found',
+                  description: 'Please complete step 1 first.',
+                  variant: 'destructive',
+                });
+                return;
+              }
+              
+              setIsSaving(true);
+              try {
+                // Save new storage locations to database
+                const newLocations = storageLocations.filter(loc => loc.isNew);
+                for (let i = 0; i < newLocations.length; i++) {
+                  await createStorageLocation.mutateAsync({
+                    restaurant_id: props.restaurantId,
+                    name: newLocations[i].name,
+                    sort_order: i,
+                  });
+                }
+                props.updateHealthScore(5);
+                setPhase('method');
+              } catch (error) {
+                console.error('Failed to save storage locations:', error);
+                toast({
+                  title: 'Error saving',
+                  description: 'Failed to save storage locations.',
+                  variant: 'destructive',
+                });
+              } finally {
+                setIsSaving(false);
+              }
+            }} 
+            className="w-full" 
+            size="lg"
+            disabled={isSaving}
+          >
+            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            {isSaving ? 'Saving...' : 'Continue to Inventory Count'}
           </Button>
         </div>
       </OnboardingLayout>
