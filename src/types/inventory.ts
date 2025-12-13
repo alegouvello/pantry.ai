@@ -48,7 +48,7 @@ export interface PurchaseOrder {
   id: string;
   vendorId: string;
   vendorName: string;
-  status: 'draft' | 'approved' | 'sent' | 'received' | 'partial';
+  status: 'draft' | 'approved' | 'sent' | 'received' | 'partial' | 'cancelled';
   items: PurchaseOrderItem[];
   totalAmount: number;
   createdAt: Date;
@@ -66,7 +66,7 @@ export interface PurchaseOrderItem {
 
 export interface Alert {
   id: string;
-  type: 'low_stock' | 'expiring' | 'anomaly' | 'approval';
+  type: 'low_stock' | 'expiring' | 'anomaly' | 'approval' | 'system';
   severity: 'low' | 'medium' | 'high';
   title: string;
   description: string;

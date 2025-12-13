@@ -1,18 +1,61 @@
-import { Plus, Upload, Search } from 'lucide-react';
+import { Plus, Upload, Search, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RecipeCard } from '@/components/recipes/RecipeCard';
-import { mockRecipes } from '@/data/mockData';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card } from '@/components/ui/card';
+import { useRecipes } from '@/hooks/useRecipes';
+import { useAuth } from '@/hooks/useAuth';
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 
 export default function Recipes() {
   const [searchQuery, setSearchQuery] = useState('');
+  const { user, loading: authLoading } = useAuth();
+  const { data: recipes, isLoading, error } = useRecipes();
 
-  const filteredRecipes = mockRecipes.filter(
+  if (!authLoading && !user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-bold text-foreground">Sign in required</h1>
+          <p className="text-muted-foreground">
+            Please sign in to view and manage recipes.
+          </p>
+        </div>
+        <Link to="/auth">
+          <Button variant="accent" size="lg">
+            <LogIn className="h-5 w-5 mr-2" />
+            Sign In
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const filteredRecipes = recipes?.filter(
     (recipe) =>
       recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       recipe.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ) || [];
+
+  // Map recipes to the format expected by RecipeCard
+  const mappedRecipes = filteredRecipes.map(recipe => ({
+    id: recipe.id,
+    name: recipe.name,
+    category: recipe.category,
+    posItemId: recipe.pos_item_id || undefined,
+    yield: recipe.yield_amount,
+    yieldUnit: recipe.yield_unit,
+    ingredients: recipe.recipe_ingredients?.map(ri => ({
+      ingredientId: ri.ingredient_id,
+      ingredientName: ri.ingredients?.name || 'Unknown',
+      quantity: ri.quantity,
+      unit: ri.unit,
+    })) || [],
+    prepTime: recipe.prep_time_minutes || undefined,
+    isActive: recipe.is_active ?? true,
+  }));
 
   return (
     <div className="space-y-6">
@@ -47,22 +90,47 @@ export default function Recipes() {
         />
       </div>
 
-      {/* Recipe Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredRecipes.map((recipe, index) => (
-          <div
-            key={recipe.id}
-            className="animate-slide-up"
-            style={{ animationDelay: `${index * 50}ms` }}
-          >
-            <RecipeCard recipe={recipe} />
+      {/* Content */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} variant="elevated" className="p-5">
+              <Skeleton className="h-10 w-10 rounded-xl mb-4" />
+              <Skeleton className="h-5 w-32 mb-2" />
+              <Skeleton className="h-4 w-24 mb-4" />
+              <Skeleton className="h-20 w-full" />
+            </Card>
+          ))}
+        </div>
+      ) : error ? (
+        <Card variant="elevated" className="p-8 text-center">
+          <p className="text-destructive">Error loading recipes: {error.message}</p>
+        </Card>
+      ) : mappedRecipes.length === 0 ? (
+        <Card variant="elevated" className="p-8 text-center">
+          <div className="space-y-4">
+            <p className="text-muted-foreground">
+              {searchQuery ? 'No recipes found matching your search.' : 'No recipes yet. Create your first recipe to get started!'}
+            </p>
+            {!searchQuery && (
+              <Button variant="accent">
+                <Plus className="h-4 w-4 mr-2" />
+                Create First Recipe
+              </Button>
+            )}
           </div>
-        ))}
-      </div>
-
-      {filteredRecipes.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No recipes found</p>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {mappedRecipes.map((recipe, index) => (
+            <div
+              key={recipe.id}
+              className="animate-slide-up"
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <RecipeCard recipe={recipe} />
+            </div>
+          ))}
         </div>
       )}
     </div>
