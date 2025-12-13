@@ -59,7 +59,7 @@ export function Step3RecipeApproval(props: StepProps) {
   const [assumePortions, setAssumePortions] = useState(true);
   const [currentRecipeIndex, setCurrentRecipeIndex] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
-  const [generatingImageFor, setGeneratingImageFor] = useState<string | null>(null);
+  const [generatingImageFor, setGeneratingImageFor] = useState<Set<string>>(new Set());
   
   const layoutProps = { ...props, conceptType };
   const [approvedRecipes, setApprovedRecipes] = useState<string[]>([]);
@@ -87,12 +87,14 @@ export function Step3RecipeApproval(props: StepProps) {
   const currentRecipe = recipes[currentRecipeIndex];
   const totalRecipes = recipes.length;
 
-  // Generate image for current recipe
+  // Generate image for a single recipe
   const generateImageForRecipe = async (recipeId: string, forceRegenerate = false) => {
     const recipe = recipes.find(r => r.id === recipeId);
-    if (!recipe || (recipe.imageUrl && !forceRegenerate)) return;
+    if (!recipe) return;
+    if (recipe.imageUrl && !forceRegenerate) return;
+    if (generatingImageFor.has(recipeId) && !forceRegenerate) return;
 
-    setGeneratingImageFor(recipeId);
+    setGeneratingImageFor(prev => new Set(prev).add(recipeId));
     try {
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-recipe-image`, {
         method: 'POST',
@@ -118,16 +120,25 @@ export function Step3RecipeApproval(props: StepProps) {
     } catch (error) {
       console.error('Failed to generate image:', error);
     } finally {
-      setGeneratingImageFor(null);
+      setGeneratingImageFor(prev => {
+        const next = new Set(prev);
+        next.delete(recipeId);
+        return next;
+      });
     }
   };
 
-  // Auto-generate image when viewing a recipe
+  // Pre-generate images for all recipes in background when entering approval phase
   useEffect(() => {
-    if (phase === 'approval' && currentRecipe && !currentRecipe.imageUrl && generatingImageFor !== currentRecipe.id) {
-      generateImageForRecipe(currentRecipe.id);
+    if (phase === 'approval' && recipes.length > 0) {
+      // Start generating images for all recipes that don't have one
+      recipes.forEach(recipe => {
+        if (!recipe.imageUrl) {
+          generateImageForRecipe(recipe.id);
+        }
+      });
     }
-  }, [currentRecipeIndex, phase, currentRecipe?.id]);
+  }, [phase, recipes.length]);
 
   const handleGenerateRecipes = () => {
     if (recipes.length > 0) {
@@ -443,7 +454,7 @@ export function Step3RecipeApproval(props: StepProps) {
             <Card className="lg:col-span-1 h-full">
               <CardContent className="pt-6">
                 <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg overflow-hidden mb-4 flex items-center justify-center relative group">
-                  {generatingImageFor === currentRecipe.id ? (
+                  {generatingImageFor.has(currentRecipe.id) ? (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Loader2 className="w-8 h-8 animate-spin text-primary" />
                       <span className="text-xs">Generating image...</span>
