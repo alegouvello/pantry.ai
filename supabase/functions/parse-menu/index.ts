@@ -43,7 +43,7 @@ serve(async (req) => {
     }
 
     console.log('Parsing menu with detail level:', detailLevel);
-    console.log('Menu content length:', menuContent.length);
+    console.log('Menu type:', menuType);
 
     const detailInstructions = {
       basic: 'Include only the main 3-5 ingredients per dish.',
@@ -55,24 +55,22 @@ serve(async (req) => {
 
 For each dish, provide:
 1. Name (exactly as it appears on the menu)
-2. Section (appetizers, mains, desserts, drinks, etc.)
+2. Section (appetizers, mains, desserts, drinks, salads, sides, etc.)
 3. Description if provided
-4. Price if visible
+4. Price if visible (as a number, e.g. 12.99)
 5. Estimated ingredients with quantities based on typical restaurant preparations
 6. Confidence level (high/medium/low) based on how certain you are
-7. Tags (vegetarian, vegan, gluten-free, seafood, popular, etc.)
+7. Tags (vegetarian, vegan, gluten-free, seafood, popular, spicy, etc.)
 
 ${detailInstructions[detailLevel as keyof typeof detailInstructions] || detailInstructions.standard}
 
-For ingredients, estimate typical restaurant portion quantities. Use common units: g, kg, ml, L, oz, lb, piece, tbsp, tsp.
+For ingredients, estimate typical restaurant portion quantities. Use common units: g, kg, ml, L, oz, lb, piece, tbsp, tsp, cup.
 
-Respond ONLY with a valid JSON array of dishes. No markdown, no explanation.`;
+IMPORTANT: Respond ONLY with a valid JSON array of dishes. No markdown formatting, no code blocks, no explanation text.`;
 
-    const userPrompt = `Parse this menu and extract all dishes with their ingredients:
+    const userPrompt = `Parse this menu and extract ALL dishes with their ingredients.
 
-${menuContent}
-
-Return a JSON array of dishes with this structure:
+Return a JSON array with this exact structure:
 [
   {
     "name": "Dish Name",
@@ -80,12 +78,59 @@ Return a JSON array of dishes with this structure:
     "description": "Description if any",
     "price": 12.99,
     "confidence": "high",
-    "tags": ["vegetarian"],
+    "tags": ["tag1", "tag2"],
     "ingredients": [
-      {"name": "Ingredient", "quantity": 100, "unit": "g", "optional": false, "confidence": "high"}
+      {"name": "Ingredient Name", "quantity": 100, "unit": "g", "optional": false, "confidence": "high"}
     ]
   }
 ]`;
+
+    // Check if the content is an image (base64)
+    const isImage = menuContent.startsWith('data:image/') || menuContent.includes('[IMAGE MENU]');
+    
+    let messages: any[];
+    
+    if (isImage) {
+      console.log('Processing image-based menu with vision model...');
+      
+      // Extract the base64 data URL
+      let imageUrl = menuContent;
+      if (menuContent.includes('[IMAGE MENU]')) {
+        // Extract the data URL from the wrapped content
+        const match = menuContent.match(/(data:image\/[^;]+;base64,[^\s]+)/);
+        if (match) {
+          imageUrl = match[1];
+        }
+      }
+      
+      // Use multimodal message format for vision
+      messages = [
+        { role: 'system', content: systemPrompt },
+        { 
+          role: 'user', 
+          content: [
+            {
+              type: 'text',
+              text: `${userPrompt}\n\nPlease analyze the menu image and extract all visible dishes with their ingredients. Read all text carefully including dish names, descriptions, prices, and any ingredient lists.`
+            },
+            {
+              type: 'image_url',
+              image_url: {
+                url: imageUrl
+              }
+            }
+          ]
+        },
+      ];
+    } else {
+      console.log('Processing text-based menu...');
+      console.log('Menu content preview:', menuContent.substring(0, 500));
+      
+      messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `${userPrompt}\n\nMenu content:\n${menuContent}` },
+      ];
+    }
 
     console.log('Calling Lovable AI for menu parsing...');
 
@@ -96,11 +141,8 @@ Return a JSON array of dishes with this structure:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
+        model: 'google/gemini-2.5-flash', // Supports vision
+        messages,
         temperature: 0.3,
       }),
     });
@@ -133,6 +175,7 @@ Return a JSON array of dishes with this structure:
     }
 
     console.log('AI response received, parsing JSON...');
+    console.log('Response preview:', content.substring(0, 300));
 
     // Clean up the response (remove markdown code blocks if present)
     let cleanContent = content.trim();
@@ -152,7 +195,23 @@ Return a JSON array of dishes with this structure:
       dishes = JSON.parse(cleanContent);
     } catch (parseError) {
       console.error('Failed to parse AI response:', cleanContent.substring(0, 500));
-      throw new Error('Failed to parse menu structure');
+      
+      // Try to extract JSON from the response
+      const jsonMatch = cleanContent.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        try {
+          dishes = JSON.parse(jsonMatch[0]);
+        } catch {
+          throw new Error('Failed to parse menu structure from AI response');
+        }
+      } else {
+        throw new Error('Failed to parse menu structure');
+      }
+    }
+
+    // Ensure dishes is an array
+    if (!Array.isArray(dishes)) {
+      dishes = [dishes];
     }
 
     // Validate and enhance the dishes
@@ -161,16 +220,16 @@ Return a JSON array of dishes with this structure:
       name: dish.name || 'Unnamed Dish',
       section: dish.section || 'Other',
       description: dish.description || '',
-      price: dish.price || null,
-      confidence: dish.confidence || 'medium',
+      price: typeof dish.price === 'number' ? dish.price : null,
+      confidence: (['high', 'medium', 'low'].includes(dish.confidence) ? dish.confidence : 'medium') as 'high' | 'medium' | 'low',
       tags: Array.isArray(dish.tags) ? dish.tags : [],
-      ingredients: (dish.ingredients || []).map((ing, ingIndex) => ({
+      ingredients: (dish.ingredients || []).map((ing: any, ingIndex: number) => ({
         id: `ing-${Date.now()}-${index}-${ingIndex}`,
         name: ing.name || 'Unknown ingredient',
-        quantity: ing.quantity || 0,
+        quantity: typeof ing.quantity === 'number' ? ing.quantity : 0,
         unit: ing.unit || 'g',
-        optional: ing.optional || false,
-        confidence: ing.confidence || 'medium',
+        optional: Boolean(ing.optional),
+        confidence: (['high', 'medium', 'low'].includes(ing.confidence) ? ing.confidence : 'medium') as 'high' | 'medium' | 'low',
       })),
     }));
 
@@ -181,6 +240,7 @@ Return a JSON array of dishes with this structure:
         success: true, 
         dishes: validatedDishes,
         count: validatedDishes.length,
+        isImageBased: isImage,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
