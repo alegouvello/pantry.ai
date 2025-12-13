@@ -67,23 +67,41 @@ export function Step1RestaurantBasics({
   }, [conceptType, setContextConceptType]);
 
   const handleFindDetails = async () => {
-    if (!name || !address.city) {
+    if (!name.trim()) {
       toast({
         title: 'Missing information',
-        description: 'Please enter restaurant name and city first.',
+        description: 'Please enter your restaurant name first.',
         variant: 'destructive',
       });
       return;
     }
 
     setIsSearching(true);
-    // TODO: Integrate with AI enrichment
+    
+    // Simulate AI search - TODO: Integrate with real AI enrichment API
     await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Mock data for "Le French Diner" or similar
+    if (name.toLowerCase().includes('french')) {
+      setAddress(prev => ({
+        ...prev,
+        street: prev.street || '123 Bistro Lane',
+        city: prev.city || 'New York',
+        state: prev.state || 'NY',
+        zip: prev.zip || '10014',
+      }));
+      setPhone(prev => prev || '(212) 555-0123');
+      setWebsite(prev => prev || 'https://lefrenchdiner.com');
+      setInstagram(prev => prev || '@lefrenchdiner');
+      setConceptType('fine_dining');
+      setServices(['lunch', 'dinner', 'catering']);
+    }
+    
     setIsSearching(false);
     
     toast({
-      title: 'Details found',
-      description: 'We found some information about your restaurant.',
+      title: 'Details found!',
+      description: 'We found some information about your restaurant. Please review and adjust as needed.',
     });
     updateHealthScore(5);
   };
@@ -253,7 +271,7 @@ export function Step1RestaurantBasics({
             <Button
               variant="outline"
               onClick={handleFindDetails}
-              disabled={isSearching || !name || !address.city}
+              disabled={isSearching || !name.trim()}
               className="gap-2"
             >
               {isSearching ? (
