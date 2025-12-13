@@ -267,3 +267,255 @@ export function useCreateMenu() {
     },
   });
 }
+
+// Integrations (POS connections)
+export function useIntegrations(restaurantId: string | undefined) {
+  return useQuery({
+    queryKey: ['integrations', restaurantId],
+    queryFn: async () => {
+      if (!restaurantId) return [];
+      
+      const { data, error } = await supabase
+        .from('integrations')
+        .select('*')
+        .eq('restaurant_id', restaurantId);
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!restaurantId,
+  });
+}
+
+export function useCreateIntegration() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ restaurant_id, type, status }: { 
+      restaurant_id: string; 
+      type: string; 
+      status?: string;
+    }) => {
+      const { data, error } = await supabase
+        .from('integrations')
+        .insert({ restaurant_id, type, status: status || 'connected' })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['integrations', data.restaurant_id] });
+    },
+  });
+}
+
+export function useUpdateIntegration() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string; status?: string; last_sync_at?: string }) => {
+      const { data, error } = await supabase
+        .from('integrations')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['integrations', data.restaurant_id] });
+    },
+  });
+}
+
+// Forecast configs (automation settings)
+export function useForecastConfig(restaurantId: string | undefined) {
+  return useQuery({
+    queryKey: ['forecast-config', restaurantId],
+    queryFn: async () => {
+      if (!restaurantId) return null;
+      
+      const { data, error } = await supabase
+        .from('forecast_configs')
+        .select('*')
+        .eq('restaurant_id', restaurantId)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!restaurantId,
+  });
+}
+
+export function useUpsertForecastConfig() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      restaurant_id, 
+      auto_alert,
+      auto_generate_po,
+      require_approval,
+      method,
+      horizon_days
+    }: { 
+      restaurant_id: string; 
+      auto_alert?: boolean;
+      auto_generate_po?: boolean;
+      require_approval?: boolean;
+      method?: string;
+      horizon_days?: number;
+    }) => {
+      const { data, error } = await supabase
+        .from('forecast_configs')
+        .upsert({ 
+          restaurant_id, 
+          auto_alert,
+          auto_generate_po,
+          require_approval,
+          method,
+          horizon_days
+        }, { onConflict: 'restaurant_id' })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['forecast-config', data.restaurant_id] });
+    },
+  });
+}
+
+// Reorder rules (par levels)
+export function useReorderRules(restaurantId: string | undefined) {
+  return useQuery({
+    queryKey: ['reorder-rules', restaurantId],
+    queryFn: async () => {
+      if (!restaurantId) return [];
+      
+      const { data, error } = await supabase
+        .from('reorder_rules')
+        .select('*, ingredients(name, unit)')
+        .eq('restaurant_id', restaurantId);
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!restaurantId,
+  });
+}
+
+export function useUpsertReorderRule() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      restaurant_id, 
+      ingredient_id,
+      reorder_point_qty,
+      par_qty,
+      preferred_vendor_id,
+      safety_buffer_level
+    }: { 
+      restaurant_id: string; 
+      ingredient_id: string;
+      reorder_point_qty?: number;
+      par_qty?: number;
+      preferred_vendor_id?: string;
+      safety_buffer_level?: string;
+    }) => {
+      // Check if rule exists
+      const { data: existing } = await supabase
+        .from('reorder_rules')
+        .select('id')
+        .eq('restaurant_id', restaurant_id)
+        .eq('ingredient_id', ingredient_id)
+        .maybeSingle();
+
+      if (existing) {
+        const { data, error } = await supabase
+          .from('reorder_rules')
+          .update({ reorder_point_qty, par_qty, preferred_vendor_id, safety_buffer_level })
+          .eq('id', existing.id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        return data;
+      } else {
+        const { data, error } = await supabase
+          .from('reorder_rules')
+          .insert({ 
+            restaurant_id, 
+            ingredient_id,
+            reorder_point_qty: reorder_point_qty || 0,
+            par_qty: par_qty || 0,
+            preferred_vendor_id,
+            safety_buffer_level
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        return data;
+      }
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['reorder-rules', data.restaurant_id] });
+    },
+  });
+}
+
+// POS Recipe Maps
+export function usePosRecipeMaps(integrationId: string | undefined) {
+  return useQuery({
+    queryKey: ['pos-recipe-maps', integrationId],
+    queryFn: async () => {
+      if (!integrationId) return [];
+      
+      const { data, error } = await supabase
+        .from('pos_recipe_maps')
+        .select('*, pos_menu_items!inner(*), recipes(*)')
+        .eq('pos_menu_items.integration_id', integrationId);
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!integrationId,
+  });
+}
+
+export function useUpsertPosRecipeMap() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      pos_menu_item_id, 
+      recipe_id,
+      confidence
+    }: { 
+      pos_menu_item_id: string; 
+      recipe_id: string;
+      confidence?: string;
+    }) => {
+      const { data, error } = await supabase
+        .from('pos_recipe_maps')
+        .upsert({ pos_menu_item_id, recipe_id, confidence }, { onConflict: 'pos_menu_item_id,recipe_id' })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pos-recipe-maps'] });
+    },
+  });
+}

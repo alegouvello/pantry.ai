@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OnboardingLayout } from '../OnboardingLayout';
-import { SetupHealthScore } from '../SetupHealthScore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Check, AlertTriangle, ArrowRight, Rocket, FileText, Package, Sparkles, Clock, ChefHat, Truck, CreditCard } from 'lucide-react';
+import { Check, AlertTriangle, ArrowRight, Rocket, FileText, Package, Sparkles, Clock, ChefHat, Truck, CreditCard, Loader2 } from 'lucide-react';
+import { useRestaurant, useStorageLocations, useMenus, useIntegrations, useForecastConfig } from '@/hooks/useOnboarding';
+import { useRecipes } from '@/hooks/useRecipes';
+import { useVendors } from '@/hooks/useVendors';
+import { useUpdateOnboardingProgress } from '@/hooks/useOnboarding';
+import { useToast } from '@/hooks/use-toast';
 
 interface StepProps {
   currentStep: number;
@@ -30,68 +34,89 @@ interface SetupItem {
 
 export function Step8GoLive(props: StepProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationComplete, setSimulationComplete] = useState(false);
+  const [isLaunching, setIsLaunching] = useState(false);
 
-  const setupItems: SetupItem[] = [
-    {
-      id: 'restaurant',
-      label: 'Restaurant details',
-      status: 'complete',
-      impact: 'critical',
-      icon: <ChefHat className="w-4 h-4" />,
-    },
-    {
-      id: 'menu',
-      label: 'Menu imported',
-      status: 'complete',
-      impact: 'critical',
-      icon: <FileText className="w-4 h-4" />,
-    },
-    {
-      id: 'recipes',
-      label: 'Recipes approved',
-      status: 'partial',
-      impact: 'critical',
-      icon: <ChefHat className="w-4 h-4" />,
-    },
-    {
-      id: 'storage',
-      label: 'Storage locations',
-      status: 'complete',
-      impact: 'recommended',
-      icon: <Package className="w-4 h-4" />,
-    },
-    {
-      id: 'inventory',
-      label: 'Baseline inventory',
-      status: 'complete',
-      impact: 'recommended',
-      icon: <Package className="w-4 h-4" />,
-    },
-    {
-      id: 'vendors',
-      label: 'Vendors configured',
-      status: 'partial',
-      impact: 'recommended',
-      icon: <Truck className="w-4 h-4" />,
-    },
-    {
-      id: 'pos',
-      label: 'POS connected',
-      status: 'complete',
-      impact: 'optional',
-      icon: <CreditCard className="w-4 h-4" />,
-    },
-    {
-      id: 'automation',
-      label: 'Automation rules',
-      status: 'complete',
-      impact: 'optional',
-      icon: <Sparkles className="w-4 h-4" />,
-    },
-  ];
+  // Fetch actual setup status
+  const { data: restaurant } = useRestaurant(props.orgId || undefined);
+  const { data: storageLocations } = useStorageLocations(props.restaurantId || undefined);
+  const { data: menus } = useMenus(props.restaurantId || undefined);
+  const { data: recipes } = useRecipes();
+  const { data: vendors } = useVendors();
+  const { data: integrations } = useIntegrations(props.restaurantId || undefined);
+  const { data: forecastConfig } = useForecastConfig(props.restaurantId || undefined);
 
+  // Calculate actual setup status
+  const getSetupItems = (): SetupItem[] => {
+    const hasRestaurant = !!restaurant?.name;
+    const hasMenu = (menus?.length || 0) > 0;
+    const menuItemCount = menus?.reduce((acc, m) => 
+      acc + (m.menu_sections?.reduce((sacc: number, s: any) => sacc + (s.menu_items?.length || 0), 0) || 0), 0
+    ) || 0;
+    const hasRecipes = (recipes?.length || 0) > 0;
+    const approvedRecipes = recipes?.filter(r => r.status === 'Approved').length || 0;
+    const hasStorageLocations = (storageLocations?.length || 0) > 0;
+    const hasVendors = (vendors?.length || 0) > 0;
+    const hasPos = integrations?.some(i => i.status === 'connected');
+    const hasAutomation = !!forecastConfig;
+
+    return [
+      {
+        id: 'restaurant',
+        label: 'Restaurant details',
+        status: hasRestaurant ? 'complete' : 'incomplete',
+        impact: 'critical',
+        icon: <ChefHat className="w-4 h-4" />,
+      },
+      {
+        id: 'menu',
+        label: `Menu imported (${menuItemCount} items)`,
+        status: hasMenu ? 'complete' : 'incomplete',
+        impact: 'critical',
+        icon: <FileText className="w-4 h-4" />,
+      },
+      {
+        id: 'recipes',
+        label: `Recipes (${approvedRecipes}/${recipes?.length || 0} approved)`,
+        status: approvedRecipes === (recipes?.length || 0) ? 'complete' : 
+               hasRecipes ? 'partial' : 'incomplete',
+        impact: 'critical',
+        icon: <ChefHat className="w-4 h-4" />,
+      },
+      {
+        id: 'storage',
+        label: `Storage locations (${storageLocations?.length || 0} zones)`,
+        status: hasStorageLocations ? 'complete' : 'incomplete',
+        impact: 'recommended',
+        icon: <Package className="w-4 h-4" />,
+      },
+      {
+        id: 'vendors',
+        label: `Vendors configured (${vendors?.length || 0})`,
+        status: hasVendors ? 'complete' : 'incomplete',
+        impact: 'recommended',
+        icon: <Truck className="w-4 h-4" />,
+      },
+      {
+        id: 'pos',
+        label: 'POS connected',
+        status: hasPos ? 'complete' : 'incomplete',
+        impact: 'optional',
+        icon: <CreditCard className="w-4 h-4" />,
+      },
+      {
+        id: 'automation',
+        label: 'Automation rules',
+        status: hasAutomation ? 'complete' : 'incomplete',
+        impact: 'optional',
+        icon: <Sparkles className="w-4 h-4" />,
+      },
+    ];
+  };
+
+  const setupItems = getSetupItems();
   const completeCount = setupItems.filter(item => item.status === 'complete').length;
   const totalCount = setupItems.length;
   const completionPercentage = Math.round((completeCount / totalCount) * 100);
@@ -103,8 +128,29 @@ export function Step8GoLive(props: StepProps) {
     setSimulationComplete(true);
   };
 
-  const handleGoLive = () => {
-    navigate('/');
+  const handleGoLive = async () => {
+    setIsLaunching(true);
+    
+    try {
+      // Update health score one final time
+      props.updateHealthScore(completionPercentage - props.setupHealthScore);
+      
+      toast({
+        title: 'Setup complete!',
+        description: 'Welcome to your Pantry dashboard',
+      });
+      
+      navigate('/');
+    } catch (error) {
+      console.error('Failed to launch:', error);
+      toast({
+        title: 'Launch failed',
+        description: 'Please try again',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLaunching(false);
+    }
   };
 
   const getStatusIcon = (status: SetupItem['status']) => {
@@ -142,7 +188,7 @@ export function Step8GoLive(props: StepProps) {
                   {completionPercentage}% complete • {completeCount} of {totalCount} steps finished
                 </p>
               </div>
-              <div className="text-2xl font-bold text-primary">{props.setupHealthScore}%</div>
+              <div className="text-2xl font-bold text-primary">{completionPercentage}%</div>
             </div>
             <Progress value={completionPercentage} className="h-2" />
           </CardContent>
@@ -200,8 +246,8 @@ export function Step8GoLive(props: StepProps) {
                   <div>
                     <p className="font-medium text-green-700">Simulation successful!</p>
                     <p className="text-sm text-green-600 mt-1">
-                      Processed 15 sample orders. Inventory depletion tracked correctly.
-                      3 low-stock alerts would be triggered. 1 draft PO generated.
+                      Processed {recipes?.length || 0} recipes. Inventory depletion tracked correctly.
+                      {vendors?.length ? ` ${vendors.length} vendor(s) configured for ordering.` : ''}
                     </p>
                   </div>
                 </div>
@@ -219,7 +265,7 @@ export function Step8GoLive(props: StepProps) {
                 >
                   {isSimulating ? (
                     <>
-                      <Sparkles className="w-4 h-4 mr-2 animate-pulse" />
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Running simulation...
                     </>
                   ) : (
@@ -235,49 +281,61 @@ export function Step8GoLive(props: StepProps) {
         </Card>
 
         {/* Sample PO Preview */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" />
-              Sample Purchase Order
-            </CardTitle>
-            <CardDescription>
-              Preview of what auto-generated orders will look like
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Draft PO for Sysco</span>
-                <Badge variant="outline">Draft</Badge>
-              </div>
-              <div className="text-sm space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Fresh Mozzarella (2kg case x3)</span>
-                  <span>$45.00</span>
+        {vendors && vendors.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
+                Sample Purchase Order
+              </CardTitle>
+              <CardDescription>
+                Preview of what auto-generated orders will look like
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Draft PO for {vendors[0]?.name || 'Vendor'}</span>
+                  <Badge variant="outline">Draft</Badge>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Romaine Lettuce (12-head case x2)</span>
-                  <span>$24.00</span>
+                <div className="text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Sample ingredient (case x3)</span>
+                    <span>$45.00</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Sample ingredient (case x2)</span>
+                    <span>$24.00</span>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">San Marzano Tomatoes (6x28oz x1)</span>
-                  <span>$18.50</span>
+                <div className="flex justify-between pt-2 border-t font-medium">
+                  <span>Total Estimate</span>
+                  <span>$69.00</span>
                 </div>
               </div>
-              <div className="flex justify-between pt-2 border-t font-medium">
-                <span>Total Estimate</span>
-                <span>$87.50</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Launch Button */}
-        <Button onClick={handleGoLive} size="lg" className="w-full py-6 text-lg">
-          <Rocket className="w-5 h-5 mr-2" />
-          Launch Dashboard
-          <ArrowRight className="w-5 h-5 ml-2" />
+        <Button 
+          onClick={handleGoLive} 
+          size="lg" 
+          className="w-full py-6 text-lg"
+          disabled={isLaunching}
+        >
+          {isLaunching ? (
+            <>
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              Launching...
+            </>
+          ) : (
+            <>
+              <Rocket className="w-5 h-5 mr-2" />
+              Launch Dashboard
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </>
+          )}
         </Button>
 
         <p className="text-center text-sm text-muted-foreground">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Bell, Zap, Shield, Clock, TrendingUp, AlertTriangle, Settings2 } from 'lucide-react';
+import { Bell, Zap, Shield, TrendingUp, AlertTriangle, Settings2, Loader2 } from 'lucide-react';
+import { useForecastConfig, useUpsertForecastConfig, useReorderRules, useUpsertReorderRule } from '@/hooks/useOnboarding';
+import { useIngredients } from '@/hooks/useIngredients';
+import { useVendors } from '@/hooks/useVendors';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StepProps {
   currentStep: number;
@@ -23,19 +28,13 @@ interface StepProps {
   updateHealthScore: (delta: number) => void;
 }
 
-// Mock top ingredients for par level setup
-const topIngredients = [
-  { id: '1', name: 'Fresh Mozzarella', unit: 'kg', suggestedReorder: 5, suggestedPar: 15 },
-  { id: '2', name: 'San Marzano Tomatoes', unit: 'cans', suggestedReorder: 10, suggestedPar: 30 },
-  { id: '3', name: 'Olive Oil', unit: 'L', suggestedReorder: 3, suggestedPar: 10 },
-  { id: '4', name: 'Salmon Fillet', unit: 'kg', suggestedReorder: 4, suggestedPar: 12 },
-  { id: '5', name: 'Romaine Lettuce', unit: 'heads', suggestedReorder: 8, suggestedPar: 20 },
-  { id: '6', name: 'Pizza Dough', unit: 'portions', suggestedReorder: 20, suggestedPar: 50 },
-];
-
 export function Step7Automation(props: StepProps) {
+  const { toast } = useToast();
   const [phase, setPhase] = useState<'settings' | 'pars'>('settings');
+  const [isSaving, setIsSaving] = useState(false);
   
+  const isLocalUpdateRef = useRef(false);
+
   // Automation settings
   const [autoAlert, setAutoAlert] = useState(true);
   const [autoGeneratePO, setAutoGeneratePO] = useState(true);
@@ -44,11 +43,182 @@ export function Step7Automation(props: StepProps) {
   const [forecastHorizon, setForecastHorizon] = useState('7');
 
   // Par levels
-  const [parLevels, setParLevels] = useState<Record<string, { reorderPoint: number; par: number; vendorId?: string }>>(
-    Object.fromEntries(
-      topIngredients.map(ing => [ing.id, { reorderPoint: ing.suggestedReorder, par: ing.suggestedPar }])
-    )
-  );
+  const [parLevels, setParLevels] = useState<Record<string, { reorderPoint: number; par: number; vendorId?: string }>>({});
+
+  const { data: forecastConfig, refetch: refetchConfig } = useForecastConfig(props.restaurantId || undefined);
+  const { data: reorderRules, refetch: refetchRules } = useReorderRules(props.restaurantId || undefined);
+  const { data: ingredients } = useIngredients();
+  const { data: vendors } = useVendors();
+  const upsertForecastConfig = useUpsertForecastConfig();
+  const upsertReorderRule = useUpsertReorderRule();
+
+  // Get top ingredients for par level setup
+  const topIngredients = ingredients?.slice(0, 6) || [];
+
+  // Initialize from existing data
+  useEffect(() => {
+    if (forecastConfig) {
+      setAutoAlert(forecastConfig.auto_alert ?? true);
+      setAutoGeneratePO(forecastConfig.auto_generate_po ?? true);
+      setRequireApproval(forecastConfig.require_approval ?? true);
+      setForecastHorizon(String(forecastConfig.horizon_days ?? 7));
+    }
+  }, [forecastConfig]);
+
+  useEffect(() => {
+    if (reorderRules && reorderRules.length > 0) {
+      const levels: Record<string, { reorderPoint: number; par: number; vendorId?: string }> = {};
+      reorderRules.forEach((rule: any) => {
+        levels[rule.ingredient_id] = {
+          reorderPoint: rule.reorder_point_qty || 0,
+          par: rule.par_qty || 0,
+          vendorId: rule.preferred_vendor_id || undefined,
+        };
+      });
+      setParLevels(prev => ({ ...prev, ...levels }));
+    }
+  }, [reorderRules]);
+
+  // Initialize par levels for ingredients without rules
+  useEffect(() => {
+    if (topIngredients.length > 0) {
+      setParLevels(prev => {
+        const newLevels = { ...prev };
+        topIngredients.forEach(ing => {
+          if (!newLevels[ing.id]) {
+            newLevels[ing.id] = {
+              reorderPoint: ing.reorder_point || 5,
+              par: ing.par_level || 15,
+            };
+          }
+        });
+        return newLevels;
+      });
+    }
+  }, [topIngredients]);
+
+  // Real-time sync for forecast config
+  useEffect(() => {
+    if (!props.restaurantId) return;
+
+    const channel = supabase
+      .channel('automation-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'forecast_configs',
+          filter: `restaurant_id=eq.${props.restaurantId}`,
+        },
+        (payload) => {
+          if (isLocalUpdateRef.current) {
+            isLocalUpdateRef.current = false;
+            return;
+          }
+          console.log('Forecast config realtime update:', payload);
+          refetchConfig();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'reorder_rules',
+          filter: `restaurant_id=eq.${props.restaurantId}`,
+        },
+        (payload) => {
+          if (isLocalUpdateRef.current) {
+            isLocalUpdateRef.current = false;
+            return;
+          }
+          console.log('Reorder rules realtime update:', payload);
+          refetchRules();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [props.restaurantId, refetchConfig, refetchRules]);
+
+  const handleSaveSettings = async () => {
+    if (!props.restaurantId) return;
+    
+    setIsSaving(true);
+    isLocalUpdateRef.current = true;
+    
+    try {
+      await upsertForecastConfig.mutateAsync({
+        restaurant_id: props.restaurantId,
+        auto_alert: autoAlert,
+        auto_generate_po: autoGeneratePO,
+        require_approval: requireApproval,
+        horizon_days: parseInt(forecastHorizon),
+        method: 'DOW_AVG',
+      });
+      
+      toast({
+        title: 'Settings saved',
+        description: 'Automation settings have been configured',
+      });
+      
+      setPhase('pars');
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      isLocalUpdateRef.current = false;
+      toast({
+        title: 'Save failed',
+        description: 'Please try again',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveParLevels = async () => {
+    if (!props.restaurantId) return;
+    
+    setIsSaving(true);
+    isLocalUpdateRef.current = true;
+    
+    try {
+      // Save all par levels
+      const promises = Object.entries(parLevels).map(([ingredientId, levels]) => 
+        upsertReorderRule.mutateAsync({
+          restaurant_id: props.restaurantId!,
+          ingredient_id: ingredientId,
+          reorder_point_qty: levels.reorderPoint,
+          par_qty: levels.par,
+          preferred_vendor_id: levels.vendorId,
+          safety_buffer_level: safetyBuffer,
+        })
+      );
+      
+      await Promise.all(promises);
+      
+      props.updateHealthScore(10);
+      toast({
+        title: 'Par levels saved',
+        description: 'Reorder rules have been configured',
+      });
+      
+      props.onNext();
+    } catch (error) {
+      console.error('Failed to save par levels:', error);
+      isLocalUpdateRef.current = false;
+      toast({
+        title: 'Save failed',
+        description: 'Please try again',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const updateParLevel = (ingredientId: string, field: 'reorderPoint' | 'par' | 'vendorId', value: any) => {
     setParLevels(prev => ({
@@ -185,8 +355,15 @@ export function Step7Automation(props: StepProps) {
             </CardContent>
           </Card>
 
-          <Button onClick={() => setPhase('pars')} className="w-full" size="lg">
-            Continue to Par Levels
+          <Button onClick={handleSaveSettings} className="w-full" size="lg" disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Continue to Par Levels'
+            )}
           </Button>
         </div>
       </OnboardingLayout>
@@ -239,7 +416,7 @@ export function Step7Automation(props: StepProps) {
                         type="number"
                         className="w-20 text-center"
                         value={parLevels[ingredient.id]?.reorderPoint || ''}
-                        onChange={(e) => updateParLevel(ingredient.id, 'reorderPoint', parseFloat(e.target.value))}
+                        onChange={(e) => updateParLevel(ingredient.id, 'reorderPoint', parseFloat(e.target.value) || 0)}
                       />
                       <span className="text-sm text-muted-foreground">{ingredient.unit}</span>
                     </div>
@@ -250,7 +427,7 @@ export function Step7Automation(props: StepProps) {
                         type="number"
                         className="w-20 text-center"
                         value={parLevels[ingredient.id]?.par || ''}
-                        onChange={(e) => updateParLevel(ingredient.id, 'par', parseFloat(e.target.value))}
+                        onChange={(e) => updateParLevel(ingredient.id, 'par', parseFloat(e.target.value) || 0)}
                       />
                       <span className="text-sm text-muted-foreground">{ingredient.unit}</span>
                     </div>
@@ -264,9 +441,9 @@ export function Step7Automation(props: StepProps) {
                         <SelectValue placeholder="Select..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="sysco">Sysco</SelectItem>
-                        <SelectItem value="usfoods">US Foods</SelectItem>
-                        <SelectItem value="local">Local Supplier</SelectItem>
+                        {vendors?.map(vendor => (
+                          <SelectItem key={vendor.id} value={vendor.id}>{vendor.name}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </TableCell>
@@ -280,11 +457,15 @@ export function Step7Automation(props: StepProps) {
           <Button variant="outline" onClick={() => setPhase('settings')}>
             Back to Settings
           </Button>
-          <Button onClick={() => {
-            props.updateHealthScore(10);
-            props.onNext();
-          }}>
-            Save & Continue
+          <Button onClick={handleSaveParLevels} disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              'Save & Continue'
+            )}
           </Button>
         </div>
       </div>
