@@ -1,0 +1,142 @@
+import { NavLink, useLocation } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Package,
+  ChefHat,
+  ShoppingCart,
+  TrendingUp,
+  AlertTriangle,
+  Plug,
+  Settings,
+  Menu,
+  X,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+
+const navItems = [
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/inventory', icon: Package, label: 'Inventory' },
+  { to: '/recipes', icon: ChefHat, label: 'Recipes' },
+  { to: '/orders', icon: ShoppingCart, label: 'Orders' },
+  { to: '/forecast', icon: TrendingUp, label: 'Forecast' },
+  { to: '/alerts', icon: AlertTriangle, label: 'Alerts' },
+  { to: '/integrations', icon: Plug, label: 'Integrations' },
+  { to: '/settings', icon: Settings, label: 'Settings' },
+];
+
+export function AppSidebar() {
+  const location = useLocation();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  return (
+    <>
+      {/* Mobile overlay */}
+      <div
+        className={cn(
+          "fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden transition-opacity",
+          isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100"
+        )}
+        onClick={() => setIsCollapsed(true)}
+      />
+
+      {/* Mobile toggle button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="fixed top-4 left-4 z-50 lg:hidden"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        {isCollapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
+      </Button>
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "fixed left-0 top-0 z-40 h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out",
+          "lg:translate-x-0",
+          isCollapsed ? "-translate-x-full lg:w-20" : "translate-x-0 w-64"
+        )}
+      >
+        <div className="flex h-full flex-col">
+          {/* Logo */}
+          <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-primary">
+              <Package className="h-5 w-5 text-primary-foreground" />
+            </div>
+            {!isCollapsed && (
+              <div className="animate-fade-in">
+                <h1 className="text-lg font-semibold text-foreground">Pantry</h1>
+                <p className="text-xs text-muted-foreground">Inventory Pro</p>
+              </div>
+            )}
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 space-y-1 p-3">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.to;
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                    isActive
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                  )}
+                >
+                  <item.icon
+                    className={cn(
+                      "h-5 w-5 shrink-0 transition-colors",
+                      isActive ? "text-primary" : "text-muted-foreground"
+                    )}
+                  />
+                  {!isCollapsed && (
+                    <span className="animate-fade-in">{item.label}</span>
+                  )}
+                  {isActive && !isCollapsed && (
+                    <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary animate-pulse-subtle" />
+                  )}
+                </NavLink>
+              );
+            })}
+          </nav>
+
+          {/* Collapse toggle for desktop */}
+          <div className="hidden lg:block border-t border-sidebar-border p-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-3"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+            >
+              <Menu className="h-5 w-5" />
+              {!isCollapsed && <span>Collapse</span>}
+            </Button>
+          </div>
+
+          {/* User section */}
+          <div className="border-t border-sidebar-border p-3">
+            <div className={cn(
+              "flex items-center gap-3 rounded-lg bg-sidebar-accent/30 px-3 py-2",
+              isCollapsed && "justify-center"
+            )}>
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-accent text-accent-foreground font-medium text-sm">
+                JD
+              </div>
+              {!isCollapsed && (
+                <div className="animate-fade-in overflow-hidden">
+                  <p className="text-sm font-medium text-foreground truncate">John Doe</p>
+                  <p className="text-xs text-muted-foreground">Manager</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </aside>
+    </>
+  );
+}
