@@ -40,47 +40,85 @@ serve(async (req) => {
     }
 
     const location = [city, state].filter(Boolean).join(', ');
-    const searchQuery = location 
+    
+    // Search for address specifically using Yelp/Google as targets
+    const addressSearchQuery = location 
+      ? `"${restaurantName}" address phone ${location}`
+      : `"${restaurantName}" restaurant address phone`;
+    
+    // Also search for general info
+    const generalSearchQuery = location 
       ? `${restaurantName} restaurant ${location}`
       : `${restaurantName} restaurant`;
 
-    console.log('Searching for restaurant with Firecrawl:', searchQuery);
+    console.log('Searching for restaurant address with Firecrawl:', addressSearchQuery);
 
-    // Step 1: Use Firecrawl to search for the restaurant
-    const firecrawlResponse = await fetch('https://api.firecrawl.dev/v1/search', {
+    // Step 1a: Search for address info (targeting business listings)
+    const addressSearchPromise = fetch('https://api.firecrawl.dev/v1/search', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        query: searchQuery,
-        limit: 5,
+        query: addressSearchQuery,
+        limit: 3,
         scrapeOptions: {
           formats: ['markdown']
         }
       }),
     });
 
-    if (!firecrawlResponse.ok) {
-      const errorText = await firecrawlResponse.text();
-      console.error('Firecrawl error:', firecrawlResponse.status, errorText);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Failed to search for restaurant data' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Step 1b: Search for general info
+    const generalSearchPromise = fetch('https://api.firecrawl.dev/v1/search', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query: generalSearchQuery,
+        limit: 3,
+        scrapeOptions: {
+          formats: ['markdown']
+        }
+      }),
+    });
+
+    // Run both searches in parallel
+    const [addressResponse, generalResponse] = await Promise.all([
+      addressSearchPromise,
+      generalSearchPromise
+    ]);
+
+    let allContent: string[] = [];
+
+    if (addressResponse.ok) {
+      const addressData = await addressResponse.json();
+      console.log('Address search results count:', addressData.data?.length || 0);
+      if (addressData.data) {
+        allContent.push(...addressData.data.map((result: any) => 
+          `Source: ${result.url}\n${result.markdown || result.description || ''}`
+        ));
+      }
     }
 
-    const firecrawlData = await firecrawlResponse.json();
-    console.log('Firecrawl results count:', firecrawlData.data?.length || 0);
+    if (generalResponse.ok) {
+      const generalData = await generalResponse.json();
+      console.log('General search results count:', generalData.data?.length || 0);
+      if (generalData.data) {
+        allContent.push(...generalData.data.map((result: any) => 
+          `Source: ${result.url}\n${result.markdown || result.description || ''}`
+        ));
+      }
+    }
 
-    // Combine all scraped content
-    const scrapedContent = firecrawlData.data
-      ?.map((result: any) => `Source: ${result.url}\n${result.markdown || result.description || ''}`)
-      .join('\n\n---\n\n') || '';
+    const scrapedContent = allContent.join('\n\n---\n\n');
 
     if (!scrapedContent) {
       console.log('No search results found, falling back to AI-only enrichment');
+    } else {
+      console.log('Total scraped content length:', scrapedContent.length);
     }
 
     // Step 2: Use Lovable AI to extract structured data from scraped content
