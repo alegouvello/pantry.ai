@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Save, X } from 'lucide-react';
+import { Plus, Trash2, Save, X, Sparkles, RefreshCw, Loader2, ImageIcon } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -63,11 +63,13 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
   const [yieldAmount, setYieldAmount] = useState(1);
   const [yieldUnit, setYieldUnit] = useState('portion');
   const [menuPrice, setMenuPrice] = useState<number | undefined>();
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [ingredients, setIngredients] = useState<EditableIngredient[]>([]);
   const [selectedIngredient, setSelectedIngredient] = useState('');
   const [newQuantity, setNewQuantity] = useState('1');
   const [newUnit, setNewUnit] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
   useEffect(() => {
     if (recipe) {
@@ -76,6 +78,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
       setYieldAmount(recipe.yield_amount);
       setYieldUnit(recipe.yield_unit);
       setMenuPrice(recipe.menu_price || undefined);
+      setImageUrl(recipe.image_url || null);
       setIngredients(
         recipe.recipe_ingredients?.map((ri) => ({
           id: ri.id,
@@ -88,6 +91,51 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
       );
     }
   }, [recipe]);
+
+  const handleGenerateImage = async () => {
+    if (!recipe) return;
+    
+    setIsGeneratingImage(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-recipe-image`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dishName: name,
+          description: '',
+          section: category,
+          tags: [],
+          recipeId: recipe.id,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.imageUrl) {
+          setImageUrl(data.imageUrl);
+          toast({
+            title: 'Image generated',
+            description: 'Recipe image has been created.',
+          });
+        } else {
+          throw new Error(data.error || 'Failed to generate image');
+        }
+      } else {
+        throw new Error('Failed to generate image');
+      }
+    } catch (error) {
+      console.error('Failed to generate image:', error);
+      toast({
+        title: 'Image generation failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
 
   const handleAddIngredient = () => {
     if (!selectedIngredient || !newQuantity || !newUnit) {
@@ -157,6 +205,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
         yield_amount: yieldAmount,
         yield_unit: yieldUnit,
         menu_price: menuPrice || null,
+        image_url: imageUrl,
       });
 
       // Get original ingredient IDs
@@ -232,6 +281,50 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Recipe Image */}
+          <div className="space-y-3">
+            <Label>Recipe Image</Label>
+            <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg overflow-hidden flex items-center justify-center relative group">
+              {isGeneratingImage ? (
+                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <span className="text-sm">Generating image...</span>
+                </div>
+              ) : imageUrl ? (
+                <>
+                  <img 
+                    src={imageUrl} 
+                    alt={name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      onClick={handleGenerateImage}
+                      disabled={isGeneratingImage}
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Regenerate Image
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                  <ImageIcon className="w-10 h-10" />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleGenerateImage}
+                    disabled={isGeneratingImage}
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate Image with AI
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
           {/* Recipe Details */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
