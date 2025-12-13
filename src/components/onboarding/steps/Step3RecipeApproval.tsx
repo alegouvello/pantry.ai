@@ -9,8 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ChefHat, Check, Clock, Trash2, Plus, ArrowRight, ArrowLeft, Sparkles, Copy } from 'lucide-react';
+import { Check, Clock, Trash2, Plus, ArrowRight, ArrowLeft, Sparkles, Copy } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
+// Dish images
+import dishMargherita from '@/assets/onboarding/dish-margherita.jpg';
+import dishCaesarSalad from '@/assets/onboarding/dish-caesar-salad.jpg';
+import dishSalmon from '@/assets/onboarding/dish-salmon.jpg';
 
 interface StepProps {
   currentStep: number;
@@ -31,6 +36,7 @@ const mockDraftRecipes = [
     section: 'Pizzas',
     confidence: 'high' as const,
     tags: ['vegetarian', 'popular'],
+    image: dishMargherita,
     ingredients: [
       { id: '1', name: 'Pizza dough', quantity: 250, unit: 'g', optional: false, confidence: 'high' as const },
       { id: '2', name: 'San Marzano tomatoes', quantity: 100, unit: 'g', optional: false, confidence: 'high' as const },
@@ -45,6 +51,7 @@ const mockDraftRecipes = [
     section: 'Salads',
     confidence: 'medium' as const,
     tags: ['classic'],
+    image: dishCaesarSalad,
     ingredients: [
       { id: '1', name: 'Romaine lettuce', quantity: 200, unit: 'g', optional: false, confidence: 'high' as const },
       { id: '2', name: 'Caesar dressing', quantity: 60, unit: 'ml', optional: false, confidence: 'medium' as const },
@@ -59,6 +66,7 @@ const mockDraftRecipes = [
     section: 'Mains',
     confidence: 'high' as const,
     tags: ['seafood', 'healthy'],
+    image: dishSalmon,
     ingredients: [
       { id: '1', name: 'Salmon fillet', quantity: 180, unit: 'g', optional: false, confidence: 'high' as const },
       { id: '2', name: 'Lemon', quantity: 0.5, unit: 'piece', optional: false, confidence: 'high' as const },
@@ -232,8 +240,12 @@ export function Step3RecipeApproval(props: StepProps) {
         {/* Left: Recipe Card */}
         <Card className="lg:col-span-1">
           <CardContent className="pt-6">
-            <div className="aspect-video bg-muted rounded-lg flex items-center justify-center mb-4">
-              <ChefHat className="w-12 h-12 text-muted-foreground" />
+            <div className="aspect-video bg-muted rounded-lg overflow-hidden mb-4">
+              <img 
+                src={currentRecipe.image} 
+                alt={currentRecipe.name}
+                className="w-full h-full object-cover"
+              />
             </div>
             <h3 className="text-xl font-semibold mb-2">{currentRecipe.name}</h3>
             <p className="text-sm text-muted-foreground mb-3">{currentRecipe.section}</p>
