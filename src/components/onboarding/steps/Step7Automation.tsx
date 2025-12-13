@@ -14,6 +14,7 @@ import { useForecastConfig, useUpsertForecastConfig, useReorderRules, useUpsertR
 import { useIngredients } from '@/hooks/useIngredients';
 import { useVendors } from '@/hooks/useVendors';
 import { useToast } from '@/hooks/use-toast';
+import { useSyncNotification } from '@/hooks/useSyncNotification';
 import { supabase } from '@/integrations/supabase/client';
 
 interface StepProps {
@@ -30,6 +31,7 @@ interface StepProps {
 
 export function Step7Automation(props: StepProps) {
   const { toast } = useToast();
+  const { notify: syncNotify } = useSyncNotification();
   const [phase, setPhase] = useState<'settings' | 'pars'>('settings');
   const [isSaving, setIsSaving] = useState(false);
   
@@ -118,10 +120,7 @@ export function Step7Automation(props: StepProps) {
           }
           console.log('Forecast config realtime update:', payload);
           refetchConfig();
-          toast({
-            title: 'Synced from another tab',
-            description: 'Automation settings updated',
-          });
+          syncNotify('Automation settings updated');
         }
       )
       .on(
@@ -139,10 +138,7 @@ export function Step7Automation(props: StepProps) {
           }
           console.log('Reorder rules realtime update:', payload);
           refetchRules();
-          toast({
-            title: 'Synced from another tab',
-            description: 'Par levels updated',
-          });
+          syncNotify('Par levels updated');
         }
       )
       .subscribe();
@@ -150,7 +146,7 @@ export function Step7Automation(props: StepProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [props.restaurantId, refetchConfig, refetchRules, toast]);
+  }, [props.restaurantId, refetchConfig, refetchRules, syncNotify]);
 
   const handleSaveSettings = async () => {
     if (!props.restaurantId) return;

@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Warehouse, Snowflake, Package, Wine, Coffee, Plus, Trash2, Upload, ListChecks, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { useStorageLocations, useCreateStorageLocation } from '@/hooks/useOnboarding';
 import { useToast } from '@/hooks/use-toast';
+import { useSyncNotification } from '@/hooks/useSyncNotification';
 import { supabase } from '@/integrations/supabase/client';
 
 interface StepProps {
@@ -63,6 +64,7 @@ const mockIngredients = [
 
 export function Step4StorageSetup(props: StepProps) {
   const { toast } = useToast();
+  const { notify: syncNotify } = useSyncNotification();
   const [phase, setPhase] = useState<'storage' | 'method' | 'count'>('storage');
   const [storageLocations, setStorageLocations] = useState<StorageLocationItem[]>(defaultStorageLocations);
   const [newLocationName, setNewLocationName] = useState('');
@@ -118,10 +120,7 @@ export function Step4StorageSetup(props: StepProps) {
 
           console.log('Storage locations realtime update:', payload);
           refetch();
-          toast({
-            title: 'Synced from another tab',
-            description: 'Storage locations updated',
-          });
+          syncNotify('Storage locations updated');
         }
       )
       .subscribe();
@@ -129,7 +128,7 @@ export function Step4StorageSetup(props: StepProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [props.restaurantId, refetch, toast]);
+  }, [props.restaurantId, refetch, syncNotify]);
 
   const addStorageLocation = () => {
     if (newLocationName.trim()) {

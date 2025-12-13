@@ -13,6 +13,7 @@ import { useVendors, useCreateVendor, useDeleteVendor } from '@/hooks/useVendors
 import { useUpsertIngredientVendorMapping, useIngredientVendorMaps } from '@/hooks/useVendorItems';
 import { useIngredients } from '@/hooks/useIngredients';
 import { useToast } from '@/hooks/use-toast';
+import { useSyncNotification } from '@/hooks/useSyncNotification';
 import { supabase } from '@/integrations/supabase/client';
 
 interface StepProps {
@@ -53,6 +54,7 @@ const fallbackIngredients = [
 
 export function Step5VendorSetup(props: StepProps) {
   const { toast } = useToast();
+  const { notify: syncNotify } = useSyncNotification();
   const [phase, setPhase] = useState<'vendors' | 'mapping'>('vendors');
   const [vendors, setVendors] = useState<LocalVendor[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -129,10 +131,7 @@ export function Step5VendorSetup(props: StepProps) {
 
           console.log('Vendors realtime update:', payload);
           refetchVendors();
-          toast({
-            title: 'Synced from another tab',
-            description: 'Vendors updated',
-          });
+          syncNotify('Vendors updated');
         }
       )
       .subscribe();
@@ -140,7 +139,7 @@ export function Step5VendorSetup(props: StepProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [refetchVendors, toast]);
+  }, [refetchVendors, syncNotify]);
 
   // Real-time sync for ingredient-vendor mappings
   useEffect(() => {
@@ -160,10 +159,7 @@ export function Step5VendorSetup(props: StepProps) {
           }
           console.log('Ingredient-vendor maps realtime update:', payload);
           refetchMappings();
-          toast({
-            title: 'Synced from another tab',
-            description: 'Ingredient mappings updated',
-          });
+          syncNotify('Ingredient mappings updated');
         }
       )
       .on(
@@ -187,7 +183,7 @@ export function Step5VendorSetup(props: StepProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [refetchMappings, toast]);
+  }, [refetchMappings, syncNotify]);
 
   // Initialize ingredient mappings from database
   useEffect(() => {
