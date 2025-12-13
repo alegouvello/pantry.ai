@@ -28,6 +28,7 @@ export default function Onboarding() {
   const [orgId, setOrgId] = useState<string | null>(null);
   const [progressId, setProgressId] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   
   // Track if initial load is complete and if update is from local action
   const initializedRef = useRef(false);
@@ -56,26 +57,42 @@ export default function Onboarding() {
       setProgressId(progress.id);
       initializedRef.current = true;
     } else if (user && !progressLoading && !progress && !createOnboarding.isPending && !createAttemptedRef.current) {
-      // Create new onboarding progress - only attempt once
+      // Create new onboarding progress - auto-retry on RLS errors (session propagation delay)
       createAttemptedRef.current = true;
-      createOnboarding.mutate({ userId: user.id }, {
-        onSuccess: (data) => {
-          setOrgId(data.org.id);
-          setProgressId(data.progress.id);
-          initializedRef.current = true;
-          setCreateError(null);
-        },
-        onError: (error: Error) => {
-          console.error('Failed to create onboarding:', error);
-          setCreateError(error.message);
-          // Reset attempt flag after a delay to allow retry
-          setTimeout(() => {
-            createAttemptedRef.current = false;
-          }, 5000);
-        },
-      });
+      
+      const attemptCreate = () => {
+        createOnboarding.mutate({ userId: user.id }, {
+          onSuccess: (data) => {
+            setOrgId(data.org.id);
+            setProgressId(data.progress.id);
+            initializedRef.current = true;
+            setCreateError(null);
+            setRetryCount(0);
+          },
+          onError: (error: Error) => {
+            console.error('Failed to create onboarding:', error);
+            
+            // Auto-retry up to 3 times for RLS errors (session propagation delay)
+            if (error.message.includes('row-level security') && retryCount < 3) {
+              setRetryCount(prev => prev + 1);
+              createAttemptedRef.current = false;
+              setTimeout(() => {
+                // Trigger re-attempt
+                attemptCreate();
+              }, 500 * (retryCount + 1)); // Exponential backoff: 500ms, 1000ms, 1500ms
+            } else {
+              setCreateError(error.message);
+              setTimeout(() => {
+                createAttemptedRef.current = false;
+              }, 3000);
+            }
+          },
+        });
+      };
+      
+      attemptCreate();
     }
-  }, [user, authLoading, progress, progressLoading, createOnboarding.isPending]);
+  }, [user, authLoading, progress, progressLoading, createOnboarding.isPending, retryCount]);
 
   // Real-time sync for multi-tab support
   useEffect(() => {
