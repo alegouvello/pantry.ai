@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { useVendors, useCreateVendor, useDeleteVendor } from '@/hooks/useVendors
 import { useUpsertIngredientVendorMapping } from '@/hooks/useVendorItems';
 import { useIngredients } from '@/hooks/useIngredients';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StepProps {
   currentStep: number;
@@ -59,8 +60,10 @@ export function Step5VendorSetup(props: StepProps) {
   const [ingredientMappings, setIngredientMappings] = useState<Record<string, { vendorId: string; sku?: string; packSize?: string; unitCost?: number }>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingMappings, setIsSavingMappings] = useState(false);
+  
+  const isLocalUpdateRef = useRef(false);
 
-  const { data: existingVendors } = useVendors();
+  const { data: existingVendors, refetch: refetchVendors } = useVendors();
   const { data: dbIngredients, isLoading: ingredientsLoading } = useIngredients();
   const createVendor = useCreateVendor();
   const deleteVendor = useDeleteVendor();
@@ -103,6 +106,35 @@ export function Step5VendorSetup(props: StepProps) {
       setVendors(mappedVendors);
     }
   }, [existingVendors]);
+
+  // Real-time sync for multi-tab support
+  useEffect(() => {
+    const channel = supabase
+      .channel('vendors-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'vendors',
+        },
+        (payload) => {
+          // Skip if this was a local update
+          if (isLocalUpdateRef.current) {
+            isLocalUpdateRef.current = false;
+            return;
+          }
+
+          console.log('Vendors realtime update:', payload);
+          refetchVendors();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetchVendors]);
 
   const handleSaveVendor = () => {
     if (!formData.name || !formData.email) return;
@@ -172,6 +204,7 @@ export function Step5VendorSetup(props: StepProps) {
 
   const saveVendorsToDatabase = async () => {
     setIsSaving(true);
+    isLocalUpdateRef.current = true;
     try {
       const newVendors = vendors.filter(v => v.isNew);
       for (const vendor of newVendors) {
@@ -188,6 +221,7 @@ export function Step5VendorSetup(props: StepProps) {
       return true;
     } catch (error) {
       console.error('Failed to save vendors:', error);
+      isLocalUpdateRef.current = false;
       toast({
         title: 'Error saving vendors',
         description: 'Failed to save vendor data.',
