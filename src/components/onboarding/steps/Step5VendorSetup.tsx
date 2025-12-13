@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Truck, Plus, Trash2, Building2, Mail, Phone, Clock, DollarSign } from 'lucide-react';
+import { Truck, Plus, Trash2, Building2, Mail, Phone, Clock, DollarSign, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useVendors, useCreateVendor, useDeleteVendor } from '@/hooks/useVendors';
+import { useToast } from '@/hooks/use-toast';
 
 interface StepProps {
   currentStep: number;
@@ -23,7 +24,7 @@ interface StepProps {
   updateHealthScore: (delta: number) => void;
 }
 
-interface Vendor {
+interface LocalVendor {
   id: string;
   name: string;
   email: string;
@@ -32,6 +33,7 @@ interface Vendor {
   deliveryDays: string[];
   minimumOrder: number;
   category?: string;
+  isNew?: boolean;
 }
 
 const deliveryDayOptions = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -47,13 +49,19 @@ const topIngredients = [
 ];
 
 export function Step5VendorSetup(props: StepProps) {
+  const { toast } = useToast();
   const [phase, setPhase] = useState<'vendors' | 'mapping'>('vendors');
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendors, setVendors] = useState<LocalVendor[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
+  const [editingVendor, setEditingVendor] = useState<LocalVendor | null>(null);
   const [ingredientMappings, setIngredientMappings] = useState<Record<string, { vendorId: string; sku?: string; packSize?: string; unitCost?: number }>>({});
+  const [isSaving, setIsSaving] = useState(false);
 
-  const [formData, setFormData] = useState<Partial<Vendor>>({
+  const { data: existingVendors } = useVendors();
+  const createVendor = useCreateVendor();
+  const deleteVendor = useDeleteVendor();
+
+  const [formData, setFormData] = useState<Partial<LocalVendor>>({
     name: '',
     email: '',
     phone: '',
@@ -63,14 +71,32 @@ export function Step5VendorSetup(props: StepProps) {
     category: '',
   });
 
+  // Initialize from database if vendors exist
+  useEffect(() => {
+    if (existingVendors && existingVendors.length > 0) {
+      const mappedVendors: LocalVendor[] = existingVendors.map(v => ({
+        id: v.id,
+        name: v.name,
+        email: v.contact_email || '',
+        phone: v.phone || '',
+        leadTimeDays: v.lead_time_days || 2,
+        deliveryDays: v.delivery_days || [],
+        minimumOrder: v.minimum_order || 0,
+        category: v.notes || '',
+        isNew: false,
+      }));
+      setVendors(mappedVendors);
+    }
+  }, [existingVendors]);
+
   const handleSaveVendor = () => {
     if (!formData.name || !formData.email) return;
 
     if (editingVendor) {
-      setVendors(vendors.map(v => v.id === editingVendor.id ? { ...v, ...formData } as Vendor : v));
+      setVendors(vendors.map(v => v.id === editingVendor.id ? { ...v, ...formData } as LocalVendor : v));
     } else {
-      const newVendor: Vendor = {
-        id: Date.now().toString(),
+      const newVendor: LocalVendor = {
+        id: `new-${Date.now()}`,
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
@@ -78,6 +104,7 @@ export function Step5VendorSetup(props: StepProps) {
         deliveryDays: formData.deliveryDays || [],
         minimumOrder: formData.minimumOrder || 0,
         category: formData.category,
+        isNew: true,
       };
       setVendors([...vendors, newVendor]);
     }
@@ -88,11 +115,24 @@ export function Step5VendorSetup(props: StepProps) {
     props.updateHealthScore(5);
   };
 
-  const handleDeleteVendor = (id: string) => {
-    setVendors(vendors.filter(v => v.id !== id));
+  const handleDeleteVendor = async (vendor: LocalVendor) => {
+    if (!vendor.isNew) {
+      try {
+        await deleteVendor.mutateAsync(vendor.id);
+      } catch (error) {
+        console.error('Failed to delete vendor:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to delete vendor.',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+    setVendors(vendors.filter(v => v.id !== vendor.id));
   };
 
-  const handleEditVendor = (vendor: Vendor) => {
+  const handleEditVendor = (vendor: LocalVendor) => {
     setEditingVendor(vendor);
     setFormData(vendor);
     setIsDialogOpen(true);
@@ -113,6 +153,35 @@ export function Step5VendorSetup(props: StepProps) {
       ...prev,
       [ingredientId]: { ...prev[ingredientId], [field]: value },
     }));
+  };
+
+  const saveVendorsToDatabase = async () => {
+    setIsSaving(true);
+    try {
+      const newVendors = vendors.filter(v => v.isNew);
+      for (const vendor of newVendors) {
+        await createVendor.mutateAsync({
+          name: vendor.name,
+          contact_email: vendor.email,
+          phone: vendor.phone,
+          lead_time_days: vendor.leadTimeDays,
+          delivery_days: vendor.deliveryDays,
+          minimum_order: vendor.minimumOrder,
+          notes: vendor.category,
+        });
+      }
+      return true;
+    } catch (error) {
+      console.error('Failed to save vendors:', error);
+      toast({
+        title: 'Error saving vendors',
+        description: 'Failed to save vendor data.',
+        variant: 'destructive',
+      });
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const suggestedCategories = ['Produce', 'Dairy', 'Meat & Poultry', 'Seafood', 'Dry Goods', 'Beverages', 'Spirits'];
@@ -160,7 +229,7 @@ export function Step5VendorSetup(props: StepProps) {
                         <Button variant="ghost" size="sm" onClick={() => handleEditVendor(vendor)}>
                           Edit
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteVendor(vendor.id)}>
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteVendor(vendor)}>
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
                       </div>
@@ -291,8 +360,19 @@ export function Step5VendorSetup(props: StepProps) {
           </Dialog>
 
           {vendors.length > 0 && (
-            <Button onClick={() => setPhase('mapping')} className="w-full" size="lg">
-              Continue to Item Mapping
+            <Button 
+              onClick={async () => {
+                const success = await saveVendorsToDatabase();
+                if (success) {
+                  setPhase('mapping');
+                }
+              }} 
+              className="w-full" 
+              size="lg"
+              disabled={isSaving}
+            >
+              {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              {isSaving ? 'Saving...' : 'Continue to Item Mapping'}
             </Button>
           )}
 
