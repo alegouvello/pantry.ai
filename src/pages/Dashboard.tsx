@@ -2,14 +2,14 @@ import { motion } from 'framer-motion';
 import {
   Package,
   AlertTriangle,
-  Clock,
-  DollarSign,
   TrendingUp,
   ShoppingCart,
   LogIn,
   ChefHat,
   Utensils,
+  ArrowRight,
 } from 'lucide-react';
+import heroImage from '@/assets/dashboard/hero-kitchen.jpg';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { AlertCard } from '@/components/dashboard/AlertCard';
 import { InventoryQuickView } from '@/components/dashboard/InventoryQuickView';
@@ -31,8 +31,8 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.1,
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
     },
   },
 };
@@ -42,7 +42,7 @@ const itemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] as const },
+    transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] as const },
   },
 };
 
@@ -100,196 +100,171 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="relative min-h-full">
-      {/* Decorative gradient orbs - matching onboarding */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div 
-          className="absolute -top-32 -right-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl"
-          animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.2, 0.4, 0.2],
-          }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div 
-          className="absolute bottom-0 -left-32 w-80 h-80 bg-accent/5 rounded-full blur-3xl"
-          animate={{ 
-            scale: [1.2, 1, 1.2],
-            opacity: [0.1, 0.3, 0.1],
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </div>
-
+    <motion.div 
+      className="space-y-8"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* Hero Section with Image */}
       <motion.div 
-        className="relative z-10 space-y-8"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
+        variants={itemVariants}
+        className="relative h-48 md:h-64 rounded-2xl overflow-hidden"
       >
-        {/* Header */}
-        <motion.div 
-          variants={itemVariants}
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-        >
-          <div>
-            <h1 className="text-3xl font-bold text-foreground tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
-              {getGreeting()}! Here's your restaurant overview.
+        <img 
+          src={heroImage} 
+          alt="Kitchen" 
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-transparent" />
+        <div className="absolute inset-0 flex items-center px-8 md:px-12">
+          <div className="space-y-3">
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
+              {getGreeting()}
+            </h1>
+            <p className="text-muted-foreground max-w-md">
+              Your kitchen is running smoothly. Here's today's overview.
             </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link to="/inventory">
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button variant="outline" className="backdrop-blur-sm bg-background/50">
-                  <Clock className="h-4 w-4 mr-2" />
-                  Cycle Count
-                </Button>
-              </motion.div>
-            </Link>
-            <Link to="/orders">
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button variant="accent" className="shadow-lg shadow-accent/25">
+            <div className="flex gap-3 pt-2">
+              <Link to="/orders">
+                <Button variant="accent" size="sm" className="shadow-lg shadow-accent/25">
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   New Order
                 </Button>
-              </motion.div>
-            </Link>
+              </Link>
+              <Link to="/recipes">
+                <Button variant="outline" size="sm" className="bg-background/50 backdrop-blur-sm">
+                  View Recipes
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
           </div>
-        </motion.div>
-
-        {/* Metrics Grid */}
-        <motion.div 
-          variants={itemVariants}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-        >
-          {isLoading ? (
-            <>
-              {[...Array(4)].map((_, i) => (
-                <Card key={i} variant="elevated" className="p-6 backdrop-blur-sm bg-card/80">
-                  <Skeleton className="h-4 w-24 mb-2" />
-                  <Skeleton className="h-8 w-16" />
-                </Card>
-              ))}
-            </>
-          ) : (
-            <>
-              <MetricCard
-                title="Menu Items"
-                value={totalDishes}
-                subtitle="Active dishes"
-                icon={Utensils}
-              />
-              <MetricCard
-                title="Ingredients"
-                value={totalIngredients}
-                subtitle="In inventory"
-                icon={Package}
-              />
-              <MetricCard
-                title="Low Stock"
-                value={lowStockCount}
-                subtitle="Needs reorder"
-                icon={AlertTriangle}
-                variant="warning"
-              />
-              <MetricCard
-                title="Pending Orders"
-                value={pendingOrdersCount}
-                subtitle="Awaiting action"
-                icon={TrendingUp}
-                variant="success"
-              />
-            </>
-          )}
-        </motion.div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Alerts */}
-          <motion.div variants={itemVariants} className="lg:col-span-2 space-y-6">
-            <Card variant="elevated" className="backdrop-blur-sm bg-card/80 border-border/50">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-warning/10">
-                    <AlertTriangle className="h-4 w-4 text-warning" />
-                  </div>
-                  Active Alerts
-                </CardTitle>
-                <Link to="/alerts">
-                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                    View All
-                  </Button>
-                </Link>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {alertsLoading ? (
-                  <div className="space-y-3">
-                    {[...Array(2)].map((_, i) => (
-                      <Skeleton key={i} className="h-20 w-full" />
-                    ))}
-                  </div>
-                ) : activeAlerts && activeAlerts.length > 0 ? (
-                  activeAlerts.slice(0, 3).map((alert, index) => (
-                    <motion.div
-                      key={alert.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <AlertCard
-                        alert={{
-                          id: alert.id,
-                          type: alert.type,
-                          severity: alert.severity,
-                          title: alert.title,
-                          description: alert.description || '',
-                          suggestedAction: alert.suggested_action || '',
-                          relatedItemId: alert.related_item_id || undefined,
-                          createdAt: new Date(alert.created_at),
-                          isResolved: alert.is_resolved || false,
-                        }}
-                        onResolve={handleResolveAlert}
-                      />
-                    </motion.div>
-                  ))
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/10 flex items-center justify-center">
-                      <ChefHat className="h-8 w-8 text-success" />
-                    </div>
-                    <p className="font-medium text-foreground">All clear!</p>
-                    <p className="text-sm mt-1">Your inventory looks great.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Low Stock Quick View */}
-            <InventoryQuickView 
-              ingredients={lowStockItems?.map(item => ({
-                id: item.id,
-                name: item.name,
-                category: item.category,
-                unit: item.unit,
-                storageLocation: item.storage_location || 'dry_storage',
-                currentStock: item.current_stock,
-                parLevel: item.par_level,
-                reorderPoint: item.reorder_point,
-                unitCost: item.unit_cost,
-                lastUpdated: new Date(item.updated_at),
-              })) || []} 
-            />
-          </motion.div>
-
-          {/* Right Column - Recipe Summary, Food Cost & Activity */}
-          <motion.div variants={itemVariants} className="space-y-6">
-            <RecipeSummary />
-            <FoodCostChart />
-            <RecentActivity />
-          </motion.div>
         </div>
       </motion.div>
-    </div>
+
+      {/* Metrics Grid - Simple and Clean */}
+      <motion.div 
+        variants={itemVariants}
+        className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+      >
+        {isLoading ? (
+          <>
+            {[...Array(4)].map((_, i) => (
+              <Card key={i} className="p-5">
+                <Skeleton className="h-4 w-20 mb-2" />
+                <Skeleton className="h-8 w-12" />
+              </Card>
+            ))}
+          </>
+        ) : (
+          <>
+            <MetricCard
+              title="Menu Items"
+              value={totalDishes}
+              subtitle="Active dishes"
+              icon={Utensils}
+            />
+            <MetricCard
+              title="Ingredients"
+              value={totalIngredients}
+              subtitle="In inventory"
+              icon={Package}
+            />
+            <MetricCard
+              title="Low Stock"
+              value={lowStockCount}
+              subtitle="Needs reorder"
+              icon={AlertTriangle}
+              variant="warning"
+            />
+            <MetricCard
+              title="Pending Orders"
+              value={pendingOrdersCount}
+              subtitle="Awaiting action"
+              icon={TrendingUp}
+              variant="success"
+            />
+          </>
+        )}
+      </motion.div>
+
+      {/* Main Content - Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Alerts & Low Stock */}
+        <motion.div variants={itemVariants} className="lg:col-span-2 space-y-6">
+          {/* Alerts Card */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardTitle className="text-base font-medium flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-warning" />
+                Active Alerts
+              </CardTitle>
+              <Link to="/alerts">
+                <Button variant="ghost" size="sm" className="text-muted-foreground">
+                  View All
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {alertsLoading ? (
+                <div className="space-y-3">
+                  {[...Array(2)].map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : activeAlerts && activeAlerts.length > 0 ? (
+                activeAlerts.slice(0, 3).map((alert) => (
+                  <AlertCard
+                    key={alert.id}
+                    alert={{
+                      id: alert.id,
+                      type: alert.type,
+                      severity: alert.severity,
+                      title: alert.title,
+                      description: alert.description || '',
+                      suggestedAction: alert.suggested_action || '',
+                      relatedItemId: alert.related_item_id || undefined,
+                      createdAt: new Date(alert.created_at),
+                      isResolved: alert.is_resolved || false,
+                    }}
+                    onResolve={handleResolveAlert}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <ChefHat className="h-10 w-10 mx-auto mb-3 text-success/60" />
+                  <p className="font-medium text-foreground">All clear!</p>
+                  <p className="text-sm">Your inventory looks great.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Low Stock */}
+          <InventoryQuickView 
+            ingredients={lowStockItems?.map(item => ({
+              id: item.id,
+              name: item.name,
+              category: item.category,
+              unit: item.unit,
+              storageLocation: item.storage_location || 'dry_storage',
+              currentStock: item.current_stock,
+              parLevel: item.par_level,
+              reorderPoint: item.reorder_point,
+              unitCost: item.unit_cost,
+              lastUpdated: new Date(item.updated_at),
+            })) || []} 
+          />
+        </motion.div>
+
+        {/* Right Column - Summary Cards */}
+        <motion.div variants={itemVariants} className="space-y-6">
+          <RecipeSummary />
+          <FoodCostChart />
+          <RecentActivity />
+        </motion.div>
+      </div>
+    </motion.div>
   );
 }
