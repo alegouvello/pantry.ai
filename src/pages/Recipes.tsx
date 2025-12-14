@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RecipeCard } from '@/components/recipes/RecipeCard';
 import { RecipeEditorDialog } from '@/components/recipes/RecipeEditorDialog';
+import { RecipeDetailDialog } from '@/components/recipes/RecipeDetailDialog';
 import { NewRecipeDialog } from '@/components/recipes/NewRecipeDialog';
 import { ImportRecipeDialog } from '@/components/recipes/ImportRecipeDialog';
 import { MenuEngineeringMatrix } from '@/components/recipes/MenuEngineeringMatrix';
@@ -39,7 +40,9 @@ export default function Recipes() {
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'matrix'>('grid');
   const [editingRecipe, setEditingRecipe] = useState<RecipeWithIngredients | null>(null);
+  const [viewingRecipe, setViewingRecipe] = useState<RecipeWithIngredients | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [newRecipeOpen, setNewRecipeOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const { user, loading: authLoading } = useAuth();
@@ -76,6 +79,11 @@ export default function Recipes() {
   const handleEdit = (recipe: RecipeWithIngredients) => {
     setEditingRecipe(recipe);
     setEditorOpen(true);
+  };
+
+  const handleViewDetail = (recipe: RecipeWithIngredients) => {
+    setViewingRecipe(recipe);
+    setDetailOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -228,7 +236,7 @@ export default function Recipes() {
         ) : viewMode === 'matrix' ? (
           <MenuEngineeringMatrix 
             recipes={filteredRecipes} 
-            onRecipeClick={handleEdit}
+            onRecipeClick={handleViewDetail}
           />
         ) : (
           <StaggeredGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -236,6 +244,7 @@ export default function Recipes() {
               <StaggeredItem key={recipe.id}>
                 <RecipeCard
                   recipe={mapRecipeForCard(recipe)}
+                  onClick={() => handleViewDetail(recipe)}
                   onEdit={() => handleEdit(recipe)}
                   onDelete={() => handleDelete(recipe.id)}
                 />
@@ -245,6 +254,11 @@ export default function Recipes() {
         )}
       </motion.div>
 
+      <RecipeDetailDialog
+        recipe={viewingRecipe}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+      />
       <RecipeEditorDialog
         recipe={editingRecipe}
         open={editorOpen}
