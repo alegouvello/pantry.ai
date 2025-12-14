@@ -14,6 +14,7 @@ import { AlertCard } from '@/components/dashboard/AlertCard';
 import { InventoryQuickView } from '@/components/dashboard/InventoryQuickView';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { RecipeSummary } from '@/components/dashboard/RecipeSummary';
+import { FoodCostChart } from '@/components/dashboard/FoodCostChart';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -214,9 +215,10 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* Right Column - Recipe Summary & Activity */}
+        {/* Right Column - Recipe Summary, Food Cost & Activity */}
         <div className="space-y-6">
           <RecipeSummary />
+          <FoodCostChart />
           <RecentActivity />
         </div>
       </div>
