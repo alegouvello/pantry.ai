@@ -120,13 +120,33 @@ export function Step4StorageSetup(props: StepProps) {
   // Fetch real ingredients from the database
   const { data: dbIngredients } = useIngredients();
   
+  // Map storage_location enum to storage location ID (either DB UUID or default ID)
+  const getStorageIdForIngredient = (storageLocation: string | null): string => {
+    // If we have existing DB locations, match by name
+    if (existingLocations && existingLocations.length > 0) {
+      const nameMap: Record<string, string> = {
+        'walk_in_cooler': 'Walk-in Cooler',
+        'freezer': 'Freezer', 
+        'dry_storage': 'Dry Storage',
+        'bar': 'Bar',
+      };
+      const targetName = nameMap[storageLocation || 'dry_storage'] || 'Dry Storage';
+      const matchedLocation = existingLocations.find(loc => 
+        loc.name.toLowerCase() === targetName.toLowerCase()
+      );
+      if (matchedLocation) return matchedLocation.id;
+    }
+    // Fall back to default IDs if no DB locations
+    return mapStorageLocationToId(storageLocation);
+  };
+  
   // Transform database ingredients to our format, applying any storage overrides
   const ingredients: IngredientItem[] = (dbIngredients || []).map(ing => ({
     id: ing.id,
     name: ing.name,
     category: ing.category,
     unit: ing.unit,
-    storageKey: storageOverrides[ing.id] || mapStorageLocationToId(ing.storage_location),
+    storageKey: storageOverrides[ing.id] || getStorageIdForIngredient(ing.storage_location),
   }));
 
   // Initialize from database if locations exist
