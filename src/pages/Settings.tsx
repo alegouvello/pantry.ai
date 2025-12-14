@@ -331,6 +331,7 @@ export default function Settings() {
           <BusinessHoursCard 
             restaurantId={restaurant?.id} 
             restaurantName={venueName}
+            location={[city, state].filter(Boolean).join(', ')}
           />
 
           {/* Closures Card */}

@@ -44,9 +44,10 @@ const DEFAULT_HOURS: BusinessHours = {
 interface BusinessHoursCardProps {
   restaurantId?: string;
   restaurantName?: string;
+  location?: string;
 }
 
-export function BusinessHoursCard({ restaurantId, restaurantName }: BusinessHoursCardProps) {
+export function BusinessHoursCard({ restaurantId, restaurantName, location }: BusinessHoursCardProps) {
   const queryClient = useQueryClient();
   const [hours, setHours] = useState<BusinessHours>(DEFAULT_HOURS);
   const [isLookingUp, setIsLookingUp] = useState(false);
@@ -114,7 +115,7 @@ export function BusinessHoursCard({ restaurantId, restaurantName }: BusinessHour
     setIsLookingUp(true);
     try {
       const { data, error } = await supabase.functions.invoke('lookup-business-hours', {
-        body: { restaurantName },
+        body: { restaurantName, location },
       });
 
       if (error) throw error;
