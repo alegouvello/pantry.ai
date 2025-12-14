@@ -430,6 +430,14 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
                       <RefreshCw className="w-4 h-4 mr-2" />
                       Regenerate
                     </Button>
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={() => setImageUrl(null)}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Remove
+                    </Button>
                   </div>
                 </>
               ) : (
