@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, DollarSign, ArrowUpDown, ArrowUp, ArrowDown, LogIn } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, ArrowUpDown, ArrowUp, ArrowDown, LogIn, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Table,
   TableBody,
@@ -212,19 +213,31 @@ export default function Profitability() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Profit (per unit)</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <span className="text-2xl font-bold text-primary">{formatCurrency(totalProfit)}</span>
-            )}
-          </CardContent>
-        </Card>
+        <TooltipProvider>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                Combined Profit
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3.5 w-3.5 text-muted-foreground/60 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p className="text-xs">Sum of profit margins (menu price minus ingredient cost) across all recipes. Represents total profit if you sold one of each item.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-8 w-24" />
+              ) : (
+                <span className="text-2xl font-bold text-primary">{formatCurrency(totalProfit)}</span>
+              )}
+            </CardContent>
+          </Card>
+        </TooltipProvider>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
