@@ -11,6 +11,7 @@ import Recipes from "./pages/Recipes";
 import Profitability from "./pages/Profitability";
 import Orders from "./pages/Orders";
 import Forecast from "./pages/Forecast";
+import SalesHistory from "./pages/SalesHistory";
 import Alerts from "./pages/Alerts";
 import Integrations from "./pages/Integrations";
 import Settings from "./pages/Settings";
@@ -43,6 +44,7 @@ const App = () => (
                     <Route path="/profitability" element={<Profitability />} />
                     <Route path="/orders" element={<Orders />} />
                     <Route path="/forecast" element={<Forecast />} />
+                    <Route path="/sales-history" element={<SalesHistory />} />
                     <Route path="/alerts" element={<Alerts />} />
                     <Route path="/integrations" element={<Integrations />} />
                     <Route path="/settings" element={<Settings />} />
