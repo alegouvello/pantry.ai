@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Upload, Download, LogIn, Package, Sparkles } from 'lucide-react';
+import { Plus, Upload, Download, LogIn, Package, Sparkles, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { InventoryTable } from '@/components/inventory/InventoryTable';
 import { ParLevelSuggestionDialog } from '@/components/inventory/ParLevelSuggestionDialog';
@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import { useIngredients, useUpdateIngredient } from '@/hooks/useIngredients';
 import { useSuggestParLevels } from '@/hooks/useSuggestParLevels';
+import { useRealtimeAlerts, useLowStockCheck } from '@/hooks/useRealtimeAlerts';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -35,9 +36,14 @@ export default function Inventory() {
   const { data: ingredients, isLoading, error } = useIngredients();
   const updateIngredient = useUpdateIngredient();
   const suggestParLevels = useSuggestParLevels();
+  const { checkLowStock } = useLowStockCheck();
+  
+  // Enable realtime alerts
+  useRealtimeAlerts();
   
   const [showSuggestionDialog, setShowSuggestionDialog] = useState(false);
   const [suggestions, setSuggestions] = useState<Record<string, { par_level: number; reorder_point: number; reasoning: string }>>({});
+  const [isCheckingStock, setIsCheckingStock] = useState(false);
 
   if (!authLoading && !user) {
     return (
@@ -104,6 +110,15 @@ export default function Inventory() {
     } catch (error) {
       // Error is handled by the mutation's onError
       console.error('Failed to get suggestions:', error);
+    }
+  };
+
+  const handleCheckLowStock = async () => {
+    setIsCheckingStock(true);
+    try {
+      await checkLowStock();
+    } finally {
+      setIsCheckingStock(false);
     }
   };
 
@@ -177,6 +192,16 @@ export default function Inventory() {
               <Button variant="accent" size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Item
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="bg-background/50 backdrop-blur-sm"
+                onClick={handleCheckLowStock}
+                disabled={!ingredients?.length || isCheckingStock}
+              >
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                {isCheckingStock ? 'Checking...' : 'Check Stock'}
               </Button>
               <Button 
                 variant="outline" 

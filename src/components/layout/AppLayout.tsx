@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AppSidebar } from './AppSidebar';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { useRealtimeAlerts } from '@/hooks/useRealtimeAlerts';
 import { Loader2 } from 'lucide-react';
 
 interface AppLayoutProps {
@@ -12,6 +13,9 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  
+  // Enable realtime alerts across the app
+  useRealtimeAlerts();
 
   useEffect(() => {
     if (!loading && !user) {
