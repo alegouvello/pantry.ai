@@ -70,6 +70,14 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
   const updateRecipe = useUpdateRecipe();
   const { toast } = useToast();
 
+  // DnD sensors - must be called unconditionally before any early returns
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   // Parse existing instructions or reset
   useEffect(() => {
     if (recipe?.instructions) {
@@ -214,13 +222,6 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
   const handleRemoveStep = (index: number) => {
     setEditedSteps(prev => prev.filter((_, i) => i !== index));
   };
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
