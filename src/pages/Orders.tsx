@@ -38,6 +38,7 @@ const itemVariants = {
 
 export default function Orders() {
   const [forecastDays, setForecastDays] = useState(3);
+  const [activeTab, setActiveTab] = useState('suggested');
   const { user, loading: authLoading } = useAuth();
   const { data: orders, isLoading: ordersLoading } = usePurchaseOrders();
   const { data: vendors, isLoading: vendorsLoading } = useVendors();
@@ -116,15 +117,18 @@ export default function Orders() {
 
       if (itemsError) throw itemsError;
 
-      toast({
-        title: 'Order created',
-        description: `Draft PO for ${suggestion.vendorName} with ${suggestion.items.length} items.`,
-      });
-
       // Invalidate queries to refresh data without page reload
       queryClient.invalidateQueries({ queryKey: ['purchase_orders'] });
       queryClient.invalidateQueries({ queryKey: ['ingredients'] });
       queryClient.invalidateQueries({ queryKey: ['low_stock_ingredients'] });
+
+      // Switch to Drafts tab to show the new order
+      setActiveTab('drafts');
+
+      toast({
+        title: 'Order created',
+        description: `Draft PO for ${suggestion.vendorName} with ${suggestion.items.length} items.`,
+      });
     } catch (error) {
       console.error('Failed to create order:', error);
       toast({
@@ -201,7 +205,7 @@ export default function Orders() {
 
       {/* Tabs */}
       <motion.div variants={itemVariants}>
-        <Tabs defaultValue="suggested" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList>
             <TabsTrigger value="suggested" className="gap-2">
               <Sparkles className="h-3.5 w-3.5" />
