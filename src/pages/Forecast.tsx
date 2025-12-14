@@ -15,6 +15,28 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import heroImage from '@/assets/pages/hero-forecast.jpg';
 
+// Format quantity with smart unit conversion
+const formatQuantity = (value: number, unit: string): string => {
+  const lowerUnit = unit.toLowerCase();
+  
+  // Convert grams to kg if >= 1000
+  if ((lowerUnit === 'g' || lowerUnit === 'gram' || lowerUnit === 'grams') && value >= 1000) {
+    return `${(value / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })} kg`;
+  }
+  
+  // Convert ml to L if >= 1000
+  if ((lowerUnit === 'ml' || lowerUnit === 'milliliter' || lowerUnit === 'milliliters') && value >= 1000) {
+    return `${(value / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })} L`;
+  }
+  
+  // Format with proper number formatting
+  const formatted = value >= 10 
+    ? Math.round(value).toLocaleString() 
+    : value.toLocaleString(undefined, { maximumFractionDigits: 1 });
+    
+  return `${formatted} ${unit}`;
+};
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -267,7 +289,7 @@ export default function Forecast() {
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-sm text-muted-foreground">
-                                {item.currentStock.toFixed(1)} / {item.neededQuantity.toFixed(1)} {item.unit}
+                                {formatQuantity(item.currentStock, item.unit)} / {formatQuantity(item.neededQuantity, item.unit)}
                               </span>
                               <Badge
                                 variant={
@@ -293,7 +315,7 @@ export default function Forecast() {
                         <p className="font-medium mb-1">Used in:</p>
                         <ul className="text-sm text-muted-foreground">
                           {item.recipes.slice(0, 5).map((r, i) => (
-                            <li key={i}>{r.name}: {r.quantity.toFixed(1)} {item.unit}</li>
+                            <li key={i}>{r.name}: {formatQuantity(r.quantity, item.unit)}</li>
                           ))}
                           {item.recipes.length > 5 && (
                             <li>...and {item.recipes.length - 5} more</li>
