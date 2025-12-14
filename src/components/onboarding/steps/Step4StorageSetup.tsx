@@ -312,9 +312,41 @@ export function Step4StorageSetup(props: StepProps) {
     setDragOverStorage(null);
   };
 
-  // Auto-assign ingredients to storage locations based on category
-  const getCategoryStorageMapping = (category: string): string => {
+  // Auto-assign ingredients to storage locations based on category AND ingredient name
+  const getCategoryStorageMapping = (category: string, ingredientName?: string): string => {
     const lowerCategory = category.toLowerCase();
+    const lowerName = (ingredientName || '').toLowerCase();
+    
+    // Check ingredient name for specific keywords that override category
+    // Walk-in Cooler items by name
+    if (lowerName.includes('beef') || 
+        lowerName.includes('pork') || 
+        lowerName.includes('chicken') ||
+        lowerName.includes('duck') ||
+        lowerName.includes('lamb') ||
+        lowerName.includes('veal') ||
+        lowerName.includes('meat') ||
+        lowerName.includes('tenderloin') ||
+        lowerName.includes('steak') ||
+        lowerName.includes('stock') ||
+        lowerName.includes('broth') ||
+        lowerName.includes('cream') ||
+        lowerName.includes('milk') ||
+        lowerName.includes('butter') ||
+        lowerName.includes('cheese') ||
+        lowerName.includes('egg') ||
+        lowerName.includes('yogurt') ||
+        lowerName.includes('mayonnaise') ||
+        lowerName.includes('aioli')) {
+      return 'default-1'; // Walk-in Cooler
+    }
+    
+    // Freezer items by name
+    if (lowerName.includes('frozen') || 
+        lowerName.includes('ice cream') ||
+        lowerName.includes('sorbet')) {
+      return 'default-2';
+    }
     
     // Walk-in Cooler (default-1): Fresh items, dairy, produce, proteins
     if (lowerCategory.includes('dairy') || 
@@ -323,6 +355,8 @@ export function Step4StorageSetup(props: StepProps) {
         lowerCategory.includes('fruit') ||
         lowerCategory.includes('herb') ||
         lowerCategory.includes('salad') ||
+        lowerCategory.includes('protein') ||
+        lowerCategory.includes('meat') ||
         lowerCategory.includes('fresh')) {
       return 'default-1';
     }
@@ -368,7 +402,7 @@ export function Step4StorageSetup(props: StepProps) {
     const updates: { id: string; storage_location: string }[] = [];
     
     for (const ingredient of ingredients) {
-      const targetStorage = getCategoryStorageMapping(ingredient.category);
+      const targetStorage = getCategoryStorageMapping(ingredient.category, ingredient.name);
       if (targetStorage !== ingredient.storageKey) {
         newOverrides[ingredient.id] = targetStorage;
         updates.push({
