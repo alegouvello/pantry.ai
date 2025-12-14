@@ -354,7 +354,14 @@ export function Step4StorageSetup(props: StepProps) {
   const [isAutoAssigning, setIsAutoAssigning] = useState(false);
 
   const handleAutoAssign = async () => {
-    if (!ingredients.length) return;
+    if (!ingredients.length) {
+      toast({
+        title: 'No ingredients found',
+        description: 'Please approve recipes in Step 3 first.',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     setIsAutoAssigning(true);
     const newOverrides: Record<string, string> = {};
