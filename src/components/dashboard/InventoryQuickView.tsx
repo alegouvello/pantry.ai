@@ -1,4 +1,5 @@
 import { Package, TrendingDown, AlertTriangle } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -26,32 +27,44 @@ export function InventoryQuickView({ ingredients }: InventoryQuickViewProps) {
   };
 
   return (
-    <Card variant="elevated">
+    <Card variant="elevated" className="backdrop-blur-sm bg-card/80 border-border/50">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
-          <Package className="h-4 w-4 text-primary" />
+          <div className="p-1.5 rounded-lg bg-warning/10">
+            <Package className="h-4 w-4 text-warning" />
+          </div>
           Low Stock Items
         </CardTitle>
         <Badge variant="warning" className="text-xs">
           {lowStockItems.length} items
         </Badge>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2">
         {lowStockItems.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            All items are well-stocked!
-          </p>
+          <div className="text-center py-8 text-muted-foreground">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-success/10 flex items-center justify-center">
+              <Package className="h-6 w-6 text-success" />
+            </div>
+            <p className="text-sm font-medium text-foreground">All stocked up!</p>
+            <p className="text-xs mt-1">Your inventory is well-stocked.</p>
+          </div>
         ) : (
-          lowStockItems.map((item) => {
+          lowStockItems.map((item, index) => {
             const percentage = getStockPercentage(item.currentStock, item.parLevel);
             const status = getStockStatus(item.currentStock, item.reorderPoint, item.parLevel);
 
             return (
-              <div key={item.id} className="space-y-2">
+              <motion.div 
+                key={item.id} 
+                className="p-3 rounded-lg bg-muted/20 border border-border/30 space-y-2"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {status === 'critical' && (
-                      <AlertTriangle className="h-3.5 w-3.5 text-destructive animate-pulse-subtle" />
+                      <AlertTriangle className="h-3.5 w-3.5 text-destructive animate-pulse" />
                     )}
                     {status === 'low' && (
                       <TrendingDown className="h-3.5 w-3.5 text-warning" />
@@ -74,7 +87,7 @@ export function InventoryQuickView({ ingredients }: InventoryQuickViewProps) {
                     status === 'good' && "[&>div]:bg-success"
                   )}
                 />
-              </div>
+              </motion.div>
             );
           })
         )}
