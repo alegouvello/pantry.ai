@@ -1227,6 +1227,7 @@ export type Database = {
           name: string
           org_id: string
           phone: string | null
+          seats: number | null
           services: string[] | null
           timezone: string | null
           updated_at: string
@@ -1245,6 +1246,7 @@ export type Database = {
           name: string
           org_id: string
           phone?: string | null
+          seats?: number | null
           services?: string[] | null
           timezone?: string | null
           updated_at?: string
@@ -1263,6 +1265,7 @@ export type Database = {
           name?: string
           org_id?: string
           phone?: string | null
+          seats?: number | null
           services?: string[] | null
           timezone?: string | null
           updated_at?: string
