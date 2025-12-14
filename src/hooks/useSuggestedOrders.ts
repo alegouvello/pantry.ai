@@ -80,10 +80,10 @@ function useIngredientVendorMaps() {
   });
 }
 
-export function useSuggestedOrders(forecastDays: number = 3) {
+export function useSuggestedOrders(forecastDays: number = 3, restaurantId?: string) {
   const { data: lowStockIngredients, isLoading: lowStockLoading } = useLowStockIngredients();
   const { data: allIngredients, isLoading: ingredientsLoading } = useIngredients();
-  const { ingredients: forecastIngredients, isLoading: forecastLoading } = useForecast(forecastDays);
+  const { ingredients: forecastIngredients, isLoading: forecastLoading } = useForecast(forecastDays, restaurantId);
   const { data: vendors, isLoading: vendorsLoading } = useVendors();
   const { data: vendorMaps, isLoading: vendorMapsLoading } = useIngredientVendorMaps();
   const { data: existingOrders, isLoading: ordersLoading } = usePurchaseOrders();

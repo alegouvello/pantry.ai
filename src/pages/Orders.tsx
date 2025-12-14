@@ -16,7 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import heroImage from '@/assets/pages/hero-orders.jpg';
 
 const containerVariants = {
@@ -40,9 +40,23 @@ export default function Orders() {
   const [forecastDays, setForecastDays] = useState(3);
   const [activeTab, setActiveTab] = useState('suggested');
   const { user, loading: authLoading } = useAuth();
+  
+  // Fetch restaurant for capacity-constrained forecast
+  const { data: restaurant } = useQuery({
+    queryKey: ['user-restaurant-orders'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('restaurants')
+        .select('id')
+        .limit(1)
+        .single();
+      return data;
+    },
+  });
+  
   const { data: orders, isLoading: ordersLoading } = usePurchaseOrders();
   const { data: vendors, isLoading: vendorsLoading } = useVendors();
-  const { suggestions, isLoading: suggestionsLoading, totalItems: suggestedItemCount } = useSuggestedOrders(forecastDays);
+  const { suggestions, isLoading: suggestionsLoading, totalItems: suggestedItemCount } = useSuggestedOrders(forecastDays, restaurant?.id);
   const approveMutation = useApprovePurchaseOrder();
   const sendMutation = useSendPurchaseOrder();
   const createMutation = useCreatePurchaseOrder();
