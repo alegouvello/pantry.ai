@@ -162,7 +162,7 @@ export default function OnboardingWelcome() {
               }}
             >
               <video 
-                src="/videos/hero-demo.mp4"
+                src={`/videos/hero-demo.mp4?v=${Date.now()}`}
                 autoPlay
                 loop
                 playsInline
