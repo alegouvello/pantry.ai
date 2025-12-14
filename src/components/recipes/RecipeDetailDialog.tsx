@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChefHat, Clock, Package, DollarSign, TrendingUp, Sparkles, 
-  Loader2, ListOrdered, ImageIcon, X, Pencil, Globe, ExternalLink 
+  Loader2, ListOrdered, ImageIcon, X, Pencil, Globe, ExternalLink,
+  Plus, Trash2, Save, GripVertical
 } from 'lucide-react';
 import {
   Dialog,
@@ -14,10 +15,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { useGenerateRecipeSteps } from '@/hooks/useGenerateRecipeSteps';
 import { useSearchRecipeSteps } from '@/hooks/useSearchRecipeSteps';
 import { useUpdateRecipe } from '@/hooks/useRecipes';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import type { RecipeWithIngredients } from '@/hooks/useRecipes';
 
@@ -44,9 +47,13 @@ const formatCurrency = (value: number) => {
 export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: RecipeDetailDialogProps) {
   const [steps, setSteps] = useState<RecipeStep[]>([]);
   const [stepsSource, setStepsSource] = useState<{ url: string; title: string } | null>(null);
+  const [isEditingSteps, setIsEditingSteps] = useState(false);
+  const [editedSteps, setEditedSteps] = useState<RecipeStep[]>([]);
+  const [isSavingSteps, setIsSavingSteps] = useState(false);
   const generateSteps = useGenerateRecipeSteps();
   const searchSteps = useSearchRecipeSteps();
   const updateRecipe = useUpdateRecipe();
+  const { toast } = useToast();
 
   // Parse existing instructions or reset
   useEffect(() => {
@@ -132,6 +139,65 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
         instructions: JSON.stringify({ steps: result.steps, source: result.source }),
       });
     }
+  };
+
+  const handleEditSteps = () => {
+    setEditedSteps([...steps]);
+    setIsEditingSteps(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingSteps(false);
+    setEditedSteps([]);
+  };
+
+  const handleSaveSteps = async () => {
+    if (!recipe) return;
+    
+    setIsSavingSteps(true);
+    try {
+      // Renumber steps
+      const renumberedSteps = editedSteps.map((s, i) => ({
+        step: i + 1,
+        instruction: s.instruction.trim(),
+      })).filter(s => s.instruction);
+
+      setSteps(renumberedSteps);
+      setStepsSource(null); // Clear source since user edited
+      
+      await updateRecipe.mutateAsync({
+        id: recipe.id,
+        instructions: JSON.stringify({ steps: renumberedSteps }),
+      });
+
+      setIsEditingSteps(false);
+      toast({
+        title: "Steps saved",
+        description: "Cooking steps have been updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error saving steps",
+        description: error instanceof Error ? error.message : "Failed to save",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingSteps(false);
+    }
+  };
+
+  const handleUpdateStep = (index: number, instruction: string) => {
+    setEditedSteps(prev => prev.map((s, i) => 
+      i === index ? { ...s, instruction } : s
+    ));
+  };
+
+  const handleAddStep = () => {
+    setEditedSteps(prev => [...prev, { step: prev.length + 1, instruction: "" }]);
+  };
+
+  const handleRemoveStep = (index: number) => {
+    setEditedSteps(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -279,7 +345,7 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
                 <h3 className="font-semibold flex items-center gap-2">
                   <ListOrdered className="h-4 w-4" />
                   Cooking Steps
-                  {stepsSource && (
+                  {stepsSource && !isEditingSteps && (
                     <a 
                       href={stepsSource.url} 
                       target="_blank" 
@@ -292,47 +358,133 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
                   )}
                 </h3>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSearchSteps}
-                    disabled={searchSteps.isPending || generateSteps.isPending}
-                  >
-                    {searchSteps.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Searching...
-                      </>
-                    ) : (
-                      <>
-                        <Globe className="h-4 w-4 mr-2" />
-                        Search Web
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGenerateSteps}
-                    disabled={generateSteps.isPending || searchSteps.isPending}
-                  >
-                    {generateSteps.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        Generate AI
-                      </>
-                    )}
-                  </Button>
+                  {isEditingSteps ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleCancelEdit}
+                        disabled={isSavingSteps}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="accent"
+                        size="sm"
+                        onClick={handleSaveSteps}
+                        disabled={isSavingSteps}
+                      >
+                        {isSavingSteps ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4 mr-2" />
+                        )}
+                        Save
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      {steps.length > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleEditSteps}
+                        >
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSearchSteps}
+                        disabled={searchSteps.isPending || generateSteps.isPending}
+                      >
+                        {searchSteps.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Searching...
+                          </>
+                        ) : (
+                          <>
+                            <Globe className="h-4 w-4 mr-2" />
+                            Search Web
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleGenerateSteps}
+                        disabled={generateSteps.isPending || searchSteps.isPending}
+                      >
+                        {generateSteps.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-4 w-4 mr-2" />
+                            Generate AI
+                          </>
+                        )}
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
 
               <AnimatePresence mode="wait">
-                {steps.length > 0 ? (
+                {isEditingSteps ? (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="space-y-3"
+                  >
+                    {editedSteps.map((step, index) => (
+                      <div
+                        key={index}
+                        className="flex gap-3 p-3 rounded-lg bg-muted/30 border border-border/50"
+                      >
+                        <div className="flex flex-col items-center gap-1">
+                          <div className={cn(
+                            "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold",
+                            "bg-primary text-primary-foreground"
+                          )}>
+                            {index + 1}
+                          </div>
+                          <GripVertical className="h-4 w-4 text-muted-foreground/50" />
+                        </div>
+                        <Textarea
+                          value={step.instruction}
+                          onChange={(e) => handleUpdateStep(index, e.target.value)}
+                          placeholder="Enter step instructions..."
+                          className="flex-1 min-h-[60px] resize-none"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveStep(index)}
+                          className="text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddStep}
+                      className="w-full"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Step
+                    </Button>
+                  </motion.div>
+                ) : steps.length > 0 ? (
                   <motion.div 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
