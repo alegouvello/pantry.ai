@@ -1,6 +1,16 @@
 import { useState, createContext, useContext, ReactNode } from 'react';
 import type { OnboardingProgress, Restaurant, ConceptType } from '@/types/onboarding';
 
+export interface ParsedIngredient {
+  id: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  optional: boolean;
+  confidence: 'high' | 'medium' | 'low';
+  isHouseMade?: boolean;
+}
+
 export interface ParsedDish {
   id: string;
   name: string;
@@ -10,14 +20,10 @@ export interface ParsedDish {
   confidence: 'high' | 'medium' | 'low';
   tags: string[];
   imageUrl?: string;
-  ingredients: {
-    id: string;
-    name: string;
-    quantity: number;
-    unit: string;
-    optional: boolean;
-    confidence: 'high' | 'medium' | 'low';
-  }[];
+  isPrep?: boolean;
+  yieldAmount?: number;
+  yieldUnit?: string;
+  ingredients: ParsedIngredient[];
 }
 
 interface OnboardingContextType {
@@ -33,6 +39,8 @@ interface OnboardingContextType {
   setConceptType: (type: ConceptType | null) => void;
   parsedDishes: ParsedDish[];
   setParsedDishes: (dishes: ParsedDish[]) => void;
+  prepRecipes: ParsedDish[];
+  setPrepRecipes: (recipes: ParsedDish[]) => void;
 }
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
@@ -44,6 +52,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [setupHealthScore, setSetupHealthScore] = useState(0);
   const [conceptType, setConceptType] = useState<ConceptType | null>(null);
   const [parsedDishes, setParsedDishes] = useState<ParsedDish[]>([]);
+  const [prepRecipes, setPrepRecipes] = useState<ParsedDish[]>([]);
 
   const updateHealthScore = (delta: number) => {
     setSetupHealthScore(prev => Math.min(100, Math.max(0, prev + delta)));
@@ -63,6 +72,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       setConceptType,
       parsedDishes,
       setParsedDishes,
+      prepRecipes,
+      setPrepRecipes,
     }}>
       {children}
     </OnboardingContext.Provider>

@@ -56,6 +56,7 @@ export function useSaveOnboardingRecipe() {
       }
 
       // Step 2: Create the recipe
+      const isPrep = dish.isPrep || dish.section === 'Prep';
       const { data: recipe, error: recipeError } = await supabase
         .from('recipes')
         .insert({
@@ -64,9 +65,9 @@ export function useSaveOnboardingRecipe() {
           confidence: dish.confidence,
           menu_price: dish.price || null,
           status: 'Approved',
-          recipe_type: 'Dish',
-          yield_amount: 1,
-          yield_unit: 'portion',
+          recipe_type: isPrep ? 'Prep' : 'Dish',
+          yield_amount: dish.yieldAmount || 1,
+          yield_unit: dish.yieldUnit || 'portion',
           image_url: imageUrl || null,
         })
         .select('id')

@@ -6,20 +6,210 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface ParsedIngredient {
+  name: string;
+  quantity: number;
+  unit: string;
+  optional: boolean;
+  confidence: 'high' | 'medium' | 'low';
+  isHouseMade?: boolean;
+}
+
+interface PrepRecipe {
+  name: string;
+  yieldAmount: number;
+  yieldUnit: string;
+  ingredients: ParsedIngredient[];
+}
+
 interface ParsedDish {
   name: string;
   section: string;
   description?: string;
   price?: number;
-  ingredients: {
-    name: string;
-    quantity: number;
-    unit: string;
-    optional: boolean;
-    confidence: 'high' | 'medium' | 'low';
-  }[];
+  ingredients: ParsedIngredient[];
   confidence: 'high' | 'medium' | 'low';
   tags: string[];
+}
+
+// Common house-made items that restaurants typically prepare from scratch
+const HOUSE_MADE_ITEMS: Record<string, PrepRecipe> = {
+  'mayonnaise': {
+    name: 'House Mayonnaise',
+    yieldAmount: 500,
+    yieldUnit: 'g',
+    ingredients: [
+      { name: 'Egg yolk', quantity: 3, unit: 'piece', optional: false, confidence: 'high' },
+      { name: 'Vegetable oil', quantity: 350, unit: 'ml', optional: false, confidence: 'high' },
+      { name: 'Dijon mustard', quantity: 1, unit: 'tsp', optional: false, confidence: 'high' },
+      { name: 'Lemon juice', quantity: 2, unit: 'tbsp', optional: false, confidence: 'high' },
+      { name: 'Salt', quantity: 1, unit: 'tsp', optional: false, confidence: 'high' },
+      { name: 'White pepper', quantity: 0.5, unit: 'tsp', optional: true, confidence: 'medium' },
+    ],
+  },
+  'aioli': {
+    name: 'House Aioli',
+    yieldAmount: 400,
+    yieldUnit: 'g',
+    ingredients: [
+      { name: 'Egg yolk', quantity: 2, unit: 'piece', optional: false, confidence: 'high' },
+      { name: 'Garlic', quantity: 4, unit: 'clove', optional: false, confidence: 'high' },
+      { name: 'Olive oil', quantity: 300, unit: 'ml', optional: false, confidence: 'high' },
+      { name: 'Lemon juice', quantity: 1, unit: 'tbsp', optional: false, confidence: 'high' },
+      { name: 'Salt', quantity: 1, unit: 'tsp', optional: false, confidence: 'high' },
+    ],
+  },
+  'vinaigrette': {
+    name: 'House Vinaigrette',
+    yieldAmount: 300,
+    yieldUnit: 'ml',
+    ingredients: [
+      { name: 'Olive oil', quantity: 200, unit: 'ml', optional: false, confidence: 'high' },
+      { name: 'Red wine vinegar', quantity: 75, unit: 'ml', optional: false, confidence: 'high' },
+      { name: 'Dijon mustard', quantity: 1, unit: 'tbsp', optional: false, confidence: 'high' },
+      { name: 'Shallot', quantity: 1, unit: 'piece', optional: false, confidence: 'medium' },
+      { name: 'Salt', quantity: 0.5, unit: 'tsp', optional: false, confidence: 'high' },
+      { name: 'Black pepper', quantity: 0.25, unit: 'tsp', optional: false, confidence: 'high' },
+    ],
+  },
+  'hollandaise': {
+    name: 'Hollandaise Sauce',
+    yieldAmount: 400,
+    yieldUnit: 'ml',
+    ingredients: [
+      { name: 'Egg yolk', quantity: 4, unit: 'piece', optional: false, confidence: 'high' },
+      { name: 'Clarified butter', quantity: 250, unit: 'g', optional: false, confidence: 'high' },
+      { name: 'Lemon juice', quantity: 2, unit: 'tbsp', optional: false, confidence: 'high' },
+      { name: 'Cayenne pepper', quantity: 0.25, unit: 'tsp', optional: true, confidence: 'medium' },
+      { name: 'Salt', quantity: 0.5, unit: 'tsp', optional: false, confidence: 'high' },
+    ],
+  },
+  'béarnaise': {
+    name: 'Béarnaise Sauce',
+    yieldAmount: 400,
+    yieldUnit: 'ml',
+    ingredients: [
+      { name: 'Egg yolk', quantity: 4, unit: 'piece', optional: false, confidence: 'high' },
+      { name: 'Clarified butter', quantity: 250, unit: 'g', optional: false, confidence: 'high' },
+      { name: 'White wine vinegar', quantity: 60, unit: 'ml', optional: false, confidence: 'high' },
+      { name: 'Shallot', quantity: 2, unit: 'piece', optional: false, confidence: 'high' },
+      { name: 'Tarragon', quantity: 2, unit: 'tbsp', optional: false, confidence: 'high' },
+      { name: 'Salt', quantity: 0.5, unit: 'tsp', optional: false, confidence: 'high' },
+    ],
+  },
+  'pesto': {
+    name: 'House Pesto',
+    yieldAmount: 300,
+    yieldUnit: 'g',
+    ingredients: [
+      { name: 'Basil leaves', quantity: 100, unit: 'g', optional: false, confidence: 'high' },
+      { name: 'Pine nuts', quantity: 50, unit: 'g', optional: false, confidence: 'high' },
+      { name: 'Parmesan cheese', quantity: 50, unit: 'g', optional: false, confidence: 'high' },
+      { name: 'Garlic', quantity: 2, unit: 'clove', optional: false, confidence: 'high' },
+      { name: 'Olive oil', quantity: 150, unit: 'ml', optional: false, confidence: 'high' },
+      { name: 'Salt', quantity: 0.5, unit: 'tsp', optional: false, confidence: 'high' },
+    ],
+  },
+  'demi-glace': {
+    name: 'Demi-Glace',
+    yieldAmount: 1000,
+    yieldUnit: 'ml',
+    ingredients: [
+      { name: 'Veal stock', quantity: 2000, unit: 'ml', optional: false, confidence: 'high' },
+      { name: 'Brown stock', quantity: 2000, unit: 'ml', optional: false, confidence: 'high' },
+      { name: 'Tomato paste', quantity: 2, unit: 'tbsp', optional: false, confidence: 'medium' },
+      { name: 'Red wine', quantity: 250, unit: 'ml', optional: true, confidence: 'medium' },
+    ],
+  },
+  'beurre blanc': {
+    name: 'Beurre Blanc',
+    yieldAmount: 300,
+    yieldUnit: 'ml',
+    ingredients: [
+      { name: 'Butter', quantity: 250, unit: 'g', optional: false, confidence: 'high' },
+      { name: 'White wine', quantity: 100, unit: 'ml', optional: false, confidence: 'high' },
+      { name: 'White wine vinegar', quantity: 50, unit: 'ml', optional: false, confidence: 'high' },
+      { name: 'Shallot', quantity: 2, unit: 'piece', optional: false, confidence: 'high' },
+      { name: 'Heavy cream', quantity: 2, unit: 'tbsp', optional: true, confidence: 'medium' },
+      { name: 'Salt', quantity: 0.5, unit: 'tsp', optional: false, confidence: 'high' },
+    ],
+  },
+  'stock': {
+    name: 'House Stock',
+    yieldAmount: 4000,
+    yieldUnit: 'ml',
+    ingredients: [
+      { name: 'Chicken bones', quantity: 2, unit: 'kg', optional: false, confidence: 'high' },
+      { name: 'Onion', quantity: 2, unit: 'piece', optional: false, confidence: 'high' },
+      { name: 'Carrot', quantity: 2, unit: 'piece', optional: false, confidence: 'high' },
+      { name: 'Celery', quantity: 2, unit: 'stalk', optional: false, confidence: 'high' },
+      { name: 'Bay leaf', quantity: 2, unit: 'piece', optional: false, confidence: 'high' },
+      { name: 'Black peppercorn', quantity: 1, unit: 'tsp', optional: false, confidence: 'medium' },
+    ],
+  },
+  'croutons': {
+    name: 'House Croutons',
+    yieldAmount: 200,
+    yieldUnit: 'g',
+    ingredients: [
+      { name: 'Bread', quantity: 200, unit: 'g', optional: false, confidence: 'high' },
+      { name: 'Olive oil', quantity: 3, unit: 'tbsp', optional: false, confidence: 'high' },
+      { name: 'Garlic', quantity: 2, unit: 'clove', optional: true, confidence: 'medium' },
+      { name: 'Salt', quantity: 0.5, unit: 'tsp', optional: false, confidence: 'high' },
+    ],
+  },
+  'caesar dressing': {
+    name: 'Caesar Dressing',
+    yieldAmount: 400,
+    yieldUnit: 'ml',
+    ingredients: [
+      { name: 'Egg yolk', quantity: 2, unit: 'piece', optional: false, confidence: 'high' },
+      { name: 'Anchovy', quantity: 4, unit: 'piece', optional: false, confidence: 'high' },
+      { name: 'Garlic', quantity: 2, unit: 'clove', optional: false, confidence: 'high' },
+      { name: 'Dijon mustard', quantity: 1, unit: 'tsp', optional: false, confidence: 'high' },
+      { name: 'Lemon juice', quantity: 2, unit: 'tbsp', optional: false, confidence: 'high' },
+      { name: 'Olive oil', quantity: 250, unit: 'ml', optional: false, confidence: 'high' },
+      { name: 'Parmesan cheese', quantity: 50, unit: 'g', optional: false, confidence: 'high' },
+      { name: 'Worcestershire sauce', quantity: 1, unit: 'tsp', optional: true, confidence: 'medium' },
+    ],
+  },
+};
+
+// Keywords that suggest an ingredient is house-made
+const HOUSE_MADE_KEYWORDS = [
+  'mayonnaise', 'mayo', 'aioli', 'vinaigrette', 'dressing', 'hollandaise',
+  'béarnaise', 'bearnaise', 'pesto', 'demi-glace', 'demi glace', 'beurre blanc',
+  'stock', 'broth', 'jus', 'croutons', 'caesar dressing', 'remoulade', 'rouille',
+];
+
+function detectHouseMadeIngredients(ingredients: ParsedIngredient[]): { 
+  updatedIngredients: ParsedIngredient[]; 
+  detectedPrepRecipes: PrepRecipe[];
+} {
+  const detectedPrepRecipes: PrepRecipe[] = [];
+  const seenPrepRecipes = new Set<string>();
+  
+  const updatedIngredients = ingredients.map(ing => {
+    const lowerName = ing.name.toLowerCase();
+    
+    // Check if this ingredient matches a house-made item
+    for (const [key, prepRecipe] of Object.entries(HOUSE_MADE_ITEMS)) {
+      if (lowerName.includes(key) || lowerName === key) {
+        // Mark as house-made
+        if (!seenPrepRecipes.has(prepRecipe.name)) {
+          detectedPrepRecipes.push(prepRecipe);
+          seenPrepRecipes.add(prepRecipe.name);
+        }
+        return { ...ing, isHouseMade: true };
+      }
+    }
+    
+    // Check for generic house-made keywords
+    const isHouseMade = HOUSE_MADE_KEYWORDS.some(keyword => lowerName.includes(keyword));
+    return isHouseMade ? { ...ing, isHouseMade: true } : ing;
+  });
+  
+  return { updatedIngredients, detectedPrepRecipes };
 }
 
 serve(async (req) => {
@@ -214,32 +404,71 @@ Return a JSON array with this exact structure:
       dishes = [dishes];
     }
 
+    // Collect all detected prep recipes across all dishes
+    const allPrepRecipes: PrepRecipe[] = [];
+    const seenPrepRecipes = new Set<string>();
+
     // Validate and enhance the dishes
-    const validatedDishes = dishes.map((dish, index) => ({
-      id: `dish-${Date.now()}-${index}`,
-      name: dish.name || 'Unnamed Dish',
-      section: dish.section || 'Other',
-      description: dish.description || '',
-      price: typeof dish.price === 'number' ? dish.price : null,
-      confidence: (['high', 'medium', 'low'].includes(dish.confidence) ? dish.confidence : 'medium') as 'high' | 'medium' | 'low',
-      tags: Array.isArray(dish.tags) ? dish.tags : [],
-      ingredients: (dish.ingredients || []).map((ing: any, ingIndex: number) => ({
+    const validatedDishes = dishes.map((dish, index) => {
+      const rawIngredients = (dish.ingredients || []).map((ing: any, ingIndex: number) => ({
         id: `ing-${Date.now()}-${index}-${ingIndex}`,
         name: ing.name || 'Unknown ingredient',
         quantity: typeof ing.quantity === 'number' ? ing.quantity : 0,
         unit: ing.unit || 'g',
         optional: Boolean(ing.optional),
         confidence: (['high', 'medium', 'low'].includes(ing.confidence) ? ing.confidence : 'medium') as 'high' | 'medium' | 'low',
+      }));
+      
+      // Detect house-made items
+      const { updatedIngredients, detectedPrepRecipes } = detectHouseMadeIngredients(rawIngredients);
+      
+      // Add unique prep recipes to the collection
+      for (const prep of detectedPrepRecipes) {
+        if (!seenPrepRecipes.has(prep.name)) {
+          allPrepRecipes.push(prep);
+          seenPrepRecipes.add(prep.name);
+        }
+      }
+      
+      return {
+        id: `dish-${Date.now()}-${index}`,
+        name: dish.name || 'Unnamed Dish',
+        section: dish.section || 'Other',
+        description: dish.description || '',
+        price: typeof dish.price === 'number' ? dish.price : null,
+        confidence: (['high', 'medium', 'low'].includes(dish.confidence) ? dish.confidence : 'medium') as 'high' | 'medium' | 'low',
+        tags: Array.isArray(dish.tags) ? dish.tags : [],
+        ingredients: updatedIngredients,
+      };
+    });
+    
+    // Format prep recipes with IDs
+    const formattedPrepRecipes = allPrepRecipes.map((prep, index) => ({
+      id: `prep-${Date.now()}-${index}`,
+      name: prep.name,
+      section: 'Prep',
+      description: `House-made ${prep.name.toLowerCase()}`,
+      price: null,
+      confidence: 'high' as const,
+      tags: ['prep', 'house-made'],
+      yieldAmount: prep.yieldAmount,
+      yieldUnit: prep.yieldUnit,
+      isPrep: true,
+      ingredients: prep.ingredients.map((ing, ingIndex) => ({
+        id: `prep-ing-${Date.now()}-${index}-${ingIndex}`,
+        ...ing,
       })),
     }));
 
-    console.log(`Successfully parsed ${validatedDishes.length} dishes`);
+    console.log(`Successfully parsed ${validatedDishes.length} dishes and ${formattedPrepRecipes.length} prep recipes`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         dishes: validatedDishes,
+        prepRecipes: formattedPrepRecipes,
         count: validatedDishes.length,
+        prepCount: formattedPrepRecipes.length,
         isImageBased: isImage,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
