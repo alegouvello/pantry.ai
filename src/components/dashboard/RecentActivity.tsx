@@ -1,48 +1,67 @@
-import { Clock, Package, ShoppingCart, AlertTriangle, Check } from 'lucide-react';
+import { Clock, Package, ShoppingCart, AlertTriangle, Check, ChefHat } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { useInventoryEvents } from '@/hooks/useInventoryEvents';
+import { usePurchaseOrdersByStatus } from '@/hooks/usePurchaseOrders';
+import { useActiveAlerts } from '@/hooks/useAlerts';
+import { formatDistanceToNow } from 'date-fns';
 
 interface Activity {
   id: string;
-  type: 'order' | 'inventory' | 'alert' | 'delivery';
+  type: 'order' | 'inventory' | 'alert' | 'delivery' | 'recipe';
   message: string;
   time: string;
+  timestamp: Date;
 }
 
-const mockActivities: Activity[] = [
-  {
-    id: '1',
-    type: 'order',
-    message: 'PO #1234 sent to Premium Foods Co.',
-    time: '10 min ago',
-  },
-  {
-    id: '2',
-    type: 'inventory',
-    message: 'Chicken Breast depleted by 8 lb (POS sync)',
-    time: '25 min ago',
-  },
-  {
-    id: '3',
-    type: 'delivery',
-    message: 'Delivery received from Fresh Farm Direct',
-    time: '1 hour ago',
-  },
-  {
-    id: '4',
-    type: 'alert',
-    message: 'Low stock alert triggered for Roma Tomatoes',
-    time: '2 hours ago',
-  },
-  {
-    id: '5',
-    type: 'inventory',
-    message: 'Cycle count completed for Walk-in Cooler',
-    time: '3 hours ago',
-  },
-];
-
 export function RecentActivity() {
+  const { data: inventoryEvents } = useInventoryEvents();
+  const { data: recentOrders } = usePurchaseOrdersByStatus(['draft', 'approved', 'sent', 'received']);
+  const { data: alerts } = useActiveAlerts();
+
+  // Build activities from real data
+  const activities: Activity[] = [];
+
+  // Add inventory events (last 3)
+  inventoryEvents?.slice(0, 3).forEach(event => {
+    activities.push({
+      id: `inv-${event.id}`,
+      type: 'inventory',
+      message: `${event.event_type === 'sale' ? 'Depleted' : event.event_type === 'receiving' ? 'Received' : 'Adjusted'} ${Math.abs(event.quantity)} ${event.ingredients?.name || 'item'}`,
+      time: formatDistanceToNow(new Date(event.created_at), { addSuffix: true }),
+      timestamp: new Date(event.created_at),
+    });
+  });
+
+  // Add recent orders (last 2)
+  recentOrders?.slice(0, 2).forEach(order => {
+    activities.push({
+      id: `ord-${order.id}`,
+      type: order.status === 'received' ? 'delivery' : 'order',
+      message: order.status === 'received' 
+        ? `Delivery received from ${order.vendors?.name || 'vendor'}`
+        : `PO ${order.status} - ${order.vendors?.name || 'vendor'}`,
+      time: formatDistanceToNow(new Date(order.updated_at), { addSuffix: true }),
+      timestamp: new Date(order.updated_at),
+    });
+  });
+
+  // Add recent alerts (last 2)
+  alerts?.slice(0, 2).forEach(alert => {
+    activities.push({
+      id: `alert-${alert.id}`,
+      type: 'alert',
+      message: alert.title,
+      time: formatDistanceToNow(new Date(alert.created_at), { addSuffix: true }),
+      timestamp: new Date(alert.created_at),
+    });
+  });
+
+  // Sort by timestamp and take top 5
+  const sortedActivities = activities
+    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+    .slice(0, 5);
+
   const getIcon = (type: Activity['type']) => {
     switch (type) {
       case 'order':
@@ -53,6 +72,8 @@ export function RecentActivity() {
         return AlertTriangle;
       case 'delivery':
         return Check;
+      case 'recipe':
+        return ChefHat;
     }
   };
 
@@ -66,6 +87,8 @@ export function RecentActivity() {
         return 'text-warning bg-warning/10';
       case 'delivery':
         return 'text-success bg-success/10';
+      case 'recipe':
+        return 'text-primary bg-primary/10';
     }
   };
 
@@ -79,31 +102,37 @@ export function RecentActivity() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {mockActivities.map((activity, index) => {
-            const Icon = getIcon(activity.type);
-            const colorClass = getIconColor(activity.type);
+          {sortedActivities.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No recent activity
+            </p>
+          ) : (
+            sortedActivities.map((activity, index) => {
+              const Icon = getIcon(activity.type);
+              const colorClass = getIconColor(activity.type);
 
-            return (
-              <div
-                key={activity.id}
-                className={cn(
-                  "flex items-start gap-3 animate-fade-in",
-                  index !== mockActivities.length - 1 && "pb-4 border-b border-border"
-                )}
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <div className={cn("p-2 rounded-lg shrink-0", colorClass)}>
-                  <Icon className="h-3.5 w-3.5" />
+              return (
+                <div
+                  key={activity.id}
+                  className={cn(
+                    "flex items-start gap-3 animate-fade-in",
+                    index !== sortedActivities.length - 1 && "pb-4 border-b border-border"
+                  )}
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <div className={cn("p-2 rounded-lg shrink-0", colorClass)}>
+                    <Icon className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-foreground">{activity.message}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {activity.time}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-foreground">{activity.message}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {activity.time}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </CardContent>
     </Card>
