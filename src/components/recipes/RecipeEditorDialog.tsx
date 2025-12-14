@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Plus, Trash2, Save, X, Sparkles, RefreshCw, Loader2, ImageIcon } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, Trash2, Save, X, Sparkles, RefreshCw, Loader2, ImageIcon, Upload } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -70,6 +71,8 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
   const [newUnit, setNewUnit] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (recipe) {
@@ -134,6 +137,66 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
       });
     } finally {
       setIsGeneratingImage(false);
+    }
+  };
+
+  const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !recipe) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please upload an image file.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'Please upload an image under 5MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${recipe.id}-${Date.now()}.${fileExt}`;
+      const filePath = `uploads/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('recipe-images')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrl } = supabase.storage
+        .from('recipe-images')
+        .getPublicUrl(filePath);
+
+      setImageUrl(publicUrl.publicUrl);
+      toast({
+        title: 'Image uploaded',
+        description: 'Your recipe image has been uploaded.',
+      });
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      toast({
+        title: 'Upload failed',
+        description: error instanceof Error ? error.message : 'Failed to upload image',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploadingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -284,11 +347,18 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
           {/* Recipe Image */}
           <div className="space-y-3">
             <Label>Recipe Image</Label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleUploadImage}
+              className="hidden"
+            />
             <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg overflow-hidden flex items-center justify-center relative group">
-              {isGeneratingImage ? (
+              {isGeneratingImage || isUploadingImage ? (
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                  <span className="text-sm">Generating image...</span>
+                  <span className="text-sm">{isGeneratingImage ? 'Generating image...' : 'Uploading image...'}</span>
                 </div>
               ) : imageUrl ? (
                 <>
@@ -297,7 +367,16 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
                     alt={name}
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <Button 
+                      variant="secondary" 
+                      size="sm" 
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingImage}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload New
+                    </Button>
                     <Button 
                       variant="secondary" 
                       size="sm" 
@@ -305,22 +384,33 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
                       disabled={isGeneratingImage}
                     >
                       <RefreshCw className="w-4 h-4 mr-2" />
-                      Regenerate Image
+                      Regenerate
                     </Button>
                   </div>
                 </>
               ) : (
                 <div className="flex flex-col items-center gap-3 text-muted-foreground">
                   <ImageIcon className="w-10 h-10" />
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleGenerateImage}
-                    disabled={isGeneratingImage}
-                  >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Generate Image with AI
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingImage}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload Image
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleGenerateImage}
+                      disabled={isGeneratingImage}
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Generate with AI
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
