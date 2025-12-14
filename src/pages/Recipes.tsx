@@ -1,4 +1,5 @@
-import { Plus, Upload, Search, LogIn } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Plus, Upload, Search, LogIn, ChefHat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RecipeCard } from '@/components/recipes/RecipeCard';
@@ -12,6 +13,24 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import heroImage from '@/assets/pages/hero-recipes.jpg';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.2 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] as const },
+  },
+};
 
 export default function Recipes() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,6 +47,7 @@ export default function Recipes() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
         <div className="text-center space-y-2">
+          <ChefHat className="h-16 w-16 text-primary mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-foreground">Sign in required</h1>
           <p className="text-muted-foreground">
             Please sign in to view and manage recipes.
@@ -70,7 +90,6 @@ export default function Recipes() {
     }
   };
 
-  // Map recipes to the format expected by RecipeCard with cost calculation
   const mapRecipeForCard = (recipe: RecipeWithIngredients) => {
     const ingredientsWithCost = recipe.recipe_ingredients?.map(ri => {
       const unitCost = ri.ingredients?.unit_cost || 0;
@@ -109,58 +128,76 @@ export default function Recipes() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Recipes</h1>
-          <p className="text-muted-foreground">
-            Define recipes and ingredient mappings
-          </p>
+    <motion.div 
+      className="space-y-8"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* Hero Section */}
+      <motion.div 
+        variants={itemVariants}
+        className="relative h-48 md:h-56 rounded-2xl overflow-hidden"
+      >
+        <img 
+          src={heroImage} 
+          alt="Recipes" 
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-transparent" />
+        <div className="absolute inset-0 flex items-center px-8 md:px-12">
+          <div className="space-y-3">
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
+              Recipes
+            </h1>
+            <p className="text-muted-foreground max-w-md">
+              Define your dishes and track ingredient costs.
+            </p>
+            <div className="flex gap-3 pt-2">
+              <Button variant="accent" size="sm" onClick={() => setNewRecipeOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                New Recipe
+              </Button>
+              <Button variant="outline" size="sm" className="bg-background/50 backdrop-blur-sm" onClick={() => setImportOpen(true)}>
+                <Upload className="h-4 w-4 mr-2" />
+                Import
+              </Button>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" />
-            Import
-          </Button>
-          <Button variant="accent" onClick={() => setNewRecipeOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Recipe
-          </Button>
-        </div>
-      </div>
+      </motion.div>
 
       {/* Search */}
-      <div className="relative max-w-md">
+      <motion.div variants={itemVariants} className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search recipes..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9 bg-muted/50 border-muted"
+          className="pl-9"
         />
-      </div>
+      </motion.div>
 
       {/* Content */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i} variant="elevated" className="p-5">
-              <Skeleton className="h-10 w-10 rounded-xl mb-4" />
-              <Skeleton className="h-5 w-32 mb-2" />
-              <Skeleton className="h-4 w-24 mb-4" />
-              <Skeleton className="h-20 w-full" />
-            </Card>
-          ))}
-        </div>
-      ) : error ? (
-        <Card variant="elevated" className="p-8 text-center">
-          <p className="text-destructive">Error loading recipes: {error.message}</p>
-        </Card>
-      ) : filteredRecipes.length === 0 ? (
-        <Card variant="elevated" className="p-8 text-center">
-          <div className="space-y-4">
-            <p className="text-muted-foreground">
+      <motion.div variants={itemVariants}>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i} className="p-5">
+                <Skeleton className="h-32 w-full rounded-lg mb-4" />
+                <Skeleton className="h-5 w-32 mb-2" />
+                <Skeleton className="h-4 w-24" />
+              </Card>
+            ))}
+          </div>
+        ) : error ? (
+          <Card className="p-8 text-center">
+            <p className="text-destructive">Error loading recipes: {error.message}</p>
+          </Card>
+        ) : filteredRecipes.length === 0 ? (
+          <Card className="p-12 text-center">
+            <ChefHat className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+            <p className="text-muted-foreground mb-4">
               {searchQuery ? 'No recipes found matching your search.' : 'No recipes yet. Create your first recipe to get started!'}
             </p>
             {!searchQuery && (
@@ -169,44 +206,34 @@ export default function Recipes() {
                 Create First Recipe
               </Button>
             )}
-          </div>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredRecipes.map((recipe, index) => (
-            <div
-              key={recipe.id}
-              className="animate-slide-up"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredRecipes.map((recipe) => (
               <RecipeCard
+                key={recipe.id}
                 recipe={mapRecipeForCard(recipe)}
                 onEdit={() => handleEdit(recipe)}
                 onDelete={() => handleDelete(recipe.id)}
               />
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </motion.div>
 
-      {/* Recipe Editor Dialog */}
       <RecipeEditorDialog
         recipe={editingRecipe}
         open={editorOpen}
         onOpenChange={setEditorOpen}
       />
-
-      {/* New Recipe Dialog */}
       <NewRecipeDialog
         open={newRecipeOpen}
         onOpenChange={setNewRecipeOpen}
       />
-
-      {/* Import Dialog */}
       <ImportRecipeDialog
         open={importOpen}
         onOpenChange={setImportOpen}
       />
-    </div>
+    </motion.div>
   );
 }
