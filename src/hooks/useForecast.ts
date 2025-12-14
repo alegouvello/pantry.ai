@@ -199,7 +199,7 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string, weathe
   const { data: pendingOrders, isLoading: pendingLoading } = usePendingOrderQuantities();
   
   // Fetch restaurant data including hours and seats for capacity constraints
-  const { data: restaurant } = useQuery({
+  const { data: restaurant, isLoading: restaurantLoading } = useQuery({
     queryKey: ['restaurant-forecast-data', restaurantId],
     queryFn: async () => {
       if (!restaurantId) return null;
@@ -440,9 +440,12 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string, weathe
     };
   }, [salesPatterns, recipes, daysAhead, events, today, weatherData, restaurant, pendingOrders]);
   
+  // Include restaurant loading only when restaurantId is provided
+  const isRestaurantDataLoading = !!restaurantId && restaurantLoading;
+  
   return {
     ...forecast,
-    isLoading: patternsLoading || recipesLoading || eventsLoading || pendingLoading,
+    isLoading: patternsLoading || recipesLoading || eventsLoading || pendingLoading || isRestaurantDataLoading,
     salesPatterns,
     recipes,
     events
