@@ -113,11 +113,21 @@ export function BusinessHoursCard({ restaurantId, restaurantName }: BusinessHour
     
     setIsLookingUp(true);
     try {
-      // In a real implementation, this would call an edge function that uses Google Places API
-      // For now, we'll show a message that this feature requires setup
-      toast.info('Auto-lookup requires Google Places API integration. Enter hours manually for now.');
+      const { data, error } = await supabase.functions.invoke('lookup-business-hours', {
+        body: { restaurantName },
+      });
+
+      if (error) throw error;
+
+      if (data?.success && data?.hours) {
+        setHours(data.hours);
+        toast.success(`Found business hours from ${data.source || 'online listing'}. Review and save.`);
+      } else {
+        toast.info(data?.error || 'Could not find hours online. Please enter manually.');
+      }
     } catch (error) {
-      toast.error('Failed to lookup hours');
+      console.error('Lookup error:', error);
+      toast.error('Failed to lookup hours. Please enter manually.');
     } finally {
       setIsLookingUp(false);
     }
