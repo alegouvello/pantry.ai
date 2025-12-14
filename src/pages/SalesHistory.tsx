@@ -22,6 +22,8 @@ import {
 } from 'recharts';
 import { format, subDays, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { TrendingUp, TrendingDown, Calendar, DollarSign, ShoppingBag, ChefHat } from 'lucide-react';
+import { motion } from 'framer-motion';
+import heroSales from '@/assets/pages/hero-sales.jpg';
 
 interface SaleItem {
   recipe_id: string;
@@ -165,27 +167,53 @@ export default function SalesHistory() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Sales History</h1>
-          <p className="text-muted-foreground">
-            Analyze sales trends, top dishes, and revenue patterns
-          </p>
+      {/* Hero Section */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="relative h-48 md:h-56 rounded-2xl overflow-hidden"
+      >
+        <img 
+          src={heroSales} 
+          alt="Sales analytics dashboard" 
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-transparent" />
+        <div className="absolute inset-0 flex items-center">
+          <div className="px-6 md:px-8">
+            <motion.h1 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="text-2xl md:text-3xl font-bold text-foreground mb-2"
+            >
+              Sales History
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="text-muted-foreground max-w-md"
+            >
+              Analyze sales trends, top dishes, and revenue patterns
+            </motion.p>
+          </div>
         </div>
-        <div className="flex gap-2">
+        <div className="absolute top-4 right-4 flex gap-2">
           {[7, 14, 30].map((days) => (
             <Button
               key={days}
               variant={dateRange === days ? 'default' : 'outline'}
               size="sm"
               onClick={() => setDateRange(days as 7 | 14 | 30)}
+              className="backdrop-blur-sm"
             >
               {days}D
             </Button>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-4">
