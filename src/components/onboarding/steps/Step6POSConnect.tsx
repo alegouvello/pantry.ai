@@ -25,14 +25,12 @@ interface StepProps {
   updateHealthScore: (delta: number) => void;
 }
 
-// Mock POS items for mapping demo (would come from POS sync in production)
-const mockPosItems = [
-  { id: '1', name: 'Margherita Pizza', category: 'Pizzas' },
-  { id: '2', name: 'Caesar Salad', category: 'Salads' },
-  { id: '3', name: 'Caesar Salad w/ Chicken', category: 'Salads' },
-  { id: '4', name: 'Grilled Salmon', category: 'Entrees' },
-  { id: '5', name: 'House Wine - Glass', category: 'Beverages' },
-];
+// POS items will be derived from approved recipes for demo (would come from POS sync in production)
+interface PosItem {
+  id: string;
+  name: string;
+  category: string;
+}
 
 export function Step6POSConnect(props: StepProps) {
   const { toast } = useToast();
@@ -48,6 +46,15 @@ export function Step6POSConnect(props: StepProps) {
   const { data: existingIntegrations, refetch: refetchIntegrations } = useIntegrations(props.restaurantId || undefined);
   const { data: recipes } = useRecipes();
   const createIntegration = useCreateIntegration();
+
+  // Derive POS items from approved recipes (simulating what would come from real POS sync)
+  const posItems: PosItem[] = (recipes || [])
+    .filter(r => r.status === 'Approved')
+    .map(r => ({
+      id: `pos-${r.id}`,
+      name: r.name,
+      category: r.category,
+    }));
 
   // Check if already connected
   const connectedIntegration = existingIntegrations?.find(i => i.status === 'connected');
@@ -92,22 +99,21 @@ export function Step6POSConnect(props: StepProps) {
     };
   }, [props.restaurantId, refetchIntegrations, syncNotify]);
 
-  // Generate AI-suggested mappings based on recipe names
+  // Auto-map POS items to their corresponding recipes (since they're derived from recipes)
   useEffect(() => {
-    if (recipes && recipes.length > 0) {
+    if (posItems.length > 0 && recipes && recipes.length > 0) {
       const suggestions: Record<string, string> = {};
-      mockPosItems.forEach(posItem => {
-        const match = recipes.find(r => 
-          r.name.toLowerCase().includes(posItem.name.split(' ')[0].toLowerCase()) ||
-          posItem.name.toLowerCase().includes(r.name.split(' ')[0].toLowerCase())
-        );
-        if (match) {
-          suggestions[posItem.id] = match.id;
+      posItems.forEach(posItem => {
+        // Extract the original recipe ID from the POS item ID (pos-{recipeId})
+        const recipeId = posItem.id.replace('pos-', '');
+        const matchingRecipe = recipes.find(r => r.id === recipeId);
+        if (matchingRecipe) {
+          suggestions[posItem.id] = matchingRecipe.id;
         }
       });
       setMappings(prev => ({ ...suggestions, ...prev }));
     }
-  }, [recipes]);
+  }, [posItems, recipes]);
 
   const handleConnect = async () => {
     if (!props.restaurantId || !selectedIntegration) return;
@@ -152,12 +158,12 @@ export function Step6POSConnect(props: StepProps) {
     props.onNext();
   };
 
-  const filteredPosItems = mockPosItems.filter(item =>
+  const filteredPosItems = posItems.filter(item =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const mappedCount = Object.values(mappings).filter(Boolean).length;
-  const unmappedCount = mockPosItems.length - mappedCount;
+  const unmappedCount = posItems.length - mappedCount;
 
   if (phase === 'select') {
     return (
@@ -256,7 +262,7 @@ export function Step6POSConnect(props: StepProps) {
                   <Check className="w-5 h-5 text-green-500" />
                   <div>
                     <p className="font-medium text-green-700">Connected successfully!</p>
-                    <p className="text-sm text-green-600">Found {mockPosItems.length} menu items</p>
+                    <p className="text-sm text-green-600">Found {posItems.length} menu items</p>
                   </div>
                 </div>
               ) : (
