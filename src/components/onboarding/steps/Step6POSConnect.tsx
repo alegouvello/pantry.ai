@@ -363,15 +363,15 @@ export function Step6POSConnect(props: StepProps) {
                     </TableCell>
                     <TableCell>
                       <Select
-                        value={currentMapping || ''}
-                        onValueChange={(value) => updateMapping(posItem.id, value)}
+                        value={currentMapping || 'unmapped'}
+                        onValueChange={(value) => updateMapping(posItem.id, value === 'unmapped' ? '' : value)}
                       >
                         <SelectTrigger className="w-56">
                           <SelectValue placeholder="Select recipe..." />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">-- Unmapped --</SelectItem>
-                          {recipes?.map(recipe => (
+                          <SelectItem value="unmapped">-- Unmapped --</SelectItem>
+                          {recipes?.filter(r => r.id).map(recipe => (
                             <SelectItem key={recipe.id} value={recipe.id}>{recipe.name}</SelectItem>
                           ))}
                         </SelectContent>
