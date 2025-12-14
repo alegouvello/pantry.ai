@@ -1,12 +1,111 @@
-import { Settings as SettingsIcon, User, Building, Users, Bell, Shield } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Settings as SettingsIcon, User, Building, Users, Bell, Shield, MapPin, Cloud, Loader2 } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useWeatherForecast, getWeatherIcon } from '@/hooks/useWeatherForecast';
+
+interface RestaurantAddress {
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+}
 
 export default function Settings() {
+  const queryClient = useQueryClient();
+  
+  // Fetch restaurant data
+  const { data: restaurant, isLoading: restaurantLoading } = useQuery({
+    queryKey: ['restaurant-settings'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('*')
+        .limit(1)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Form state
+  const [venueName, setVenueName] = useState('');
+  const [venueType, setVenueType] = useState('');
+  const [timezone, setTimezone] = useState('');
+  const [currency, setCurrency] = useState('');
+  const [street, setStreet] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [zip, setZip] = useState('');
+  const [country, setCountry] = useState('');
+
+  // Update form when restaurant data loads
+  useEffect(() => {
+    if (restaurant) {
+      setVenueName(restaurant.name || '');
+      setVenueType(restaurant.concept_type || '');
+      setTimezone(restaurant.timezone || 'America/New_York');
+      setCurrency(restaurant.currency || 'USD');
+      const address = restaurant.address as RestaurantAddress || {};
+      setStreet(address.street || '');
+      setCity(address.city || '');
+      setState(address.state || '');
+      setZip(address.zip || '');
+      setCountry(address.country || 'USA');
+    }
+  }, [restaurant]);
+
+  // Weather preview
+  const { data: weatherPreview, isLoading: weatherLoading } = useWeatherForecast(
+    city || undefined,
+    undefined,
+    undefined,
+    3
+  );
+
+  // Update mutation
+  const updateRestaurant = useMutation({
+    mutationFn: async () => {
+      if (!restaurant?.id) throw new Error('No restaurant found');
+      
+      const { error } = await supabase
+        .from('restaurants')
+        .update({
+          name: venueName,
+          concept_type: venueType,
+          timezone,
+          currency,
+          address: {
+            street,
+            city,
+            state,
+            zip,
+            country,
+          },
+        })
+        .eq('id', restaurant.id);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['restaurant-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['user-restaurant'] });
+      queryClient.invalidateQueries({ queryKey: ['weather-forecast'] });
+      toast.success('Settings saved successfully');
+    },
+    onError: (error) => {
+      toast.error('Failed to save settings: ' + error.message);
+    },
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -45,41 +144,184 @@ export default function Settings() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="venueName">Venue Name</Label>
-                  <Input
-                    id="venueName"
-                    defaultValue="The Golden Fork"
-                    className="bg-muted/50"
-                  />
+              {restaurantLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="venueType">Venue Type</Label>
-                  <Input
-                    id="venueType"
-                    defaultValue="Restaurant"
-                    className="bg-muted/50"
-                  />
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="venueName">Venue Name</Label>
+                      <Input
+                        id="venueName"
+                        value={venueName}
+                        onChange={(e) => setVenueName(e.target.value)}
+                        className="bg-muted/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="venueType">Venue Type</Label>
+                      <Input
+                        id="venueType"
+                        value={venueType}
+                        onChange={(e) => setVenueType(e.target.value)}
+                        placeholder="e.g., Restaurant, Cafe, Bar"
+                        className="bg-muted/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="timezone">Timezone</Label>
+                      <Input
+                        id="timezone"
+                        value={timezone}
+                        onChange={(e) => setTimezone(e.target.value)}
+                        className="bg-muted/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="currency">Currency</Label>
+                      <Input
+                        id="currency"
+                        value={currency}
+                        onChange={(e) => setCurrency(e.target.value)}
+                        className="bg-muted/50"
+                      />
+                    </div>
+                  </div>
+                  <Button 
+                    variant="accent" 
+                    onClick={() => updateRestaurant.mutate()}
+                    disabled={updateRestaurant.isPending}
+                  >
+                    {updateRestaurant.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Save Changes
+                  </Button>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Location & Weather Card */}
+          <Card variant="elevated" className="mt-6">
+            <CardHeader>
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                Location & Weather
+              </CardTitle>
+              <CardDescription>
+                Set your venue location for accurate weather-based forecasting
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {restaurantLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="timezone">Timezone</Label>
-                  <Input
-                    id="timezone"
-                    defaultValue="America/New_York"
-                    className="bg-muted/50"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="currency">Currency</Label>
-                  <Input
-                    id="currency"
-                    defaultValue="USD"
-                    className="bg-muted/50"
-                  />
-                </div>
-              </div>
-              <Button variant="accent">Save Changes</Button>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="street">Street Address</Label>
+                      <Input
+                        id="street"
+                        value={street}
+                        onChange={(e) => setStreet(e.target.value)}
+                        placeholder="123 Main Street"
+                        className="bg-muted/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City</Label>
+                      <Input
+                        id="city"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        placeholder="New York"
+                        className="bg-muted/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="state">State / Province</Label>
+                      <Input
+                        id="state"
+                        value={state}
+                        onChange={(e) => setState(e.target.value)}
+                        placeholder="NY"
+                        className="bg-muted/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="zip">ZIP / Postal Code</Label>
+                      <Input
+                        id="zip"
+                        value={zip}
+                        onChange={(e) => setZip(e.target.value)}
+                        placeholder="10001"
+                        className="bg-muted/50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="country">Country</Label>
+                      <Input
+                        id="country"
+                        value={country}
+                        onChange={(e) => setCountry(e.target.value)}
+                        placeholder="USA"
+                        className="bg-muted/50"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Weather Preview */}
+                  {city && (
+                    <div className="rounded-lg border bg-muted/30 p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Cloud className="h-4 w-4 text-blue-500" />
+                        <span className="text-sm font-medium">Weather Preview for {city}</span>
+                      </div>
+                      {weatherLoading ? (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Loading weather data...
+                        </div>
+                      ) : weatherPreview?.forecast?.length ? (
+                        <div className="flex gap-4">
+                          {weatherPreview.forecast.slice(0, 3).map((day) => (
+                            <div key={day.date} className="text-center">
+                              <div className="text-2xl">{getWeatherIcon(day.condition)}</div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                              </div>
+                              <div className="text-sm font-medium">
+                                {Math.round(day.temp)}°F
+                              </div>
+                              {day.impact !== 0 && (
+                                <div className={`text-xs ${day.impact > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                  {day.impact > 0 ? '+' : ''}{day.impact}%
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Unable to load weather. Check your city name.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <Button 
+                    variant="accent" 
+                    onClick={() => updateRestaurant.mutate()}
+                    disabled={updateRestaurant.isPending}
+                  >
+                    {updateRestaurant.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Save Location
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
 
