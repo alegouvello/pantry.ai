@@ -168,7 +168,7 @@ export default function OnboardingWelcome() {
                 {/* Phone screen */}
                 <div className="relative aspect-[9/19.5] rounded-[2.25rem] overflow-hidden bg-black">
                   <video 
-                    src="/videos/hero-demo.mp4"
+                    src="/videos/onboarding-demo.mp4"
                     autoPlay
                     muted
                     loop
