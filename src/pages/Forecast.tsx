@@ -13,6 +13,8 @@ import { ForecastEventDialog } from '@/components/forecast/ForecastEventDialog';
 import { useWeatherForecast } from '@/hooks/useWeatherForecast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import heroImage from '@/assets/pages/hero-forecast.jpg';
 
 // Format quantity with smart unit conversion
@@ -55,6 +57,7 @@ const itemVariants = {
 };
 
 export default function Forecast() {
+  const navigate = useNavigate();
   const [daysAhead, setDaysAhead] = useState(3);
   
   const { data: restaurant } = useQuery({
@@ -104,7 +107,18 @@ export default function Forecast() {
               Predicted demand and ingredient needs based on patterns.
             </p>
             <div className="flex gap-3 pt-2">
-              <Button variant="accent" size="sm">
+              <Button 
+                variant="accent" 
+                size="sm"
+                onClick={() => {
+                  if (ingredients.filter(i => i.risk === 'high').length > 0) {
+                    toast.success(`Found ${ingredients.filter(i => i.risk === 'high').length} items to order`);
+                    navigate('/orders');
+                  } else {
+                    toast.info('No urgent orders needed based on current forecast');
+                  }
+                }}
+              >
                 <TrendingUp className="h-4 w-4 mr-2" />
                 Generate Orders
               </Button>
