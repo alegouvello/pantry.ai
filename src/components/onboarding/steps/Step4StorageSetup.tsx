@@ -96,7 +96,7 @@ export function Step4StorageSetup(props: StepProps) {
   const { toast } = useToast();
   const { conceptType } = useOnboardingContext();
   const { notify: syncNotify } = useSyncNotification();
-  const [phase, setPhase] = useState<'storage' | 'method' | 'count'>('storage');
+  const [phase, setPhase] = useState<'storage' | 'method' | 'count' | 'summary'>('storage');
   const [storageLocations, setStorageLocations] = useState<StorageLocationItem[]>(defaultStorageLocations);
   const [newLocationName, setNewLocationName] = useState('');
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
@@ -551,9 +551,10 @@ export function Step4StorageSetup(props: StepProps) {
     );
   }
 
-  return (
-    <OnboardingLayout {...layoutProps} title="Guided Inventory Count" subtitle={`${countedItems} of ${totalItems} items counted`}>
-      <div className="space-y-6">
+  if (phase === 'count') {
+    return (
+      <OnboardingLayout {...layoutProps} title="Guided Inventory Count" subtitle={`${countedItems} of ${totalItems} items counted`}>
+        <div className="space-y-6">
         <div className="bg-muted/50 rounded-lg p-4 flex items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
             💡 Drag ingredients between storage tabs to reassign them, or use auto-assign.
@@ -741,6 +742,98 @@ export function Step4StorageSetup(props: StepProps) {
             Back to Method
           </Button>
           <Button 
+            onClick={() => setPhase('summary')}
+            disabled={countedItems === 0}
+          >
+            Review & Save
+          </Button>
+        </div>
+      </div>
+    </OnboardingLayout>
+  );
+  }
+
+  // Summary phase - review before saving
+  const countedIngredients = ingredients.filter(
+    ing => inventoryCounts[ing.id] !== undefined || notStocked.includes(ing.id)
+  );
+  
+  const groupedBySummary = storageLocations.map(location => ({
+    location,
+    items: countedIngredients.filter(ing => ing.storageKey === location.id),
+  })).filter(group => group.items.length > 0);
+
+  return (
+    <OnboardingLayout {...layoutProps} title="Review Inventory Count" subtitle="Confirm your counts before saving">
+      <div className="space-y-6">
+        <div className="bg-muted/50 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">{countedItems} items counted</p>
+              <p className="text-sm text-muted-foreground">
+                {Object.keys(inventoryCounts).length} with quantities, {notStocked.length} marked as not stocked
+              </p>
+            </div>
+            <Badge variant="secondary" className="text-lg px-4 py-2">
+              Ready to save
+            </Badge>
+          </div>
+        </div>
+
+        <div className="space-y-4 max-h-[400px] overflow-y-auto">
+          {groupedBySummary.map(({ location, items }) => {
+            const Icon = location.icon;
+            return (
+              <Card key={location.id}>
+                <CardContent className="py-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Icon className={`w-5 h-5 ${location.color}`} />
+                    <h3 className="font-semibold">{location.name}</h3>
+                    <Badge variant="outline">{items.length} items</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    {items.map(ingredient => {
+                      const isMarkedNotStocked = notStocked.includes(ingredient.id);
+                      const count = inventoryCounts[ingredient.id];
+                      return (
+                        <div 
+                          key={ingredient.id} 
+                          className="flex items-center justify-between py-2 px-3 bg-muted/30 rounded-lg"
+                        >
+                          <div>
+                            <span className="font-medium">{ingredient.name}</span>
+                            <span className="text-sm text-muted-foreground ml-2">({ingredient.category})</span>
+                          </div>
+                          {isMarkedNotStocked ? (
+                            <Badge variant="secondary" className="text-muted-foreground">Not stocked</Badge>
+                          ) : (
+                            <span className="font-mono font-medium">
+                              {count} {ingredient.unit}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {countedItems === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
+            <p>No items counted yet</p>
+            <p className="text-sm">Go back to count your inventory</p>
+          </div>
+        )}
+
+        <div className="flex justify-between pt-4">
+          <Button variant="outline" onClick={() => setPhase('count')}>
+            Back to Count
+          </Button>
+          <Button 
             onClick={async () => {
               setIsSaving(true);
               
@@ -802,7 +895,7 @@ export function Step4StorageSetup(props: StepProps) {
                   await Promise.all(updates);
                   toast({
                     title: 'Inventory saved',
-                    description: `${Object.keys(inventoryCounts).length + notStocked.length} items counted and saved.`,
+                    description: `${countedItems} items saved successfully.`,
                   });
                 }
                 
@@ -819,10 +912,10 @@ export function Step4StorageSetup(props: StepProps) {
                 setIsSaving(false);
               }
             }}
-            disabled={isSaving}
+            disabled={isSaving || countedItems === 0}
           >
             {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-            {isSaving ? 'Saving...' : 'Save & Continue'}
+            {isSaving ? 'Saving...' : 'Confirm & Save'}
           </Button>
         </div>
       </div>
