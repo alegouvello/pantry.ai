@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChefHat, Clock, Package, DollarSign, TrendingUp, Sparkles, 
-  Loader2, ListOrdered, ImageIcon, X, Pencil 
+  Loader2, ListOrdered, ImageIcon, X, Pencil, Globe, ExternalLink 
 } from 'lucide-react';
 import {
   Dialog,
@@ -16,6 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { useGenerateRecipeSteps } from '@/hooks/useGenerateRecipeSteps';
+import { useSearchRecipeSteps } from '@/hooks/useSearchRecipeSteps';
 import { useUpdateRecipe } from '@/hooks/useRecipes';
 import { cn } from '@/lib/utils';
 import type { RecipeWithIngredients } from '@/hooks/useRecipes';
@@ -42,7 +43,9 @@ const formatCurrency = (value: number) => {
 
 export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: RecipeDetailDialogProps) {
   const [steps, setSteps] = useState<RecipeStep[]>([]);
+  const [stepsSource, setStepsSource] = useState<{ url: string; title: string } | null>(null);
   const generateSteps = useGenerateRecipeSteps();
+  const searchSteps = useSearchRecipeSteps();
   const updateRecipe = useUpdateRecipe();
 
   // Parse existing instructions or reset
@@ -54,6 +57,9 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
           setSteps(parsed);
         } else if (parsed.steps && Array.isArray(parsed.steps)) {
           setSteps(parsed.steps);
+          if (parsed.source) {
+            setStepsSource(parsed.source);
+          }
         } else {
           setSteps([]);
         }
@@ -67,6 +73,7 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
       }
     } else {
       setSteps([]);
+      setStepsSource(null);
     }
   }, [recipe]);
 
@@ -99,11 +106,30 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
 
     if (result.steps && result.steps.length > 0) {
       setSteps(result.steps);
+      setStepsSource(null);
       
       // Save to database
       await updateRecipe.mutateAsync({
         id: recipe.id,
-        instructions: JSON.stringify(result.steps),
+        instructions: JSON.stringify({ steps: result.steps }),
+      });
+    }
+  };
+
+  const handleSearchSteps = async () => {
+    const result = await searchSteps.mutateAsync({
+      recipeName: recipe.name,
+      category: recipe.category,
+    });
+
+    if (result.steps && result.steps.length > 0) {
+      setSteps(result.steps);
+      setStepsSource(result.source);
+      
+      // Save to database with source info
+      await updateRecipe.mutateAsync({
+        id: recipe.id,
+        instructions: JSON.stringify({ steps: result.steps, source: result.source }),
       });
     }
   };
@@ -249,29 +275,60 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
 
             {/* Cooking Steps */}
             <div>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                 <h3 className="font-semibold flex items-center gap-2">
                   <ListOrdered className="h-4 w-4" />
                   Cooking Steps
-                </h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleGenerateSteps}
-                  disabled={generateSteps.isPending}
-                >
-                  {generateSteps.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      {steps.length > 0 ? 'Regenerate' : 'Generate with AI'}
-                    </>
+                  {stepsSource && (
+                    <a 
+                      href={stepsSource.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 font-normal"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Source
+                    </a>
                   )}
-                </Button>
+                </h3>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSearchSteps}
+                    disabled={searchSteps.isPending || generateSteps.isPending}
+                  >
+                    {searchSteps.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Searching...
+                      </>
+                    ) : (
+                      <>
+                        <Globe className="h-4 w-4 mr-2" />
+                        Search Web
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateSteps}
+                    disabled={generateSteps.isPending || searchSteps.isPending}
+                  >
+                    {generateSteps.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate AI
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
 
               <AnimatePresence mode="wait">
@@ -309,7 +366,7 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
                   >
                     <ChefHat className="h-12 w-12 mx-auto mb-3 opacity-30" />
                     <p className="text-sm">No cooking steps yet.</p>
-                    <p className="text-xs">Click "Generate with AI" to create detailed instructions.</p>
+                    <p className="text-xs">Search the web for real recipes or generate with AI.</p>
                   </motion.div>
                 )}
               </AnimatePresence>
