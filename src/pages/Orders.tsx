@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, FileText, LogIn, ShoppingCart, Sparkles, RefreshCw } from 'lucide-react';
+import { Plus, FileText, LogIn, ShoppingCart, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PurchaseOrderCard } from '@/components/orders/PurchaseOrderCard';
 import { SuggestedOrderCard } from '@/components/orders/SuggestedOrderCard';
@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import heroImage from '@/assets/pages/hero-orders.jpg';
 
 const containerVariants = {
@@ -44,6 +45,7 @@ export default function Orders() {
   const approveMutation = useApprovePurchaseOrder();
   const sendMutation = useSendPurchaseOrder();
   const createMutation = useCreatePurchaseOrder();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   if (!authLoading && !user) {
@@ -119,8 +121,10 @@ export default function Orders() {
         description: `Draft PO for ${suggestion.vendorName} with ${suggestion.items.length} items.`,
       });
 
-      // Refresh orders
-      window.location.reload(); // Simple refresh - could use queryClient.invalidateQueries instead
+      // Invalidate queries to refresh data without page reload
+      queryClient.invalidateQueries({ queryKey: ['purchase_orders'] });
+      queryClient.invalidateQueries({ queryKey: ['ingredients'] });
+      queryClient.invalidateQueries({ queryKey: ['low_stock_ingredients'] });
     } catch (error) {
       console.error('Failed to create order:', error);
       toast({
