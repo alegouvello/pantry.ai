@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   BarChart,
   Bar,
@@ -20,10 +21,27 @@ import {
   Cell,
   Legend,
 } from 'recharts';
-import { format, subDays, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
-import { TrendingUp, TrendingDown, Calendar, DollarSign, ShoppingBag, ChefHat, ChevronDown, ChevronRight, Clock } from 'lucide-react';
+import { format, subDays, startOfWeek, getHours } from 'date-fns';
+import { TrendingUp, TrendingDown, Calendar, DollarSign, ShoppingBag, ChefHat, ChevronRight, Clock, Filter, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import heroSales from '@/assets/pages/hero-sales.jpg';
+
+type TimeOfDay = 'all' | 'morning' | 'afternoon' | 'evening' | 'night';
+type OrderSize = 'all' | 'small' | 'medium' | 'large';
+
+const getTimeOfDay = (date: Date): TimeOfDay => {
+  const hour = getHours(date);
+  if (hour >= 5 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 17) return 'afternoon';
+  if (hour >= 17 && hour < 21) return 'evening';
+  return 'night';
+};
+
+const getOrderSize = (itemCount: number): OrderSize => {
+  if (itemCount <= 2) return 'small';
+  if (itemCount <= 5) return 'medium';
+  return 'large';
+};
 
 interface SaleItem {
   recipe_id: string;
@@ -51,6 +69,9 @@ const COLORS = [
 export default function SalesHistory() {
   const [dateRange, setDateRange] = useState<7 | 14 | 30>(30);
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
+  const [dishFilter, setDishFilter] = useState<string>('all');
+  const [timeOfDayFilter, setTimeOfDayFilter] = useState<TimeOfDay>('all');
+  const [orderSizeFilter, setOrderSizeFilter] = useState<OrderSize>('all');
 
   const toggleDateExpand = (dateKey: string) => {
     setExpandedDates(prev => {
@@ -63,6 +84,15 @@ export default function SalesHistory() {
       return next;
     });
   };
+
+  const clearAllFilters = () => {
+    setDishFilter('all');
+    setTimeOfDayFilter('all');
+    setOrderSizeFilter('all');
+  };
+
+  const hasActiveFilters = dishFilter !== 'all' || timeOfDayFilter !== 'all' || orderSizeFilter !== 'all';
+
   // Fetch sales events
   const { data: salesEvents, isLoading } = useQuery({
     queryKey: ['sales-history', dateRange],
@@ -83,9 +113,54 @@ export default function SalesHistory() {
     },
   });
 
+  // Get all unique dishes for filter dropdown
+  const allDishes = useMemo(() => {
+    if (!salesEvents?.length) return [];
+    const dishSet = new Set<string>();
+    salesEvents.forEach((event) => {
+      const items = Array.isArray(event.items) ? event.items : [];
+      items.forEach((item) => {
+        const dishName = item.recipe_name || item.recipe_id;
+        if (dishName) dishSet.add(dishName);
+      });
+    });
+    return Array.from(dishSet).sort();
+  }, [salesEvents]);
+
+  // Filter sales events based on selected filters
+  const filteredSalesEvents = useMemo(() => {
+    if (!salesEvents?.length) return [];
+    
+    return salesEvents.filter((event) => {
+      const eventDate = new Date(event.occurred_at);
+      const items = Array.isArray(event.items) ? event.items : [];
+      const itemCount = items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+      
+      // Time of day filter
+      if (timeOfDayFilter !== 'all' && getTimeOfDay(eventDate) !== timeOfDayFilter) {
+        return false;
+      }
+      
+      // Order size filter
+      if (orderSizeFilter !== 'all' && getOrderSize(itemCount) !== orderSizeFilter) {
+        return false;
+      }
+      
+      // Dish filter
+      if (dishFilter !== 'all') {
+        const hasDish = items.some((item) => 
+          (item.recipe_name || item.recipe_id) === dishFilter
+        );
+        if (!hasDish) return false;
+      }
+      
+      return true;
+    });
+  }, [salesEvents, dishFilter, timeOfDayFilter, orderSizeFilter]);
+
   // Process data for charts
   const { dailySales, dailyOrders, topDishes, weeklyTrend, totalRevenue, totalOrders, avgOrderValue } = useMemo(() => {
-    if (!salesEvents?.length) {
+    if (!filteredSalesEvents?.length) {
       return {
         dailySales: [],
         dailyOrders: new Map<string, SalesEvent[]>(),
@@ -105,7 +180,7 @@ export default function SalesHistory() {
     let totalItems = 0;
     let totalOrderCount = 0;
 
-    salesEvents.forEach((event) => {
+    filteredSalesEvents.forEach((event) => {
       const date = format(new Date(event.occurred_at), 'MMM dd');
       const dateKey = format(new Date(event.occurred_at), 'yyyy-MM-dd');
       
@@ -148,7 +223,7 @@ export default function SalesHistory() {
 
     // Weekly trend
     const weeklyMap = new Map<string, number>();
-    salesEvents.forEach((event) => {
+    filteredSalesEvents.forEach((event) => {
       const weekStart = format(startOfWeek(new Date(event.occurred_at)), 'MMM dd');
       const items = Array.isArray(event.items) ? event.items : [];
       const itemCount = items.reduce((sum, item) => sum + (item.quantity || 1), 0);
@@ -171,7 +246,7 @@ export default function SalesHistory() {
       totalOrders: totalOrderCount,
       avgOrderValue: totalOrderCount > 0 ? estimatedRevenue / totalOrderCount : 0,
     };
-  }, [salesEvents]);
+  }, [filteredSalesEvents]);
 
   // Calculate trend
   const salesTrend = useMemo(() => {
@@ -233,6 +308,86 @@ export default function SalesHistory() {
             </Button>
           ))}
         </div>
+      </motion.div>
+
+      {/* Filter Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.4 }}
+      >
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Filter className="h-4 w-4" />
+                Filters
+              </div>
+              
+              {/* Dish Filter */}
+              <Select value={dishFilter} onValueChange={setDishFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="All Dishes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Dishes</SelectItem>
+                  {allDishes.map((dish) => (
+                    <SelectItem key={dish} value={dish}>
+                      {dish}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Time of Day Filter */}
+              <Select value={timeOfDayFilter} onValueChange={(v) => setTimeOfDayFilter(v as TimeOfDay)}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Any Time" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any Time</SelectItem>
+                  <SelectItem value="morning">Morning (5am-12pm)</SelectItem>
+                  <SelectItem value="afternoon">Afternoon (12pm-5pm)</SelectItem>
+                  <SelectItem value="evening">Evening (5pm-9pm)</SelectItem>
+                  <SelectItem value="night">Night (9pm-5am)</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Order Size Filter */}
+              <Select value={orderSizeFilter} onValueChange={(v) => setOrderSizeFilter(v as OrderSize)}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Any Size" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any Size</SelectItem>
+                  <SelectItem value="small">Small (1-2 items)</SelectItem>
+                  <SelectItem value="medium">Medium (3-5 items)</SelectItem>
+                  <SelectItem value="large">Large (6+ items)</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Clear
+                </Button>
+              )}
+
+              {/* Filter Summary */}
+              {hasActiveFilters && (
+                <div className="ml-auto text-sm text-muted-foreground">
+                  Showing {filteredSalesEvents.length} of {salesEvents?.length || 0} orders
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* Summary Cards */}
