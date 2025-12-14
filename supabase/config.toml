@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.lookup-business-hours]
 verify_jwt = false
+
+[functions.suggest-par-levels]
+verify_jwt = false

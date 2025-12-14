@@ -1,12 +1,16 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Upload, Download, LogIn, Package } from 'lucide-react';
+import { Plus, Upload, Download, LogIn, Package, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { InventoryTable } from '@/components/inventory/InventoryTable';
+import { ParLevelSuggestionDialog } from '@/components/inventory/ParLevelSuggestionDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
-import { useIngredients } from '@/hooks/useIngredients';
+import { useIngredients, useUpdateIngredient } from '@/hooks/useIngredients';
+import { useSuggestParLevels } from '@/hooks/useSuggestParLevels';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 import heroImage from '@/assets/pages/hero-inventory.jpg';
 
 const containerVariants = {
@@ -29,6 +33,11 @@ const itemVariants = {
 export default function Inventory() {
   const { user, loading: authLoading } = useAuth();
   const { data: ingredients, isLoading, error } = useIngredients();
+  const updateIngredient = useUpdateIngredient();
+  const suggestParLevels = useSuggestParLevels();
+  
+  const [showSuggestionDialog, setShowSuggestionDialog] = useState(false);
+  const [suggestions, setSuggestions] = useState<Record<string, { par_level: number; reorder_point: number; reasoning: string }>>({});
 
   if (!authLoading && !user) {
     return (
@@ -67,6 +76,77 @@ export default function Inventory() {
     vendorSku: item.vendor_sku || undefined,
   })) || [];
 
+  const handleSuggestParLevels = async () => {
+    if (!ingredients?.length) {
+      toast.error('No ingredients to analyze');
+      return;
+    }
+
+    setShowSuggestionDialog(true);
+    setSuggestions({});
+
+    try {
+      const inputIngredients = ingredients.map(ing => ({
+        id: ing.id,
+        name: ing.name,
+        category: ing.category,
+        unit: ing.unit,
+        currentStock: ing.current_stock,
+        storageLocation: ing.storage_location || undefined,
+      }));
+
+      const result = await suggestParLevels.mutateAsync({
+        ingredients: inputIngredients,
+        conceptType: 'casual dining', // Could be fetched from restaurant settings
+      });
+
+      setSuggestions(result);
+    } catch (error) {
+      // Error is handled by the mutation's onError
+      console.error('Failed to get suggestions:', error);
+    }
+  };
+
+  const handleApplySuggestions = async (selectedIds: string[]) => {
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const id of selectedIds) {
+      const suggestion = suggestions[id];
+      if (suggestion) {
+        try {
+          await updateIngredient.mutateAsync({
+            id,
+            par_level: suggestion.par_level,
+            reorder_point: suggestion.reorder_point,
+          });
+          successCount++;
+        } catch (error) {
+          failCount++;
+          console.error(`Failed to update ${id}:`, error);
+        }
+      }
+    }
+
+    if (successCount > 0) {
+      toast.success(`Updated par levels for ${successCount} ingredients`);
+    }
+    if (failCount > 0) {
+      toast.error(`Failed to update ${failCount} ingredients`);
+    }
+    
+    setSuggestions({});
+  };
+
+  const dialogIngredients = mappedIngredients.map(ing => ({
+    id: ing.id,
+    name: ing.name,
+    category: ing.category,
+    unit: ing.unit,
+    currentParLevel: ing.parLevel,
+    currentReorderPoint: ing.reorderPoint,
+  }));
+
   return (
     <motion.div 
       className="space-y-8"
@@ -93,10 +173,20 @@ export default function Inventory() {
             <p className="text-muted-foreground max-w-md">
               Manage your ingredients and stock levels.
             </p>
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3 pt-2 flex-wrap">
               <Button variant="accent" size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Item
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="bg-background/50 backdrop-blur-sm"
+                onClick={handleSuggestParLevels}
+                disabled={!ingredients?.length || suggestParLevels.isPending}
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                {suggestParLevels.isPending ? 'Analyzing...' : 'AI Par Levels'}
               </Button>
               <Button variant="outline" size="sm" className="bg-background/50 backdrop-blur-sm">
                 <Upload className="h-4 w-4 mr-2" />
@@ -139,6 +229,16 @@ export default function Inventory() {
           <InventoryTable ingredients={mappedIngredients} />
         )}
       </motion.div>
+
+      {/* AI Suggestion Dialog */}
+      <ParLevelSuggestionDialog
+        open={showSuggestionDialog}
+        onOpenChange={setShowSuggestionDialog}
+        ingredients={dialogIngredients}
+        suggestions={suggestions}
+        isLoading={suggestParLevels.isPending}
+        onApply={handleApplySuggestions}
+      />
     </motion.div>
   );
 }
