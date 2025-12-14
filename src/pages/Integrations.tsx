@@ -2,6 +2,8 @@ import { Plug, Check, AlertCircle, ExternalLink, RefreshCw } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
+import heroIntegrations from '@/assets/pages/hero-integrations.jpg';
 
 const integrations = [
   {
@@ -41,15 +43,40 @@ const integrations = [
 export default function Integrations() {
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Integrations</h1>
-          <p className="text-muted-foreground">
-            Connect your POS and external systems
-          </p>
+      {/* Hero Section */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="relative h-48 md:h-56 rounded-2xl overflow-hidden"
+      >
+        <img 
+          src={heroIntegrations} 
+          alt="POS integrations hub" 
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-transparent" />
+        <div className="absolute inset-0 flex items-center">
+          <div className="px-6 md:px-8">
+            <motion.h1 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="text-2xl md:text-3xl font-bold text-foreground mb-2"
+            >
+              Integrations
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+              className="text-muted-foreground max-w-md"
+            >
+              Connect your POS and external systems for seamless data sync
+            </motion.p>
+          </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Integration Status */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
