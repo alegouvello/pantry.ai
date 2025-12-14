@@ -138,6 +138,7 @@ serve(async (req) => {
 CRITICAL RULES:
 - ONLY include data that you actually find in the search results
 - If a field is not found, use an EMPTY STRING "" - never put placeholder text like "low confidence" or "not found"
+- For street addresses, ALWAYS include the FULL address with building/street number (e.g., "188 Orchard Street" not just "Orchard Street")
 - For zip codes, only include actual 5-digit zip codes, otherwise leave empty
 - For phone numbers, only include real phone numbers found, otherwise leave empty
 - For websites, only include real URLs found, otherwise leave empty
@@ -164,7 +165,7 @@ IMPORTANT: Only return actual data found. Leave fields EMPTY (empty string "") i
                   address: {
                     type: 'object',
                     properties: {
-                      street: { type: 'string', description: 'Street address or empty string if not found' },
+                      street: { type: 'string', description: 'COMPLETE street address WITH building number (e.g., "188 Orchard Street") or empty string if not found' },
                       city: { type: 'string', description: 'City name or empty string if not found' },
                       state: { type: 'string', description: 'State abbreviation or empty string if not found' },
                       zip: { type: 'string', description: '5-digit ZIP code ONLY or empty string if not found' }
