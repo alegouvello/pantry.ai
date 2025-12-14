@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Check, AlertTriangle, ArrowRight, Rocket, FileText, Package, Sparkles, Clock, ChefHat, Truck, CreditCard, Loader2 } from 'lucide-react';
 import { useRestaurant, useStorageLocations, useMenus, useIntegrations, useForecastConfig } from '@/hooks/useOnboarding';
+import { useIngredients } from '@/hooks/useIngredients';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useVendors } from '@/hooks/useVendors';
 import { useToast } from '@/hooks/use-toast';
@@ -47,6 +48,7 @@ export function Step8GoLive(props: StepProps) {
   const { data: menus, refetch: refetchMenus } = useMenus(props.restaurantId || undefined);
   const { data: recipes, refetch: refetchRecipes } = useRecipes();
   const { data: vendors, refetch: refetchVendors } = useVendors();
+  const { data: ingredients } = useIngredients();
   const { data: integrations, refetch: refetchIntegrations } = useIntegrations(props.restaurantId || undefined);
   const { data: forecastConfig, refetch: refetchForecast } = useForecastConfig(props.restaurantId || undefined);
 
@@ -342,18 +344,40 @@ export function Step8GoLive(props: StepProps) {
                   <Badge variant="outline">Draft</Badge>
                 </div>
                 <div className="text-sm space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Sample ingredient (case x3)</span>
-                    <span>$45.00</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Sample ingredient (case x2)</span>
-                    <span>$24.00</span>
-                  </div>
+                  {(() => {
+                    // Get up to 4 actual ingredients for the sample PO
+                    const sampleIngredients = (ingredients || []).slice(0, 4);
+                    if (sampleIngredients.length === 0) {
+                      return (
+                        <div className="text-muted-foreground italic">
+                          No ingredients configured yet
+                        </div>
+                      );
+                    }
+                    const quantities = [3, 2, 5, 1];
+                    const prices = [12.50, 8.75, 15.00, 22.00];
+                    return sampleIngredients.map((ing, idx) => (
+                      <div key={ing.id} className="flex justify-between">
+                        <span className="text-muted-foreground">
+                          {ing.name} ({quantities[idx]} {ing.unit})
+                        </span>
+                        <span>${(quantities[idx] * prices[idx]).toFixed(2)}</span>
+                      </div>
+                    ));
+                  })()}
                 </div>
                 <div className="flex justify-between pt-2 border-t font-medium">
                   <span>Total Estimate</span>
-                  <span>$69.00</span>
+                  <span>
+                    ${(() => {
+                      const sampleCount = Math.min((ingredients || []).length, 4);
+                      if (sampleCount === 0) return '0.00';
+                      const quantities = [3, 2, 5, 1];
+                      const prices = [12.50, 8.75, 15.00, 22.00];
+                      const total = quantities.slice(0, sampleCount).reduce((acc, qty, idx) => acc + qty * prices[idx], 0);
+                      return total.toFixed(2);
+                    })()}
+                  </span>
                 </div>
               </div>
             </CardContent>
