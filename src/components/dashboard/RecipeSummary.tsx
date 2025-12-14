@@ -1,4 +1,5 @@
 import { ChefHat, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -10,17 +11,19 @@ export function RecipeSummary() {
 
   if (isLoading) {
     return (
-      <Card variant="elevated">
+      <Card variant="elevated" className="backdrop-blur-sm bg-card/80 border-border/50">
         <CardHeader>
           <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <ChefHat className="h-4 w-4 text-primary" />
+            <div className="p-1.5 rounded-lg bg-primary/10">
+              <ChefHat className="h-4 w-4 text-primary" />
+            </div>
             Recipe Overview
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-12 bg-muted rounded" />
+              <div key={i} className="h-12 bg-muted rounded-lg" />
             ))}
           </div>
         </CardContent>
@@ -57,14 +60,16 @@ export function RecipeSummary() {
     : 0;
 
   return (
-    <Card variant="elevated">
+    <Card variant="elevated" className="backdrop-blur-sm bg-card/80 border-border/50">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
-          <ChefHat className="h-4 w-4 text-primary" />
+          <div className="p-1.5 rounded-lg bg-primary/10">
+            <ChefHat className="h-4 w-4 text-primary" />
+          </div>
           Recipe Overview
         </CardTitle>
         <Link to="/recipes">
-          <Badge variant="secondary" className="text-xs cursor-pointer hover:bg-secondary/80">
+          <Badge variant="secondary" className="text-xs cursor-pointer hover:bg-secondary/80 transition-colors">
             {dishRecipes.length} dishes
           </Badge>
         </Link>
@@ -72,21 +77,29 @@ export function RecipeSummary() {
       <CardContent className="space-y-4">
         {/* Summary Stats */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-muted/50 rounded-lg p-3 text-center">
-            <p className="text-2xl font-bold text-foreground">{dishRecipes.length}</p>
-            <p className="text-xs text-muted-foreground">Menu Items</p>
-          </div>
-          <div className="bg-muted/50 rounded-lg p-3 text-center">
-            <p className="text-2xl font-bold text-foreground">{prepRecipes.length}</p>
-            <p className="text-xs text-muted-foreground">Prep Recipes</p>
-          </div>
+          <motion.div 
+            className="bg-muted/30 rounded-xl p-4 text-center border border-border/30"
+            whileHover={{ scale: 1.02 }}
+            transition={{ duration: 0.2 }}
+          >
+            <p className="text-3xl font-bold text-foreground">{dishRecipes.length}</p>
+            <p className="text-xs text-muted-foreground mt-1">Menu Items</p>
+          </motion.div>
+          <motion.div 
+            className="bg-muted/30 rounded-xl p-4 text-center border border-border/30"
+            whileHover={{ scale: 1.02 }}
+            transition={{ duration: 0.2 }}
+          >
+            <p className="text-3xl font-bold text-foreground">{prepRecipes.length}</p>
+            <p className="text-xs text-muted-foreground mt-1">Prep Recipes</p>
+          </motion.div>
         </div>
 
         {/* Average Food Cost */}
-        <div className="space-y-2">
+        <div className="space-y-3 p-4 rounded-xl bg-muted/20 border border-border/30">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Avg Food Cost</span>
-            <span className={`font-medium ${avgFoodCost > 35 ? 'text-warning' : 'text-success'}`}>
+            <span className={`font-semibold ${avgFoodCost > 35 ? 'text-warning' : 'text-success'}`}>
               {avgFoodCost.toFixed(1)}%
             </span>
           </div>
@@ -102,18 +115,26 @@ export function RecipeSummary() {
         {/* Recipes Needing Attention */}
         {needsAttention.length > 0 && (
           <div className="space-y-2">
-            <p className="text-sm font-medium flex items-center gap-1 text-warning">
+            <p className="text-sm font-medium flex items-center gap-2 text-warning">
               <AlertCircle className="h-3.5 w-3.5" />
               Needs Review
             </p>
-            {needsAttention.map(recipe => (
-              <div key={recipe.id} className="flex items-center justify-between text-sm py-1">
-                <span className="text-foreground truncate">{recipe.name}</span>
-                <span className="text-muted-foreground text-xs">
-                  {recipe.menu_price ? `${recipe.foodCostPct.toFixed(0)}% cost` : 'No price'}
-                </span>
-              </div>
-            ))}
+            <div className="space-y-1">
+              {needsAttention.map((recipe, index) => (
+                <motion.div 
+                  key={recipe.id} 
+                  className="flex items-center justify-between text-sm py-2 px-3 rounded-lg hover:bg-muted/30 transition-colors"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <span className="text-foreground truncate">{recipe.name}</span>
+                  <span className="text-muted-foreground text-xs">
+                    {recipe.menu_price ? `${recipe.foodCostPct.toFixed(0)}% cost` : 'No price'}
+                  </span>
+                </motion.div>
+              ))}
+            </div>
           </div>
         )}
       </CardContent>

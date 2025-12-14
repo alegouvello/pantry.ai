@@ -1,4 +1,5 @@
 import { Clock, Package, ShoppingCart, AlertTriangle, Check, ChefHat } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useInventoryEvents } from '@/hooks/useInventoryEvents';
@@ -93,32 +94,37 @@ export function RecentActivity() {
   };
 
   return (
-    <Card variant="elevated">
+    <Card variant="elevated" className="backdrop-blur-sm bg-card/80 border-border/50">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
-          <Clock className="h-4 w-4 text-primary" />
+          <div className="p-1.5 rounded-lg bg-primary/10">
+            <Clock className="h-4 w-4 text-primary" />
+          </div>
           Recent Activity
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-1">
           {sortedActivities.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No recent activity
-            </p>
+            <div className="text-center py-8 text-muted-foreground">
+              <Clock className="h-8 w-8 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">No recent activity</p>
+            </div>
           ) : (
             sortedActivities.map((activity, index) => {
               const Icon = getIcon(activity.type);
               const colorClass = getIconColor(activity.type);
 
               return (
-                <div
+                <motion.div
                   key={activity.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
                   className={cn(
-                    "flex items-start gap-3 animate-fade-in",
-                    index !== sortedActivities.length - 1 && "pb-4 border-b border-border"
+                    "flex items-start gap-3 p-3 rounded-lg hover:bg-muted/30 transition-colors",
+                    index !== sortedActivities.length - 1 && "border-b border-border/30"
                   )}
-                  style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className={cn("p-2 rounded-lg shrink-0", colorClass)}>
                     <Icon className="h-3.5 w-3.5" />
@@ -129,7 +135,7 @@ export function RecentActivity() {
                       {activity.time}
                     </p>
                   </div>
-                </div>
+                </motion.div>
               );
             })
           )}

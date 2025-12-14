@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
@@ -18,12 +19,12 @@ export function FoodCostChart() {
 
   if (isLoading) {
     return (
-      <Card variant="elevated">
+      <Card variant="elevated" className="backdrop-blur-sm bg-card/80 border-border/50">
         <CardHeader className="pb-2">
           <Skeleton className="h-5 w-32" />
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-48 w-full" />
+          <Skeleton className="h-48 w-full rounded-lg" />
         </CardContent>
       </Card>
     );
@@ -105,17 +106,19 @@ export function FoodCostChart() {
 
   if (dishRecipes.length === 0) {
     return (
-      <Card variant="elevated">
+      <Card variant="elevated" className="backdrop-blur-sm bg-card/80 border-border/50">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-primary" />
+            <div className="p-1.5 rounded-lg bg-primary/10">
+              <DollarSign className="h-4 w-4 text-primary" />
+            </div>
             Food Cost Overview
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
             <DollarSign className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No recipes with pricing</p>
+            <p className="text-sm font-medium text-foreground">No pricing data</p>
             <p className="text-xs mt-1">Add menu prices to see food cost analysis</p>
           </div>
         </CardContent>
@@ -124,34 +127,38 @@ export function FoodCostChart() {
   }
 
   return (
-    <Card variant="elevated">
+    <Card variant="elevated" className="backdrop-blur-sm bg-card/80 border-border/50">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
-          <DollarSign className="h-4 w-4 text-primary" />
+          <div className="p-1.5 rounded-lg bg-primary/10">
+            <DollarSign className="h-4 w-4 text-primary" />
+          </div>
           Food Cost Overview
         </CardTitle>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={handleTakeSnapshot}
-          disabled={createSnapshot.isPending}
-          className="h-8 px-2"
-        >
-          {createSnapshot.isPending ? (
-            <RefreshCw className="h-3 w-3 animate-spin" />
-          ) : (
-            <Camera className="h-3 w-3" />
-          )}
-          <span className="ml-1 text-xs">Snapshot</span>
-        </Button>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleTakeSnapshot}
+            disabled={createSnapshot.isPending}
+            className="h-8 px-2"
+          >
+            {createSnapshot.isPending ? (
+              <RefreshCw className="h-3 w-3 animate-spin" />
+            ) : (
+              <Camera className="h-3 w-3" />
+            )}
+            <span className="ml-1 text-xs">Snapshot</span>
+          </Button>
+        </motion.div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Average Food Cost with Trend */}
-        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+        <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/30">
           <div>
             <p className="text-xs text-muted-foreground">Current Average</p>
             <div className="flex items-baseline gap-2">
-              <p className="text-2xl font-bold text-foreground">{currentAvgFoodCost.toFixed(1)}%</p>
+              <p className="text-3xl font-bold text-foreground">{currentAvgFoodCost.toFixed(1)}%</p>
               {weekOverWeekChange !== null && (
                 <span className={`text-xs flex items-center gap-0.5 ${
                   weekOverWeekChange < 0 ? 'text-success' : weekOverWeekChange > 0 ? 'text-destructive' : 'text-muted-foreground'
@@ -253,16 +260,16 @@ export function FoodCostChart() {
         )}
 
         {/* Summary Stats */}
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="flex items-center gap-2">
+        <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-success/5 border border-success/20">
             <div className="w-2 h-2 rounded-full bg-success" />
             <span className="text-muted-foreground">On target:</span>
-            <span className="font-medium text-foreground">{excellent + good}</span>
+            <span className="font-semibold text-foreground">{excellent + good}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-destructive/5 border border-destructive/20">
             <div className="w-2 h-2 rounded-full bg-destructive" />
             <span className="text-muted-foreground">Needs review:</span>
-            <span className="font-medium text-foreground">{warning + high}</span>
+            <span className="font-semibold text-foreground">{warning + high}</span>
           </div>
         </div>
       </CardContent>
