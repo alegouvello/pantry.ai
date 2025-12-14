@@ -95,6 +95,30 @@ export default function SalesHistory() {
 
   const hasActiveFilters = dishFilter !== 'all' || timeOfDayFilter !== 'all' || orderSizeFilter !== 'all';
 
+  // Fetch recipes for price lookup
+  const { data: recipes } = useQuery({
+    queryKey: ['recipes-prices'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('recipes')
+        .select('id, name, menu_price');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Create price lookup map
+  const priceMap = useMemo(() => {
+    const map = new Map<string, number>();
+    recipes?.forEach(recipe => {
+      if (recipe.menu_price) {
+        map.set(recipe.id, recipe.menu_price);
+        map.set(recipe.name, recipe.menu_price);
+      }
+    });
+    return map;
+  }, [recipes]);
+
   // Fetch sales events
   const { data: salesEvents, isLoading } = useQuery({
     queryKey: ['sales-history', dateRange],
@@ -182,6 +206,8 @@ export default function SalesHistory() {
     let totalItems = 0;
     let totalOrderCount = 0;
 
+    let totalRevenueSum = 0;
+
     filteredSalesEvents.forEach((event) => {
       const date = format(new Date(event.occurred_at), 'MMM dd');
       const dateKey = format(new Date(event.occurred_at), 'yyyy-MM-dd');
@@ -190,7 +216,12 @@ export default function SalesHistory() {
       
       const items = Array.isArray(event.items) ? event.items : [];
       const orderItems = items.reduce((sum, item) => sum + (item.quantity || 1), 0);
-      const orderRevenue = orderItems * 25; // Estimated avg price per item
+      
+      // Calculate revenue using actual menu prices
+      const orderRevenue = items.reduce((sum, item) => {
+        const price = priceMap.get(item.recipe_id) || priceMap.get(item.recipe_name) || 0;
+        return sum + (price * (item.quantity || 1));
+      }, 0);
 
       existing.orders += 1;
       existing.items += orderItems;
@@ -204,13 +235,15 @@ export default function SalesHistory() {
 
       totalOrderCount += 1;
       totalItems += orderItems;
+      totalRevenueSum += orderRevenue;
 
       // Aggregate by dish
       items.forEach((item) => {
         const dishKey = item.recipe_name || item.recipe_id;
+        const price = priceMap.get(item.recipe_id) || priceMap.get(item.recipe_name) || 0;
         const existingDish = dishMap.get(dishKey) || { name: dishKey, count: 0, revenue: 0 };
         existingDish.count += item.quantity || 1;
-        existingDish.revenue += (item.quantity || 1) * 25;
+        existingDish.revenue += (item.quantity || 1) * price;
         dishMap.set(dishKey, existingDish);
       });
     });
@@ -237,18 +270,16 @@ export default function SalesHistory() {
       sales,
     }));
 
-    const estimatedRevenue = totalItems * 25;
-
     return {
       dailySales,
       dailyOrders: dailyOrdersMap,
       topDishes,
       weeklyTrend,
-      totalRevenue: estimatedRevenue,
+      totalRevenue: totalRevenueSum,
       totalOrders: totalOrderCount,
-      avgOrderValue: totalOrderCount > 0 ? estimatedRevenue / totalOrderCount : 0,
+      avgOrderValue: totalOrderCount > 0 ? totalRevenueSum / totalOrderCount : 0,
     };
-  }, [filteredSalesEvents]);
+  }, [filteredSalesEvents, priceMap]);
 
   // Calculate trend
   const salesTrend = useMemo(() => {
@@ -642,7 +673,7 @@ export default function SalesHistory() {
               <DollarSign className="h-5 w-5 text-muted-foreground" />
               Daily Revenue
             </CardTitle>
-            <CardDescription>Estimated revenue per day (based on avg $25/item)</CardDescription>
+            <CardDescription>Revenue per day based on menu prices</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -808,7 +839,10 @@ export default function SalesHistory() {
                                         new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime()
                                       ).map((order, orderIndex) => {
                                         const orderItems = Array.isArray(order.items) ? order.items : [];
-                                        const orderTotal = orderItems.reduce((sum, item) => sum + (item.quantity || 1), 0) * 25;
+                                        const orderTotal = orderItems.reduce((sum, item) => {
+                                          const price = priceMap.get(item.recipe_id) || priceMap.get(item.recipe_name) || 0;
+                                          return sum + (price * (item.quantity || 1));
+                                        }, 0);
                                         
                                         return (
                                           <div 
@@ -838,25 +872,28 @@ export default function SalesHistory() {
                                             
                                             {orderItems.length > 0 ? (
                                               <div className="space-y-2">
-                                                {orderItems.map((item, itemIndex) => (
-                                                  <div 
-                                                    key={itemIndex}
-                                                    className="flex items-center justify-between py-1.5 px-3 rounded bg-muted/30"
-                                                  >
-                                                    <div className="flex items-center gap-2">
-                                                      <ChefHat className="h-3.5 w-3.5 text-muted-foreground" />
-                                                      <span className="text-sm">{item.recipe_name || item.recipe_id}</span>
+                                                {orderItems.map((item, itemIndex) => {
+                                                  const itemPrice = priceMap.get(item.recipe_id) || priceMap.get(item.recipe_name) || 0;
+                                                  return (
+                                                    <div 
+                                                      key={itemIndex}
+                                                      className="flex items-center justify-between py-1.5 px-3 rounded bg-muted/30"
+                                                    >
+                                                      <div className="flex items-center gap-2">
+                                                        <ChefHat className="h-3.5 w-3.5 text-muted-foreground" />
+                                                        <span className="text-sm">{item.recipe_name || item.recipe_id}</span>
+                                                      </div>
+                                                      <div className="flex items-center gap-4">
+                                                        <Badge variant="muted" className="text-xs">
+                                                          ×{item.quantity || 1}
+                                                        </Badge>
+                                                        <span className="text-sm text-muted-foreground w-16 text-right">
+                                                          ${((item.quantity || 1) * itemPrice).toLocaleString()}
+                                                        </span>
+                                                      </div>
                                                     </div>
-                                                    <div className="flex items-center gap-4">
-                                                      <Badge variant="muted" className="text-xs">
-                                                        ×{item.quantity || 1}
-                                                      </Badge>
-                                                      <span className="text-sm text-muted-foreground w-16 text-right">
-                                                        ${((item.quantity || 1) * 25).toLocaleString()}
-                                                      </span>
-                                                    </div>
-                                                  </div>
-                                                ))}
+                                                  );
+                                                })}
                                               </div>
                                             ) : (
                                               <p className="text-sm text-muted-foreground text-center py-2">
