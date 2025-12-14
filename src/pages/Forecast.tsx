@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TrendingUp, Calendar, Package, AlertTriangle, Loader2, Info } from 'lucide-react';
+import { TrendingUp, Calendar, Package, AlertTriangle, Loader2, Info, Sparkles } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,10 +7,14 @@ import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useForecast } from '@/hooks/useForecast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ForecastCalendar } from '@/components/forecast/ForecastCalendar';
+import { ForecastEventDialog } from '@/components/forecast/ForecastEventDialog';
 
 export default function Forecast() {
   const [daysAhead, setDaysAhead] = useState(3);
-  const { dishes, ingredients, isLoading, salesPatterns } = useForecast(daysAhead);
+  // TODO: Get restaurantId from context/auth
+  const restaurantId = 'demo-restaurant-id';
+  const { dishes, ingredients, isLoading, salesPatterns, hasEventImpact, events } = useForecast(daysAhead, restaurantId);
 
   const hasHistoricalData = salesPatterns && salesPatterns.length > 0;
 
@@ -25,10 +29,7 @@ export default function Forecast() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline">
-            <Calendar className="h-4 w-4 mr-2" />
-            Add Event
-          </Button>
+          <ForecastEventDialog restaurantId={restaurantId} />
           <Button variant="accent">
             <TrendingUp className="h-4 w-4 mr-2" />
             Generate Orders
@@ -63,19 +64,32 @@ export default function Forecast() {
 
       {/* Data Source Indicator */}
       {!isLoading && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Info className="h-4 w-4" />
-          {hasHistoricalData ? (
-            <span>
-              Forecast based on <strong>{salesPatterns.length}</strong> historical sales patterns
-            </span>
-          ) : (
-            <span>
-              Using default estimates. Connect POS or add sales data for accurate forecasting.
-            </span>
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <Info className="h-4 w-4" />
+            {hasHistoricalData ? (
+              <span>
+                Forecast based on <strong>{salesPatterns.length}</strong> historical sales patterns
+              </span>
+            ) : (
+              <span>
+                Using default estimates. Connect POS or add sales data for accurate forecasting.
+              </span>
+            )}
+          </div>
+          {hasEventImpact && (
+            <div className="flex items-center gap-1 text-primary">
+              <Sparkles className="h-4 w-4" />
+              <span>
+                <strong>{events?.length || 0}</strong> events factored in
+              </span>
+            </div>
           )}
         </div>
       )}
+
+      {/* Event Calendar */}
+      <ForecastCalendar restaurantId={restaurantId} daysAhead={daysAhead} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Predicted Dish Sales */}
@@ -121,6 +135,14 @@ export default function Forecast() {
                               <span className="text-xs text-muted-foreground">
                                 {dish.confidence}% confidence
                               </span>
+                              {dish.eventImpact && (
+                                <Badge 
+                                  variant={dish.eventImpact > 0 ? 'high' : 'low'} 
+                                  className="text-xs"
+                                >
+                                  {dish.eventImpact > 0 ? '+' : ''}{dish.eventImpact}% event
+                                </Badge>
+                              )}
                             </div>
                           </div>
                         </div>
