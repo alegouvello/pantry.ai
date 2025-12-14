@@ -72,6 +72,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -140,9 +141,8 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
     }
   };
 
-  const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !recipe) return;
+  const processFile = async (file: File) => {
+    if (!recipe) return;
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -197,6 +197,36 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    }
+  };
+
+  const handleUploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      await processFile(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      await processFile(file);
     }
   };
 
@@ -354,8 +384,22 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
               onChange={handleUploadImage}
               className="hidden"
             />
-            <div className="aspect-video bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg overflow-hidden flex items-center justify-center relative group">
-              {isGeneratingImage || isUploadingImage ? (
+            <div 
+              className={`aspect-video rounded-lg overflow-hidden flex items-center justify-center relative group transition-all ${
+                isDragging 
+                  ? 'bg-primary/20 border-2 border-dashed border-primary' 
+                  : 'bg-gradient-to-br from-primary/20 to-primary/5'
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              {isDragging ? (
+                <div className="flex flex-col items-center gap-2 text-primary">
+                  <Upload className="w-10 h-10" />
+                  <span className="text-sm font-medium">Drop image here</span>
+                </div>
+              ) : isGeneratingImage || isUploadingImage ? (
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
                   <span className="text-sm">{isGeneratingImage ? 'Generating image...' : 'Uploading image...'}</span>
@@ -391,6 +435,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
               ) : (
                 <div className="flex flex-col items-center gap-3 text-muted-foreground">
                   <ImageIcon className="w-10 h-10" />
+                  <p className="text-sm">Drag & drop an image or</p>
                   <div className="flex gap-2">
                     <Button 
                       variant="outline" 
