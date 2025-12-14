@@ -715,6 +715,20 @@ export function Step4StorageSetup(props: StepProps) {
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2">
                                   <span className="font-medium">{ingredient.name}</span>
+                                  {recipes.length > 0 && (
+                                    <Badge 
+                                      variant="secondary" 
+                                      className={`text-xs px-1.5 py-0 h-5 ${
+                                        recipes.length <= 2 
+                                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                                          : recipes.length <= 5 
+                                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                      }`}
+                                    >
+                                      {recipes.length} recipe{recipes.length > 1 ? 's' : ''}
+                                    </Badge>
+                                  )}
                                 </div>
                                 <p className="text-sm text-muted-foreground">{ingredient.category}</p>
                                 {recipes.length > 0 && (
