@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { useLowStockIngredients } from './useIngredients';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useLowStockIngredients, useIngredients } from './useIngredients';
 import { useForecast } from './useForecast';
 import { useVendors } from './useVendors';
-import { useVendorItems } from './useVendorItems';
-import type { Ingredient } from './useIngredients';
 
 export interface SuggestedOrderItem {
   ingredientId: string;
@@ -28,26 +28,85 @@ export interface SuggestedOrder {
   reason: string;
 }
 
+// Hook to fetch ingredient-vendor mappings with vendor details
+function useIngredientVendorMaps() {
+  return useQuery({
+    queryKey: ['ingredient_vendor_maps_with_details'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ingredient_vendor_maps')
+        .select(`
+          ingredient_id,
+          priority_rank,
+          vendor_items (
+            id,
+            vendor_id,
+            unit_cost,
+            name,
+            vendors (
+              id,
+              name
+            )
+          )
+        `)
+        .order('priority_rank', { ascending: true });
+      
+      if (error) throw error;
+      
+      // Build a map of ingredient_id -> best vendor info (lowest priority_rank)
+      const vendorMap = new Map<string, {
+        vendorId: string;
+        vendorName: string;
+        unitCost: number;
+      }>();
+      
+      for (const mapping of data || []) {
+        // Only use the first (lowest priority) mapping for each ingredient
+        if (!vendorMap.has(mapping.ingredient_id) && mapping.vendor_items) {
+          const vendorItem = mapping.vendor_items as any;
+          if (vendorItem.vendors) {
+            vendorMap.set(mapping.ingredient_id, {
+              vendorId: vendorItem.vendors.id,
+              vendorName: vendorItem.vendors.name,
+              unitCost: vendorItem.unit_cost || 0,
+            });
+          }
+        }
+      }
+      
+      return vendorMap;
+    }
+  });
+}
+
 export function useSuggestedOrders(forecastDays: number = 3) {
   const { data: lowStockIngredients, isLoading: lowStockLoading } = useLowStockIngredients();
+  const { data: allIngredients, isLoading: ingredientsLoading } = useIngredients();
   const { ingredients: forecastIngredients, isLoading: forecastLoading } = useForecast(forecastDays);
   const { data: vendors, isLoading: vendorsLoading } = useVendors();
-  const { data: vendorItems, isLoading: vendorItemsLoading } = useVendorItems();
+  const { data: vendorMaps, isLoading: vendorMapsLoading } = useIngredientVendorMaps();
 
   const suggestions = useMemo(() => {
     if (!lowStockIngredients && !forecastIngredients) {
       return [];
     }
 
+    // Build ingredient lookup for unit costs
+    const ingredientLookup = new Map(
+      (allIngredients || []).map(ing => [ing.id, ing])
+    );
+
     // Build a map of ingredient needs
     const ingredientNeeds = new Map<string, SuggestedOrderItem>();
 
     // Add low stock items (current_stock <= reorder_point)
     for (const ingredient of lowStockIngredients || []) {
-      // Calculate suggested quantity to reach par level
       const suggestedQuantity = Math.max(0, ingredient.par_level - ingredient.current_stock);
       
       if (suggestedQuantity > 0) {
+        // Get vendor info from vendor maps (historical assignments)
+        const vendorInfo = vendorMaps?.get(ingredient.id);
+        
         ingredientNeeds.set(ingredient.id, {
           ingredientId: ingredient.id,
           ingredientName: ingredient.name,
@@ -55,39 +114,43 @@ export function useSuggestedOrders(forecastDays: number = 3) {
           parLevel: ingredient.par_level,
           reorderPoint: ingredient.reorder_point,
           unit: ingredient.unit,
-          unitCost: ingredient.unit_cost,
+          unitCost: vendorInfo?.unitCost || ingredient.unit_cost,
           suggestedQuantity,
           reason: 'low_stock',
-          vendorId: ingredient.vendor_id || undefined,
+          vendorId: vendorInfo?.vendorId || ingredient.vendor_id || undefined,
         });
       }
     }
 
     // Add forecast-driven needs (ingredients with low coverage)
     for (const forecastItem of forecastIngredients || []) {
-      // Only suggest if coverage is below 100% (won't have enough for forecast)
       if (forecastItem.coverage < 100) {
         const shortage = forecastItem.neededQuantity - forecastItem.currentStock;
         const existing = ingredientNeeds.get(forecastItem.ingredientId);
+        const ingredient = ingredientLookup.get(forecastItem.ingredientId);
+        const vendorInfo = vendorMaps?.get(forecastItem.ingredientId);
         
         if (existing) {
-          // Update with forecast info
           existing.neededForForecast = forecastItem.neededQuantity;
-          // Use the higher of low stock suggestion or forecast-driven need
           existing.suggestedQuantity = Math.max(existing.suggestedQuantity, Math.ceil(shortage));
+          // Update vendor if we have mapping but didn't have it before
+          if (!existing.vendorId && vendorInfo?.vendorId) {
+            existing.vendorId = vendorInfo.vendorId;
+            existing.unitCost = vendorInfo.unitCost || existing.unitCost;
+          }
         } else {
-          // Add new forecast-driven need
           ingredientNeeds.set(forecastItem.ingredientId, {
             ingredientId: forecastItem.ingredientId,
             ingredientName: forecastItem.ingredientName,
             currentStock: forecastItem.currentStock,
-            parLevel: 0, // Unknown from forecast data
-            reorderPoint: 0,
+            parLevel: ingredient?.par_level || 0,
+            reorderPoint: ingredient?.reorder_point || 0,
             unit: forecastItem.unit,
-            unitCost: 0,
+            unitCost: vendorInfo?.unitCost || ingredient?.unit_cost || 0,
             suggestedQuantity: Math.ceil(shortage),
             reason: 'forecast_demand',
             neededForForecast: forecastItem.neededQuantity,
+            vendorId: vendorInfo?.vendorId || ingredient?.vendor_id || undefined,
           });
         }
       }
@@ -111,10 +174,18 @@ export function useSuggestedOrders(forecastDays: number = 3) {
     const suggestedOrders: SuggestedOrder[] = [];
 
     vendorGroups.forEach((items, vendorId) => {
-      const vendor = vendors?.find(v => v.id === vendorId);
+      // Try to get vendor name from vendorMaps first, then fall back to vendors list
+      let vendorName = 'Unknown Vendor';
+      const vendorFromMaps = Array.from(vendorMaps?.values() || []).find(v => v.vendorId === vendorId);
+      if (vendorFromMaps) {
+        vendorName = vendorFromMaps.vendorName;
+      } else {
+        const vendor = vendors?.find(v => v.id === vendorId);
+        if (vendor) vendorName = vendor.name;
+      }
+      
       const totalAmount = items.reduce((sum, item) => sum + (item.suggestedQuantity * item.unitCost), 0);
       
-      // Determine urgency based on how many items are critically low
       const criticalItems = items.filter(item => item.currentStock <= item.reorderPoint * 0.5);
       const urgency: 'high' | 'medium' | 'low' = 
         criticalItems.length > 0 ? 'high' : 
@@ -124,11 +195,11 @@ export function useSuggestedOrders(forecastDays: number = 3) {
       const lowStockCount = items.filter(i => i.reason === 'low_stock').length;
       const forecastCount = items.filter(i => i.reason === 'forecast_demand').length;
       if (lowStockCount > 0) reasons.push(`${lowStockCount} below reorder point`);
-      if (forecastCount > 0) reasons.push(`${forecastCount} needed for forecast`);
+      if (forecastCount > 0) reasons.push(`${forecastCount} needed for ${forecastDays}-day forecast`);
 
       suggestedOrders.push({
         vendorId,
-        vendorName: vendor?.name || 'Unknown Vendor',
+        vendorName,
         items,
         totalAmount,
         urgency,
@@ -154,11 +225,11 @@ export function useSuggestedOrders(forecastDays: number = 3) {
     suggestedOrders.sort((a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency]);
 
     return suggestedOrders;
-  }, [lowStockIngredients, forecastIngredients, vendors, vendorItems]);
+  }, [lowStockIngredients, allIngredients, forecastIngredients, vendors, vendorMaps, forecastDays]);
 
   return {
     suggestions,
-    isLoading: lowStockLoading || forecastLoading || vendorsLoading || vendorItemsLoading,
+    isLoading: lowStockLoading || ingredientsLoading || forecastLoading || vendorsLoading || vendorMapsLoading,
     totalItems: suggestions.reduce((sum, s) => sum + s.items.length, 0),
     totalAmount: suggestions.reduce((sum, s) => sum + s.totalAmount, 0),
   };
