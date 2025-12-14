@@ -194,8 +194,11 @@ export default function OnboardingWelcome() {
                 {/* Phone notch */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-7 bg-zinc-900 rounded-b-2xl z-20" />
                 
-                {/* Phone screen */}
-                <div className="relative aspect-[9/19.5] rounded-[2.25rem] overflow-hidden bg-black">
+                {/* Phone screen - click to toggle sound */}
+                <div 
+                  className="relative aspect-[9/19.5] rounded-[2.25rem] overflow-hidden bg-black cursor-pointer group"
+                  onClick={toggleMute}
+                >
                   <video 
                     ref={videoRef}
                     src="/videos/onboarding-demo.mp4"
@@ -206,28 +209,35 @@ export default function OnboardingWelcome() {
                     className="absolute inset-0 w-full h-full object-cover"
                   />
                   
-                  {/* Unmute overlay button */}
-                  <motion.button
-                    onClick={toggleMute}
-                    className="absolute bottom-4 right-4 z-30 flex items-center gap-2 px-3 py-2 rounded-full bg-black/60 backdrop-blur-sm text-white text-sm font-medium hover:bg-black/80 transition-colors"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 1, duration: 0.3 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  {/* Sound indicator overlay */}
+                  <motion.div
+                    className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                    initial={false}
                   >
-                    {isMuted ? (
-                      <>
-                        <VolumeX className="w-4 h-4" />
-                        <span>Tap for sound</span>
-                      </>
-                    ) : (
-                      <>
-                        <Volume2 className="w-4 h-4" />
-                        <span>Sound on</span>
-                      </>
-                    )}
-                  </motion.button>
+                    <motion.div
+                      className="w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      {isMuted ? (
+                        <VolumeX className="w-8 h-8 text-white" />
+                      ) : (
+                        <Volume2 className="w-8 h-8 text-white" />
+                      )}
+                    </motion.div>
+                  </motion.div>
+                  
+                  {/* Initial hint */}
+                  {isMuted && (
+                    <motion.div
+                      className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-xs font-medium"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 1.5, duration: 0.3 }}
+                    >
+                      Tap for sound
+                    </motion.div>
+                  )}
                 </div>
                 
                 {/* Home indicator */}
