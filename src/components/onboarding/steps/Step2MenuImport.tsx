@@ -231,14 +231,14 @@ export function Step2MenuImport({
     >
       <div className="space-y-8">
         {/* Method Selection */}
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2">
           {importMethods.map((m) => (
             <button
               key={m.id}
               onClick={() => setMethod(m.id)}
               disabled={isProcessing}
               className={cn(
-                "relative p-6 rounded-xl border-2 text-left transition-all hover:border-primary/50",
+                "relative p-4 sm:p-6 rounded-xl border-2 text-left transition-all hover:border-primary/50",
                 method === m.id 
                   ? "border-primary bg-primary/5" 
                   : "border-border",
@@ -246,16 +246,16 @@ export function Step2MenuImport({
               )}
             >
               {m.recommended && (
-                <span className="absolute top-3 right-3 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                  Recommended
+                <span className="absolute top-2 right-2 sm:top-3 sm:right-3 text-[10px] sm:text-xs bg-primary text-primary-foreground px-1.5 sm:px-2 py-0.5 rounded-full">
+                  Best
                 </span>
               )}
               <m.icon className={cn(
-                "w-8 h-8 mb-3",
+                "w-6 h-6 sm:w-8 sm:h-8 mb-2 sm:mb-3",
                 method === m.id ? "text-primary" : "text-muted-foreground"
               )} />
-              <h3 className="font-semibold text-foreground mb-1">{m.title}</h3>
-              <p className="text-sm text-muted-foreground">{m.description}</p>
+              <h3 className="font-semibold text-foreground mb-0.5 sm:mb-1 text-sm sm:text-base">{m.title}</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{m.description}</p>
             </button>
           ))}
         </div>

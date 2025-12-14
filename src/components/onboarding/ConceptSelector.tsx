@@ -46,12 +46,12 @@ const itemVariants = {
 export function ConceptSelector({ selected, onSelect }: ConceptSelectorProps) {
   return (
     <motion.div 
-      className="grid grid-cols-2 md:grid-cols-4 gap-4"
+      className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-4"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
-      {concepts.map((concept, index) => (
+      {concepts.map((concept) => (
         <motion.button
           key={concept}
           variants={itemVariants}
@@ -59,10 +59,10 @@ export function ConceptSelector({ selected, onSelect }: ConceptSelectorProps) {
           whileTap={{ scale: 0.97 }}
           onClick={() => onSelect(concept)}
           className={cn(
-            "relative rounded-2xl overflow-hidden aspect-[4/3] group transition-colors duration-300",
+            "relative rounded-xl sm:rounded-2xl overflow-hidden aspect-[4/3] group transition-colors duration-300",
             "border-2 focus:outline-none focus:ring-2 focus:ring-primary/50",
             selected === concept 
-              ? "border-primary ring-4 ring-primary/20 shadow-lg" 
+              ? "border-primary ring-2 sm:ring-4 ring-primary/20 shadow-lg" 
               : "border-transparent hover:border-primary/60 hover:shadow-lg"
           )}
         >
@@ -72,8 +72,8 @@ export function ConceptSelector({ selected, onSelect }: ConceptSelectorProps) {
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-4">
-            <span className="text-sm font-semibold text-white drop-shadow-lg">
+          <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-4">
+            <span className="text-xs sm:text-sm font-semibold text-white drop-shadow-lg">
               {CONCEPT_LABELS[concept]}
             </span>
           </div>
@@ -82,9 +82,9 @@ export function ConceptSelector({ selected, onSelect }: ConceptSelectorProps) {
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 500, damping: 25 }}
-              className="absolute top-3 right-3 w-7 h-7 rounded-full bg-primary flex items-center justify-center shadow-lg"
+              className="absolute top-2 right-2 sm:top-3 sm:right-3 w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-primary flex items-center justify-center shadow-lg"
             >
-              <Check className="w-4 h-4 text-primary-foreground" />
+              <Check className="w-3 h-3 sm:w-4 sm:h-4 text-primary-foreground" />
             </motion.div>
           )}
           {/* Hover overlay */}

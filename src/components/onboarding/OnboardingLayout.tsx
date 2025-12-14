@@ -182,7 +182,7 @@ export function OnboardingLayout({
       </header>
 
       {/* Main content */}
-      <main className="flex-1 py-8 px-4 sm:px-6 relative z-10">
+      <main className="flex-1 py-6 sm:py-8 px-4 sm:px-6 relative z-10">
         <div className="max-w-5xl mx-auto">
           {/* Step Header */}
           <motion.div 
@@ -190,13 +190,13 @@ export function OnboardingLayout({
             initial="initial"
             animate="animate"
             variants={headerVariants}
-            className="text-center mb-10"
+            className="text-center mb-6 sm:mb-10"
           >
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3 }}
-              className="inline-flex items-center gap-2 bg-primary/10 backdrop-blur-sm text-primary text-sm font-medium px-4 py-1.5 rounded-full mb-4 border border-primary/20"
+              className="inline-flex items-center gap-2 bg-primary/10 backdrop-blur-sm text-primary text-xs sm:text-sm font-medium px-3 sm:px-4 py-1 sm:py-1.5 rounded-full mb-3 sm:mb-4 border border-primary/20"
             >
               Step {currentStep} of {totalSteps}
             </motion.div>
@@ -204,7 +204,7 @@ export function OnboardingLayout({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.1 }}
-              className="text-3xl md:text-4xl font-bold text-foreground mb-3"
+              className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2 sm:mb-3 px-2"
             >
               {title}
             </motion.h2>
@@ -213,7 +213,7 @@ export function OnboardingLayout({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: 0.2 }}
-                className="text-lg text-muted-foreground max-w-2xl mx-auto"
+                className="text-sm sm:text-lg text-muted-foreground max-w-2xl mx-auto px-2"
               >
                 {subtitle}
               </motion.p>
@@ -229,7 +229,7 @@ export function OnboardingLayout({
               exit="exit"
               variants={contentVariants}
               className={cn(
-                "mb-8 bg-card/80 backdrop-blur-md rounded-2xl border border-border/50 shadow-xl p-6 sm:p-8",
+                "mb-6 sm:mb-8 bg-card/80 backdrop-blur-md rounded-xl sm:rounded-2xl border border-border/50 shadow-xl p-4 sm:p-6 md:p-8",
                 className
               )}
             >
@@ -247,20 +247,20 @@ export function OnboardingLayout({
           transition={{ duration: 0.3, delay: 0.3 }}
           className="border-t bg-background/80 backdrop-blur-md sticky bottom-0 z-40"
         >
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div>
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
                 {onBack && (
                   <motion.div whileHover={{ x: -3 }} whileTap={{ scale: 0.95 }}>
-                    <Button variant="ghost" onClick={onBack} className="gap-2">
+                    <Button variant="ghost" onClick={onBack} className="gap-1 sm:gap-2 px-2 sm:px-4">
                       <ArrowLeft className="w-4 h-4" />
-                      Back
+                      <span className="hidden sm:inline">Back</span>
                     </Button>
                   </motion.div>
                 )}
               </div>
               
-              <div className="sm:hidden">
+              <div className="sm:hidden shrink-0">
                 <SetupHealthScore score={setupHealthScore} />
               </div>
               
@@ -268,14 +268,15 @@ export function OnboardingLayout({
                 <motion.div 
                   whileHover={{ x: 3 }} 
                   whileTap={{ scale: 0.95 }}
+                  className="shrink-0"
                 >
                   <Button 
                     onClick={onNext} 
                     disabled={nextDisabled}
-                    className="gap-2 px-6 shadow-lg shadow-primary/25"
-                    size="lg"
+                    className="gap-1 sm:gap-2 px-4 sm:px-6 shadow-lg shadow-primary/25"
+                    size="default"
                   >
-                    {nextLabel}
+                    <span className="text-sm sm:text-base">{nextLabel}</span>
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 </motion.div>
