@@ -23,23 +23,38 @@ export default function Auth() {
 
   // Redirect if already logged in - check onboarding status
   useEffect(() => {
-    if (user) {
+    if (user && !authLoading) {
       // Check if user has completed onboarding
       const checkOnboardingStatus = async () => {
-        const { data } = await import('@/integrations/supabase/client').then(m => 
-          m.supabase.from('onboarding_progress').select('current_step').eq('user_id', user.id).maybeSingle()
-        );
-        
-        // If no progress or not completed (step 8), go to onboarding
-        if (!data || data.current_step < 8) {
-          navigate('/onboarding');
-        } else {
+        try {
+          const { supabase } = await import('@/integrations/supabase/client');
+          const { data, error } = await supabase
+            .from('onboarding_progress')
+            .select('current_step')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
+          if (error) {
+            console.error('Error checking onboarding status:', error);
+            // Default to dashboard if we can't check
+            navigate('/');
+            return;
+          }
+          
+          // If no progress or not completed (step 8), go to onboarding
+          if (!data || (data.current_step !== null && data.current_step < 8)) {
+            navigate('/onboarding');
+          } else {
+            navigate('/');
+          }
+        } catch (err) {
+          console.error('Error in onboarding check:', err);
           navigate('/');
         }
       };
       checkOnboardingStatus();
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   // Show loading spinner while auth state is being determined
   if (authLoading) {
