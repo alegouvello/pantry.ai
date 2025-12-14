@@ -15,8 +15,9 @@ interface BusinessHours {
   [key: string]: DayHours;
 }
 
-// Parse time strings like "11:00 AM" or "11 AM" to 24h format "11:00"
-function parseTime(timeStr: string): string {
+// Parse time strings like "5:30 PM", "11 AM", "5:30-11 PM" to 24h format "17:30"
+// Also handles cases where AM/PM is only on the second time (e.g., "5:30-11 PM" means 5:30 PM to 11 PM)
+function parseTime(timeStr: string, inferredPeriod?: string): string {
   if (!timeStr) return '';
   
   const cleaned = timeStr.trim().toLowerCase();
@@ -24,19 +25,53 @@ function parseTime(timeStr: string): string {
   // Handle "closed" or similar
   if (cleaned.includes('closed')) return '';
   
-  // Extract hours and minutes
+  // Extract hours and minutes - handle formats like "5:30", "11", "5:30 PM", "11PM"
   const timeMatch = cleaned.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
   if (!timeMatch) return '';
   
   let hours = parseInt(timeMatch[1], 10);
   const minutes = timeMatch[2] || '00';
-  const period = timeMatch[3]?.toLowerCase();
+  let period = timeMatch[3]?.toLowerCase() || inferredPeriod;
+  
+  // If no period and hours <= 6, likely PM for restaurant hours
+  if (!period && hours <= 6) {
+    period = 'pm';
+  }
   
   // Convert to 24h format
   if (period === 'pm' && hours !== 12) hours += 12;
   if (period === 'am' && hours === 12) hours = 0;
   
   return `${hours.toString().padStart(2, '0')}:${minutes}`;
+}
+
+// Parse a time range like "5:30-11 PM" or "5:30 PM - 11 PM"
+function parseTimeRange(rangeStr: string): { open: string; close: string } | null {
+  if (!rangeStr) return null;
+  
+  const cleaned = rangeStr.trim();
+  
+  // Match patterns like "5:30-11 PM", "5:30 PM - 11 PM", "5:30–11PM"
+  const rangeMatch = cleaned.match(/(\d{1,2}(?::\d{2})?)\s*(am|pm)?\s*[-–—to]+\s*(\d{1,2}(?::\d{2})?)\s*(am|pm)?/i);
+  
+  if (!rangeMatch) return null;
+  
+  const openTimeStr = rangeMatch[1];
+  const openPeriod = rangeMatch[2]?.toLowerCase();
+  const closeTimeStr = rangeMatch[3];
+  const closePeriod = rangeMatch[4]?.toLowerCase();
+  
+  // If only closing time has AM/PM, infer same for opening (common pattern: "5:30-11 PM")
+  const inferredOpenPeriod = openPeriod || closePeriod;
+  
+  const openTime = parseTime(openTimeStr + (openPeriod ? ' ' + openPeriod : ''), inferredOpenPeriod);
+  const closeTime = parseTime(closeTimeStr + (closePeriod ? ' ' + closePeriod : ''), closePeriod);
+  
+  if (openTime && closeTime) {
+    return { open: openTime, close: closeTime };
+  }
+  
+  return null;
 }
 
 // Extract business hours from scraped content
@@ -63,15 +98,24 @@ function extractBusinessHours(content: string): BusinessHours | null {
   
   let foundAny = false;
   
-  // Pattern 1: "Monday: 11:00 AM - 10:00 PM" or "Monday 11 AM – 10 PM"
-  const dayPattern = /\b(mon(?:day)?|tue(?:s(?:day)?)?|wed(?:nesday)?|thu(?:r(?:s(?:day)?)?)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)\b[:\s]*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*[-–—to]+\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/gi;
+  // Pattern 1: Google-style "Sunday 5:30-10 PM" or "Monday 5:30–11 PM"
+  // Handles: "Day TIME-TIME PM" where PM only appears once at end
+  const googlePattern = /\b(mon(?:day)?|tue(?:s(?:day)?)?|wed(?:nesday)?|thu(?:r(?:s(?:day)?)?)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)\b[:\s]*(\d{1,2}(?::\d{2})?)\s*(am|pm)?\s*[-–—]+\s*(\d{1,2}(?::\d{2})?)\s*(am|pm)/gi;
   
   let match;
-  while ((match = dayPattern.exec(content)) !== null) {
+  while ((match = googlePattern.exec(content)) !== null) {
     const dayKey = dayMap[match[1].toLowerCase()];
     if (dayKey) {
-      const openTime = parseTime(match[2]);
-      const closeTime = parseTime(match[3]);
+      const openTimeStr = match[2];
+      const openPeriod = match[3]?.toLowerCase();
+      const closeTimeStr = match[4];
+      const closePeriod = match[5]?.toLowerCase();
+      
+      // If opening time has no AM/PM, infer from closing time
+      const inferredPeriod = openPeriod || closePeriod;
+      
+      const openTime = parseTime(openTimeStr, inferredPeriod);
+      const closeTime = parseTime(closeTimeStr, closePeriod);
       
       if (openTime && closeTime) {
         hours[dayKey] = {
@@ -84,7 +128,27 @@ function extractBusinessHours(content: string): BusinessHours | null {
     }
   }
   
-  // Pattern 2: Day listed as "Closed"
+  // Pattern 2: "Monday: 11:00 AM - 10:00 PM" (both times have AM/PM)
+  const fullPattern = /\b(mon(?:day)?|tue(?:s(?:day)?)?|wed(?:nesday)?|thu(?:r(?:s(?:day)?)?)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)\b[:\s]*(\d{1,2}(?::\d{2})?)\s*(am|pm)\s*[-–—to]+\s*(\d{1,2}(?::\d{2})?)\s*(am|pm)/gi;
+  
+  while ((match = fullPattern.exec(content)) !== null) {
+    const dayKey = dayMap[match[1].toLowerCase()];
+    if (dayKey && hours[dayKey].closed) { // Don't overwrite if already found
+      const openTime = parseTime(match[2] + ' ' + match[3]);
+      const closeTime = parseTime(match[4] + ' ' + match[5]);
+      
+      if (openTime && closeTime) {
+        hours[dayKey] = {
+          open: openTime,
+          close: closeTime,
+          closed: false,
+        };
+        foundAny = true;
+      }
+    }
+  }
+  
+  // Pattern 3: Day listed as "Closed"
   const closedPattern = /\b(mon(?:day)?|tue(?:s(?:day)?)?|wed(?:nesday)?|thu(?:r(?:s(?:day)?)?)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)\b[:\s]*closed/gi;
   
   while ((match = closedPattern.exec(content)) !== null) {
@@ -95,14 +159,15 @@ function extractBusinessHours(content: string): BusinessHours | null {
     }
   }
   
-  // Pattern 3: Range of days like "Mon-Fri: 11 AM - 10 PM"
-  const rangePattern = /(mon(?:day)?)\s*[-–—]\s*(fri(?:day)?|sun(?:day)?)[:\s]*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*[-–—to]+\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)?)/gi;
+  // Pattern 4: Range of days like "Mon-Fri: 5:30-11 PM"
+  const rangePattern = /(mon(?:day)?)\s*[-–—]\s*(fri(?:day)?|sat(?:urday)?|sun(?:day)?)[:\s]*(\d{1,2}(?::\d{2})?)\s*(am|pm)?\s*[-–—to]+\s*(\d{1,2}(?::\d{2})?)\s*(am|pm)/gi;
   
   while ((match = rangePattern.exec(content)) !== null) {
     const startDay = dayMap[match[1].toLowerCase()];
     const endDay = dayMap[match[2].toLowerCase()];
-    const openTime = parseTime(match[3]);
-    const closeTime = parseTime(match[4]);
+    const inferredPeriod = match[4]?.toLowerCase() || match[6]?.toLowerCase();
+    const openTime = parseTime(match[3], inferredPeriod);
+    const closeTime = parseTime(match[5], match[6]?.toLowerCase());
     
     if (startDay && endDay && openTime && closeTime) {
       const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -110,8 +175,10 @@ function extractBusinessHours(content: string): BusinessHours | null {
       const endIdx = days.indexOf(endDay);
       
       for (let i = startIdx; i <= endIdx; i++) {
-        hours[days[i]] = { open: openTime, close: closeTime, closed: false };
-        foundAny = true;
+        if (hours[days[i]].closed) { // Don't overwrite
+          hours[days[i]] = { open: openTime, close: closeTime, closed: false };
+          foundAny = true;
+        }
       }
     }
   }
