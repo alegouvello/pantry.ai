@@ -63,7 +63,7 @@ export function Step2MenuImport({
   updateHealthScore,
 }: Step2Props) {
   const { toast } = useToast();
-  const { conceptType, setParsedDishes } = useOnboardingContext();
+  const { conceptType, setParsedDishes, setPrepRecipes } = useOnboardingContext();
   const [method, setMethod] = useState<ImportMethod | null>(null);
   const [menuUrl, setMenuUrl] = useState('');
   const [isMonitored, setIsMonitored] = useState(false);
@@ -129,6 +129,7 @@ export function Step2MenuImport({
   const handleContinue = async () => {
     if (method === 'manual') {
       setParsedDishes([]);
+      setPrepRecipes([]);
       onNext();
       return;
     }
@@ -184,11 +185,18 @@ export function Step2MenuImport({
       }
 
       const dishes = data.dishes || [];
+      const prepRecipes = data.prepRecipes || [];
+      
       setParsedDishes(dishes);
+      setPrepRecipes(prepRecipes);
 
+      const prepMessage = prepRecipes.length > 0 
+        ? ` Detected ${prepRecipes.length} house-made prep items.`
+        : '';
+      
       toast({
         title: 'Menu parsed successfully!',
-        description: `Found ${dishes.length} dishes. Review and approve recipes next.`,
+        description: `Found ${dishes.length} dishes.${prepMessage} Review and approve recipes next.`,
       });
 
       updateHealthScore(15);

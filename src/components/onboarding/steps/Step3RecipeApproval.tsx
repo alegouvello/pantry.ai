@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { AIConfidenceCard } from '../AIConfidenceCard';
@@ -10,11 +10,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Check, Clock, Trash2, Plus, ArrowRight, ArrowLeft, Sparkles, AlertCircle, Loader2, ImageIcon, RefreshCw } from 'lucide-react';
+import { Check, Clock, Trash2, Plus, ArrowRight, ArrowLeft, Sparkles, AlertCircle, Loader2, ImageIcon, RefreshCw, ChefHat, ChevronDown, ChevronRight } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useOnboardingContext, ParsedDish } from '@/contexts/OnboardingContext';
+import { useOnboardingContext, ParsedDish, ParsedIngredient } from '@/contexts/OnboardingContext';
 import { useSaveOnboardingRecipe } from '@/hooks/useSaveOnboardingRecipe';
 import { useToast } from '@/hooks/use-toast';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.98 },
@@ -52,7 +53,7 @@ interface ApprovedRecipeData {
 
 export function Step3RecipeApproval(props: StepProps) {
   const { toast } = useToast();
-  const { conceptType, parsedDishes } = useOnboardingContext();
+  const { conceptType, parsedDishes, prepRecipes } = useOnboardingContext();
   const saveRecipe = useSaveOnboardingRecipe();
   
   const [phase, setPhase] = useState<'settings' | 'approval'>('settings');
@@ -66,8 +67,9 @@ export function Step3RecipeApproval(props: StepProps) {
   const [approvedRecipes, setApprovedRecipes] = useState<string[]>([]);
   const [approvedRecipeData, setApprovedRecipeData] = useState<ApprovedRecipeData[]>([]);
   const [needsLaterRecipes, setNeedsLaterRecipes] = useState<string[]>([]);
-  const [editingIngredients, setEditingIngredients] = useState<ParsedDish['ingredients']>([]);
+  const [editingIngredients, setEditingIngredients] = useState<ParsedIngredient[]>([]);
   const [recipes, setRecipes] = useState<ParsedDish[]>([]);
+  const [expandedPrepItems, setExpandedPrepItems] = useState<Set<string>>(new Set());
 
   // Track ingredients per recipe for saving
   const recipeIngredientsRef = useRef<Record<string, ParsedDish['ingredients']>>({});
@@ -75,15 +77,17 @@ export function Step3RecipeApproval(props: StepProps) {
   // Use parsed dishes from context or empty array
   useEffect(() => {
     if (parsedDishes.length > 0) {
-      setRecipes(parsedDishes);
+      // Combine dishes and prep recipes, with prep recipes first for visibility
+      const allRecipes = [...prepRecipes, ...parsedDishes];
+      setRecipes(allRecipes);
       setPhase('approval');
-      setEditingIngredients(parsedDishes[0]?.ingredients || []);
+      setEditingIngredients(allRecipes[0]?.ingredients || []);
       // Initialize ingredients tracking
-      parsedDishes.forEach(dish => {
+      allRecipes.forEach(dish => {
         recipeIngredientsRef.current[dish.id] = dish.ingredients;
       });
     }
-  }, [parsedDishes]);
+  }, [parsedDishes, prepRecipes]);
 
   const currentRecipe = recipes[currentRecipeIndex];
   const totalRecipes = recipes.length;
@@ -212,7 +216,7 @@ export function Step3RecipeApproval(props: StepProps) {
   };
 
   const addIngredient = () => {
-    const newIngredient = {
+    const newIngredient: ParsedIngredient = {
       id: `new-${Date.now()}`,
       name: '',
       quantity: 0,
@@ -221,6 +225,29 @@ export function Step3RecipeApproval(props: StepProps) {
       confidence: 'medium' as const,
     };
     setEditingIngredients([...editingIngredients, newIngredient]);
+  };
+
+  // Find prep recipe that matches an ingredient name
+  const findPrepRecipeForIngredient = (ingredientName: string): ParsedDish | undefined => {
+    const lowerName = ingredientName.toLowerCase();
+    return prepRecipes.find(prep => {
+      const prepLowerName = prep.name.toLowerCase();
+      // Check if ingredient contains key words from prep recipe name
+      return prepLowerName.includes(lowerName) || 
+             lowerName.includes(prepLowerName.replace('house ', ''));
+    });
+  };
+
+  const togglePrepExpanded = (ingredientId: string) => {
+    setExpandedPrepItems(prev => {
+      const next = new Set(prev);
+      if (next.has(ingredientId)) {
+        next.delete(ingredientId);
+      } else {
+        next.add(ingredientId);
+      }
+      return next;
+    });
   };
 
   const isComplete = totalRecipes > 0 && approvedRecipes.length + needsLaterRecipes.length === totalRecipes;
@@ -553,70 +580,121 @@ export function Step3RecipeApproval(props: StepProps) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {editingIngredients.map(ingredient => (
-                      <TableRow key={ingredient.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              value={ingredient.name}
-                              onChange={(e) => updateIngredient(ingredient.id, 'name', e.target.value)}
-                              className="h-8"
-                            />
-                            {ingredient.confidence !== 'high' && (
-                              <Badge variant={ingredient.confidence === 'medium' ? 'secondary' : 'destructive'} className="text-xs">
-                                {ingredient.confidence}
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            value={ingredient.quantity}
-                            onChange={(e) => updateIngredient(ingredient.id, 'quantity', parseFloat(e.target.value) || 0)}
-                            className="h-8"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Select
-                            value={ingredient.unit}
-                            onValueChange={(value) => updateIngredient(ingredient.id, 'unit', value)}
-                          >
-                            <SelectTrigger className="h-8">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="g">g</SelectItem>
-                              <SelectItem value="kg">kg</SelectItem>
-                              <SelectItem value="ml">ml</SelectItem>
-                              <SelectItem value="L">L</SelectItem>
-                              <SelectItem value="oz">oz</SelectItem>
-                              <SelectItem value="lb">lb</SelectItem>
-                              <SelectItem value="piece">piece</SelectItem>
-                              <SelectItem value="tbsp">tbsp</SelectItem>
-                              <SelectItem value="tsp">tsp</SelectItem>
-                              <SelectItem value="cup">cup</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          <Switch
-                            checked={ingredient.optional}
-                            onCheckedChange={(checked) => updateIngredient(ingredient.id, 'optional', checked)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive"
-                            onClick={() => removeIngredient(ingredient.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {editingIngredients.map(ingredient => {
+                      const prepRecipe = ingredient.isHouseMade ? findPrepRecipeForIngredient(ingredient.name) : undefined;
+                      const isExpanded = expandedPrepItems.has(ingredient.id);
+                      
+                      return (
+                        <React.Fragment key={ingredient.id}>
+                          <TableRow className={ingredient.isHouseMade ? 'bg-amber-50/50 dark:bg-amber-950/20' : ''}>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {ingredient.isHouseMade && prepRecipe && (
+                                  <button
+                                    onClick={() => togglePrepExpanded(ingredient.id)}
+                                    className="p-1 hover:bg-muted rounded"
+                                  >
+                                    {isExpanded ? (
+                                      <ChevronDown className="w-4 h-4 text-amber-600" />
+                                    ) : (
+                                      <ChevronRight className="w-4 h-4 text-amber-600" />
+                                    )}
+                                  </button>
+                                )}
+                                <Input
+                                  value={ingredient.name}
+                                  onChange={(e) => updateIngredient(ingredient.id, 'name', e.target.value)}
+                                  className="h-8"
+                                />
+                                {ingredient.isHouseMade && (
+                                  <Badge variant="outline" className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-300">
+                                    <ChefHat className="w-3 h-3 mr-1" />
+                                    Prep
+                                  </Badge>
+                                )}
+                                {ingredient.confidence !== 'high' && !ingredient.isHouseMade && (
+                                  <Badge variant={ingredient.confidence === 'medium' ? 'secondary' : 'destructive'} className="text-xs">
+                                    {ingredient.confidence}
+                                  </Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                value={ingredient.quantity}
+                                onChange={(e) => updateIngredient(ingredient.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                className="h-8"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Select
+                                value={ingredient.unit}
+                                onValueChange={(value) => updateIngredient(ingredient.id, 'unit', value)}
+                              >
+                                <SelectTrigger className="h-8">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="g">g</SelectItem>
+                                  <SelectItem value="kg">kg</SelectItem>
+                                  <SelectItem value="ml">ml</SelectItem>
+                                  <SelectItem value="L">L</SelectItem>
+                                  <SelectItem value="oz">oz</SelectItem>
+                                  <SelectItem value="lb">lb</SelectItem>
+                                  <SelectItem value="piece">piece</SelectItem>
+                                  <SelectItem value="tbsp">tbsp</SelectItem>
+                                  <SelectItem value="tsp">tsp</SelectItem>
+                                  <SelectItem value="cup">cup</SelectItem>
+                                  <SelectItem value="clove">clove</SelectItem>
+                                  <SelectItem value="stalk">stalk</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell>
+                              <Switch
+                                checked={ingredient.optional}
+                                onCheckedChange={(checked) => updateIngredient(ingredient.id, 'optional', checked)}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive"
+                                onClick={() => removeIngredient(ingredient.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                          
+                          {/* Expandable sub-ingredients for house-made items */}
+                          {ingredient.isHouseMade && prepRecipe && isExpanded && (
+                            <TableRow>
+                              <TableCell colSpan={5} className="bg-amber-50/30 dark:bg-amber-950/10 p-0">
+                                <div className="pl-10 pr-4 py-3 border-l-2 border-amber-400 ml-4">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <ChefHat className="w-4 h-4 text-amber-600" />
+                                    <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                                      {prepRecipe.name} — yields {prepRecipe.yieldAmount} {prepRecipe.yieldUnit}
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {prepRecipe.ingredients.map(subIng => (
+                                      <div key={subIng.id} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <span className="w-2 h-2 rounded-full bg-amber-400" />
+                                        <span>{subIng.quantity} {subIng.unit} {subIng.name}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
                   </TableBody>
                 </Table>
 
