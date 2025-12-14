@@ -1,10 +1,12 @@
+import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, TrendingDown, Package, ArrowRight, Sparkles } from 'lucide-react';
+import { TrendingDown, Package, ArrowRight, Sparkles, Minus, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import type { SuggestedOrder } from '@/hooks/useSuggestedOrders';
+import type { SuggestedOrder, SuggestedOrderItem } from '@/hooks/useSuggestedOrders';
 
 interface SuggestedOrderCardProps {
   suggestion: SuggestedOrder;
@@ -12,6 +14,45 @@ interface SuggestedOrderCardProps {
 }
 
 export function SuggestedOrderCard({ suggestion, onCreateOrder }: SuggestedOrderCardProps) {
+  const [editedItems, setEditedItems] = useState<Record<string, number>>(() => 
+    Object.fromEntries(suggestion.items.map(item => [item.ingredientId, item.suggestedQuantity]))
+  );
+
+  const updateQuantity = useCallback((ingredientId: string, delta: number) => {
+    setEditedItems(prev => ({
+      ...prev,
+      [ingredientId]: Math.max(0, (prev[ingredientId] || 0) + delta)
+    }));
+  }, []);
+
+  const setQuantity = useCallback((ingredientId: string, value: number) => {
+    setEditedItems(prev => ({
+      ...prev,
+      [ingredientId]: Math.max(0, value)
+    }));
+  }, []);
+
+  const getEditedTotal = useCallback(() => {
+    return suggestion.items.reduce((sum, item) => {
+      const qty = editedItems[item.ingredientId] ?? item.suggestedQuantity;
+      return sum + (qty * item.unitCost);
+    }, 0);
+  }, [suggestion.items, editedItems]);
+
+  const handleCreateOrder = useCallback(() => {
+    const editedSuggestion: SuggestedOrder = {
+      ...suggestion,
+      items: suggestion.items
+        .map(item => ({
+          ...item,
+          suggestedQuantity: editedItems[item.ingredientId] ?? item.suggestedQuantity
+        }))
+        .filter(item => item.suggestedQuantity > 0),
+      totalAmount: getEditedTotal()
+    };
+    onCreateOrder(editedSuggestion);
+  }, [suggestion, editedItems, getEditedTotal, onCreateOrder]);
+
   const urgencyStyles = {
     high: 'border-destructive/50 bg-destructive/5',
     medium: 'border-warning/50 bg-warning/5',
@@ -23,6 +64,10 @@ export function SuggestedOrderCard({ suggestion, onCreateOrder }: SuggestedOrder
     medium: { variant: 'warning' as const, label: 'Soon' },
     low: { variant: 'secondary' as const, label: 'Optional' },
   };
+
+  const activeItemCount = suggestion.items.filter(
+    item => (editedItems[item.ingredientId] ?? item.suggestedQuantity) > 0
+  ).length;
 
   return (
     <motion.div
@@ -46,7 +91,7 @@ export function SuggestedOrderCard({ suggestion, onCreateOrder }: SuggestedOrder
                   {suggestion.vendorName}
                 </CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {suggestion.items.length} item{suggestion.items.length !== 1 ? 's' : ''} suggested
+                  {activeItemCount} item{activeItemCount !== 1 ? 's' : ''} in order
                 </p>
               </div>
             </div>
@@ -62,51 +107,76 @@ export function SuggestedOrderCard({ suggestion, onCreateOrder }: SuggestedOrder
             {suggestion.reason}
           </p>
 
-          {/* Items Preview */}
-          <div className="space-y-2 max-h-48 overflow-y-auto">
-            {suggestion.items.slice(0, 5).map((item) => (
-              <div
-                key={item.ingredientId}
-                className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div className={`flex-shrink-0 p-1 rounded ${
-                          item.reason === 'low_stock' ? 'bg-destructive/20' : 'bg-primary/20'
-                        }`}>
-                          {item.reason === 'low_stock' ? (
-                            <TrendingDown className="h-3 w-3 text-destructive" />
-                          ) : (
-                            <Package className="h-3 w-3 text-primary" />
-                          )}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {item.reason === 'low_stock' 
-                          ? 'Below reorder point' 
-                          : 'Needed for forecasted demand'}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <span className="text-sm font-medium truncate">{item.ingredientName}</span>
+          {/* Items Preview with Editable Quantities */}
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {suggestion.items.map((item) => {
+              const currentQty = editedItems[item.ingredientId] ?? item.suggestedQuantity;
+              const itemTotal = currentQty * item.unitCost;
+              
+              return (
+                <div
+                  key={item.ingredientId}
+                  className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30"
+                >
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className={`flex-shrink-0 p-1 rounded ${
+                            item.reason === 'low_stock' ? 'bg-destructive/20' : 'bg-primary/20'
+                          }`}>
+                            {item.reason === 'low_stock' ? (
+                              <TrendingDown className="h-3 w-3 text-destructive" />
+                            ) : (
+                              <Package className="h-3 w-3 text-primary" />
+                            )}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {item.reason === 'low_stock' 
+                            ? 'Below reorder point' 
+                            : 'Needed for forecasted demand'}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <span className="text-sm font-medium truncate">{item.ingredientName}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => updateQuantity(item.ingredientId, -1)}
+                        disabled={currentQty <= 0}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <Input
+                        type="number"
+                        value={currentQty}
+                        onChange={(e) => setQuantity(item.ingredientId, parseFloat(e.target.value) || 0)}
+                        className="h-7 w-16 text-center text-sm px-1"
+                        min={0}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => updateQuantity(item.ingredientId, 1)}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <span className="text-xs text-muted-foreground w-8">{item.unit}</span>
+                    <span className="text-sm font-medium w-16 text-right">
+                      ${itemTotal.toFixed(2)}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right flex-shrink-0 ml-2">
-                  <span className="text-sm font-semibold">
-                    {item.suggestedQuantity} {item.unit}
-                  </span>
-                  <p className="text-xs text-muted-foreground">
-                    ${(item.suggestedQuantity * item.unitCost).toFixed(2)}
-                  </p>
-                </div>
-              </div>
-            ))}
-            {suggestion.items.length > 5 && (
-              <p className="text-xs text-center text-muted-foreground py-1">
-                +{suggestion.items.length - 5} more items
-              </p>
-            )}
+              );
+            })}
           </div>
 
           {/* Total & Action */}
@@ -114,14 +184,14 @@ export function SuggestedOrderCard({ suggestion, onCreateOrder }: SuggestedOrder
             <div>
               <p className="text-xs text-muted-foreground">Estimated Total</p>
               <p className="text-lg font-bold text-foreground">
-                ${suggestion.totalAmount.toFixed(2)}
+                ${getEditedTotal().toFixed(2)}
               </p>
             </div>
             <Button
               variant="accent"
               size="sm"
-              onClick={() => onCreateOrder(suggestion)}
-              disabled={suggestion.vendorId === 'unassigned'}
+              onClick={handleCreateOrder}
+              disabled={suggestion.vendorId === 'unassigned' || activeItemCount === 0}
             >
               Create PO
               <ArrowRight className="h-4 w-4 ml-1" />
