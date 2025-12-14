@@ -153,7 +153,7 @@ export default function OnboardingWelcome() {
           {/* Video container */}
           <div className="absolute inset-0 flex items-center justify-center p-8 lg:p-12">
             <motion.div 
-              className="relative w-full max-w-2xl aspect-video rounded-2xl overflow-hidden shadow-2xl backdrop-blur-sm"
+              className="relative w-full max-w-2xl aspect-video rounded-2xl overflow-hidden shadow-2xl"
               variants={videoVariants}
               initial="hidden"
               animate="visible"
@@ -168,7 +168,7 @@ export default function OnboardingWelcome() {
                 loop
                 playsInline
                 controls
-                className="w-full h-full object-contain bg-black"
+                className="absolute inset-0 w-full h-full object-cover"
               />
               <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-white/20 rounded-2xl" />
             </motion.div>
