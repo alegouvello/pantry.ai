@@ -249,12 +249,15 @@ export function useSuggestedOrders(forecastDays: number = 3, restaurantId?: stri
     suggestedOrders.sort((a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency]);
 
     return suggestedOrders;
-  }, [lowStockIngredients, allIngredients, forecastIngredients, vendors, vendorMaps, forecastDays, ingredientsInPendingPOs]);
+  }, [lowStockIngredients, allIngredients, forecastIngredients, vendors, vendorMaps, forecastDays, ingredientsInPendingPOs, restaurantId]);
 
+  // Include restaurantId loading state - suggestions are only valid once restaurant is loaded
+  const isRestaurantLoading = restaurantId === undefined;
+  
   return {
-    suggestions,
-    isLoading: lowStockLoading || ingredientsLoading || forecastLoading || vendorsLoading || vendorMapsLoading || ordersLoading,
-    totalItems: suggestions.reduce((sum, s) => sum + s.items.length, 0),
-    totalAmount: suggestions.reduce((sum, s) => sum + s.totalAmount, 0),
+    suggestions: isRestaurantLoading ? [] : suggestions,
+    isLoading: lowStockLoading || ingredientsLoading || forecastLoading || vendorsLoading || vendorMapsLoading || ordersLoading || isRestaurantLoading,
+    totalItems: isRestaurantLoading ? 0 : suggestions.reduce((sum, s) => sum + s.items.length, 0),
+    totalAmount: isRestaurantLoading ? 0 : suggestions.reduce((sum, s) => sum + s.totalAmount, 0),
   };
 }
