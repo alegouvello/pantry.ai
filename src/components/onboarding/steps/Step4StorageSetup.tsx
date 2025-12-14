@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Warehouse, Snowflake, Package, Wine, Coffee, Plus, Trash2, Upload, ListChecks, FileSpreadsheet, Loader2, GripVertical, Wand2, UtensilsCrossed, Filter, X } from 'lucide-react';
+import { Warehouse, Snowflake, Package, Wine, Coffee, Plus, Trash2, Upload, ListChecks, FileSpreadsheet, Loader2, GripVertical, Wand2, UtensilsCrossed, Filter, X, AlertTriangle } from 'lucide-react';
 import { useStorageLocations, useCreateStorageLocation } from '@/hooks/useOnboarding';
 import { useOnboardingContext } from '@/contexts/OnboardingContext';
 import { useToast } from '@/hooks/use-toast';
@@ -426,6 +426,19 @@ export function Step4StorageSetup(props: StepProps) {
   const ingredientsByStorage = (storageId: string) =>
     ingredients.filter(ing => ing.storageKey === storageId);
 
+  // Critical ingredients - used in 6+ recipes
+  const criticalIngredients = useMemo(() => {
+    if (!ingredientRecipes) return [];
+    return ingredients.filter(ing => {
+      const recipes = ingredientRecipes.get(ing.id) || [];
+      return recipes.length >= 6;
+    }).sort((a, b) => {
+      const aCount = (ingredientRecipes.get(a.id) || []).length;
+      const bCount = (ingredientRecipes.get(b.id) || []).length;
+      return bCount - aCount; // Sort by recipe count descending
+    });
+  }, [ingredients, ingredientRecipes]);
+
   const countedItems = Object.keys(inventoryCounts).length + notStocked.length;
   const totalItems = ingredients.length;
 
@@ -712,6 +725,59 @@ export function Step4StorageSetup(props: StepProps) {
             </div>
           )}
         </div>
+
+        {/* Critical Ingredients Section */}
+        {criticalIngredients.length > 0 && !recipeFilter && (
+          <Card className="border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-950/20">
+            <CardContent className="py-4">
+              <div className="flex items-center gap-2 mb-3">
+                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                <h3 className="font-semibold text-red-900 dark:text-red-100">
+                  Critical Ingredients ({criticalIngredients.length})
+                </h3>
+                <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs">
+                  Used in 6+ recipes
+                </Badge>
+              </div>
+              <p className="text-sm text-red-700/80 dark:text-red-300/80 mb-4">
+                These ingredients are used across many dishes — running low affects multiple menu items.
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {criticalIngredients.slice(0, 6).map(ingredient => {
+                  const recipes = ingredientRecipes?.get(ingredient.id) || [];
+                  const isNotStocked = notStocked.includes(ingredient.id);
+                  return (
+                    <div 
+                      key={ingredient.id} 
+                      className={`flex items-center justify-between gap-2 p-2 rounded-lg bg-background border ${isNotStocked ? 'opacity-50' : ''}`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm truncate">{ingredient.name}</p>
+                        <p className="text-xs text-muted-foreground">{recipes.length} recipes</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          value={inventoryCounts[ingredient.id] || ''}
+                          onChange={(e) => updateCount(ingredient.id, parseFloat(e.target.value) || 0)}
+                          className="w-16 h-8 text-sm"
+                          placeholder="0"
+                          disabled={isNotStocked}
+                        />
+                        <span className="text-xs text-muted-foreground w-8">{ingredient.unit}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {criticalIngredients.length > 6 && (
+                <p className="text-xs text-red-600/70 dark:text-red-400/70 mt-3">
+                  +{criticalIngredients.length - 6} more critical ingredients in storage tabs below
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Tabs value={activeStorageTab} onValueChange={setActiveStorageTab}>
           <TabsList className="w-full justify-start overflow-x-auto">
