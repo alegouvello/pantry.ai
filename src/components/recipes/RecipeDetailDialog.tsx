@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChefHat, Clock, Package, DollarSign, TrendingUp, Sparkles, 
-  Loader2, ListOrdered, ImageIcon, X 
+  Loader2, ListOrdered, ImageIcon, X, Pencil 
 } from 'lucide-react';
 import {
   Dialog,
@@ -24,6 +24,7 @@ interface RecipeDetailDialogProps {
   recipe: RecipeWithIngredients | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit?: () => void;
 }
 
 interface RecipeStep {
@@ -39,7 +40,7 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
-export function RecipeDetailDialog({ recipe, open, onOpenChange }: RecipeDetailDialogProps) {
+export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: RecipeDetailDialogProps) {
   const [steps, setSteps] = useState<RecipeStep[]>([]);
   const generateSteps = useGenerateRecipeSteps();
   const updateRecipe = useUpdateRecipe();
@@ -140,14 +141,29 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange }: RecipeDetailD
               </div>
             </DialogHeader>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute top-3 right-3 bg-background/50 backdrop-blur-sm hover:bg-background/80"
-            onClick={() => onOpenChange(false)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="absolute top-3 right-3 flex items-center gap-2">
+            {onEdit && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="bg-background/50 backdrop-blur-sm hover:bg-background/80"
+                onClick={() => {
+                  onOpenChange(false);
+                  onEdit();
+                }}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="bg-background/50 backdrop-blur-sm hover:bg-background/80"
+              onClick={() => onOpenChange(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         <ScrollArea className="max-h-[calc(90vh-12rem)]">

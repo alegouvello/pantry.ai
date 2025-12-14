@@ -258,6 +258,11 @@ export default function Recipes() {
         recipe={viewingRecipe}
         open={detailOpen}
         onOpenChange={setDetailOpen}
+        onEdit={() => {
+          if (viewingRecipe) {
+            handleEdit(viewingRecipe);
+          }
+        }}
       />
       <RecipeEditorDialog
         recipe={editingRecipe}
