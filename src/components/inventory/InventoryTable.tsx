@@ -2,11 +2,12 @@ import { useState } from 'react';
 import {
   Package,
   Search,
-  Filter,
   MoreHorizontal,
   Edit2,
   Trash2,
   ArrowUpDown,
+  ChefHat,
+  X,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,8 +19,23 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Ingredient } from '@/types/inventory';
 import { cn } from '@/lib/utils';
+import { useRecipes } from '@/hooks/useRecipes';
+import { useIngredientRecipes } from '@/hooks/useIngredientRecipes';
 
 interface InventoryTableProps {
   ingredients: Ingredient[];
@@ -29,13 +45,34 @@ export function InventoryTable({ ingredients }: InventoryTableProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<keyof Ingredient>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
+  
+  const { data: recipes } = useRecipes();
+  const { data: ingredientRecipesMap } = useIngredientRecipes();
+
+  // Get ingredient IDs for selected recipe
+  const selectedRecipeIngredientIds = selectedRecipeId && recipes
+    ? new Set(
+        recipes
+          .find(r => r.id === selectedRecipeId)
+          ?.recipe_ingredients.map(ri => ri.ingredient_id) || []
+      )
+    : null;
 
   const filteredIngredients = ingredients
-    .filter(
-      (item) =>
+    .filter((item) => {
+      // Text search filter
+      const matchesSearch = 
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.category.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+        item.category.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Recipe filter
+      const matchesRecipe = selectedRecipeIngredientIds 
+        ? selectedRecipeIngredientIds.has(item.id)
+        : true;
+      
+      return matchesSearch && matchesRecipe;
+    })
     .sort((a, b) => {
       const aValue = a[sortField];
       const bValue = b[sortField];
@@ -72,20 +109,46 @@ export function InventoryTable({ ingredients }: InventoryTableProps) {
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
           <Package className="h-5 w-5 text-primary" />
           Inventory Items
+          {selectedRecipeId && (
+            <Badge variant="secondary" className="ml-2 gap-1">
+              <ChefHat className="h-3 w-3" />
+              {recipes?.find(r => r.id === selectedRecipeId)?.name}
+              <button 
+                onClick={() => setSelectedRecipeId(null)}
+                className="ml-1 hover:text-foreground"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          )}
         </CardTitle>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
+        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+          <div className="relative flex-1 sm:w-48">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search ingredients..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 bg-muted/50 border-muted"
             />
           </div>
-          <Button variant="outline" size="icon">
-            <Filter className="h-4 w-4" />
-          </Button>
+          <Select 
+            value={selectedRecipeId || ''} 
+            onValueChange={(v) => setSelectedRecipeId(v || null)}
+          >
+            <SelectTrigger className="w-[180px] bg-muted/50">
+              <ChefHat className="h-4 w-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Filter by recipe" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Recipes</SelectItem>
+              {recipes?.map((recipe) => (
+                <SelectItem key={recipe.id} value={recipe.id}>
+                  {recipe.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </CardHeader>
       <CardContent className="p-0">
@@ -158,9 +221,34 @@ export function InventoryTable({ ingredients }: InventoryTableProps) {
                           <Package className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div>
-                          <p className="font-medium text-foreground">
-                            {item.name}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-foreground">
+                              {item.name}
+                            </p>
+                            {ingredientRecipesMap?.get(item.id) && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge 
+                                      variant="outline" 
+                                      className="text-xs py-0 px-1.5 cursor-pointer hover:bg-muted"
+                                    >
+                                      <ChefHat className="h-3 w-3 mr-1" />
+                                      {ingredientRecipesMap.get(item.id)!.length}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" className="max-w-xs">
+                                    <p className="font-medium mb-1">Used in:</p>
+                                    <ul className="text-xs space-y-0.5">
+                                      {ingredientRecipesMap.get(item.id)!.map(r => (
+                                        <li key={r.id}>{r.name}</li>
+                                      ))}
+                                    </ul>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
                           <p className="text-xs text-muted-foreground">
                             ${item.unitCost.toFixed(2)} / {item.unit}
                           </p>
