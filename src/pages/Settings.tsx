@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, User, Building, Users, Bell, Shield, MapPin, Cloud, Loader2 } from 'lucide-react';
+import { Settings as SettingsIcon, User, Building, Users, Bell, Shield, MapPin, Cloud, Loader2, Clock } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useWeatherForecast, getWeatherIcon } from '@/hooks/useWeatherForecast';
+import { BusinessHoursCard } from '@/components/settings/BusinessHoursCard';
+import { ClosuresCard } from '@/components/settings/ClosuresCard';
 
 interface RestaurantAddress {
   street?: string;
@@ -325,7 +327,16 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          <Card variant="elevated" className="mt-6">
+          {/* Business Hours Card */}
+          <BusinessHoursCard 
+            restaurantId={restaurant?.id} 
+            restaurantName={venueName}
+          />
+
+          {/* Closures Card */}
+          <ClosuresCard restaurantId={restaurant?.id} />
+
+          <Card variant="elevated">
             <CardHeader>
               <CardTitle className="text-base font-semibold">
                 Storage Locations
