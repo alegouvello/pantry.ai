@@ -740,11 +740,89 @@ export function Step4StorageSetup(props: StepProps) {
           <Button variant="outline" onClick={() => setPhase('method')}>
             Back to Method
           </Button>
-          <Button onClick={() => {
-            props.updateHealthScore(15);
-            props.onNext();
-          }}>
-            Save & Continue
+          <Button 
+            onClick={async () => {
+              setIsSaving(true);
+              
+              try {
+                // Save inventory counts to database
+                const updateIngredientStock = async (ingredientId: string, newStock: number) => {
+                  const { error } = await supabase
+                    .from('ingredients')
+                    .update({ current_stock: newStock })
+                    .eq('id', ingredientId);
+                  if (error) throw error;
+                };
+                
+                const logInventoryEvent = async (
+                  ingredientId: string, 
+                  quantity: number, 
+                  previousStock: number, 
+                  newStock: number, 
+                  notes: string
+                ) => {
+                  const { error } = await supabase
+                    .from('inventory_events')
+                    .insert({
+                      ingredient_id: ingredientId,
+                      event_type: 'count' as const,
+                      quantity,
+                      previous_stock: previousStock,
+                      new_stock: newStock,
+                      source: 'onboarding',
+                      notes,
+                    });
+                  if (error) throw error;
+                };
+                
+                const updates: Promise<void>[] = [];
+                
+                for (const ingredient of ingredients) {
+                  const count = inventoryCounts[ingredient.id];
+                  const isMarkedNotStocked = notStocked.includes(ingredient.id);
+                  
+                  // Only update if user entered a count or marked as not stocked
+                  if (count !== undefined || isMarkedNotStocked) {
+                    const newStock = isMarkedNotStocked ? 0 : (count || 0);
+                    
+                    // Find original ingredient to get previous stock
+                    const originalIngredient = dbIngredients?.find(i => i.id === ingredient.id);
+                    const previousStock = originalIngredient?.current_stock || 0;
+                    
+                    const notes = isMarkedNotStocked 
+                      ? 'Marked as not stocked during onboarding' 
+                      : 'Initial count during onboarding';
+                    
+                    updates.push(updateIngredientStock(ingredient.id, newStock));
+                    updates.push(logInventoryEvent(ingredient.id, newStock - previousStock, previousStock, newStock, notes));
+                  }
+                }
+                
+                if (updates.length > 0) {
+                  await Promise.all(updates);
+                  toast({
+                    title: 'Inventory saved',
+                    description: `${Object.keys(inventoryCounts).length + notStocked.length} items counted and saved.`,
+                  });
+                }
+                
+                props.updateHealthScore(15);
+                props.onNext();
+              } catch (error) {
+                console.error('Failed to save inventory counts:', error);
+                toast({
+                  title: 'Error saving',
+                  description: 'Failed to save inventory counts. Please try again.',
+                  variant: 'destructive',
+                });
+              } finally {
+                setIsSaving(false);
+              }
+            }}
+            disabled={isSaving}
+          >
+            {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            {isSaving ? 'Saving...' : 'Save & Continue'}
           </Button>
         </div>
       </div>
