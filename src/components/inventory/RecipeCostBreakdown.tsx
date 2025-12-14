@@ -1,10 +1,13 @@
-import { useMemo } from 'react';
-import { DollarSign, TrendingUp, ChefHat, PieChart } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { DollarSign, TrendingUp, ChefHat, PieChart, Lightbulb } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { RecipeWithIngredients } from '@/hooks/useRecipes';
 import { Ingredient } from '@/types/inventory';
+import { useOptimizeMargins, OptimizationResult } from '@/hooks/useOptimizeMargins';
+import { MarginOptimizationDialog } from './MarginOptimizationDialog';
 
 interface RecipeCostBreakdownProps {
   recipe: RecipeWithIngredients;
@@ -22,6 +25,9 @@ interface CostItem {
 }
 
 export function RecipeCostBreakdown({ recipe, ingredients }: RecipeCostBreakdownProps) {
+  const [showOptimization, setShowOptimization] = useState(false);
+  const [optimizationResult, setOptimizationResult] = useState<OptimizationResult | null>(null);
+  const optimizeMargins = useOptimizeMargins();
   const costBreakdown = useMemo(() => {
     const ingredientMap = new Map(ingredients.map(i => [i.id, i]));
     
@@ -74,19 +80,60 @@ export function RecipeCostBreakdown({ recipe, ingredients }: RecipeCostBreakdown
 
   const status = getFoodCostStatus(costBreakdown.foodCostPct);
 
+  const handleOptimize = async () => {
+    setShowOptimization(true);
+    setOptimizationResult(null);
+    
+    const recipeData = {
+      name: recipe.name,
+      category: recipe.category,
+      totalCost: costBreakdown.totalCost,
+      menuPrice: costBreakdown.menuPrice || null,
+      foodCostPct: costBreakdown.foodCostPct || null,
+      yieldAmount: costBreakdown.yieldAmount,
+      yieldUnit: costBreakdown.yieldUnit,
+      ingredients: costBreakdown.items.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        unit: item.unit,
+        unitCost: item.unitCost,
+        lineCost: item.lineCost,
+        percentage: item.percentage,
+      })),
+    };
+
+    try {
+      const result = await optimizeMargins.mutateAsync(recipeData);
+      setOptimizationResult(result);
+    } catch (error) {
+      // Error handled by the mutation
+    }
+  };
+
   return (
     <Card className="mb-6 animate-fade-in">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="text-lg font-semibold flex items-center gap-2">
             <PieChart className="h-5 w-5 text-primary" />
             Cost Breakdown: {recipe.name}
           </CardTitle>
-          {costBreakdown.menuPrice > 0 && (
-            <Badge variant={status.variant}>
-              {costBreakdown.foodCostPct.toFixed(1)}% Food Cost • {status.label}
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleOptimize}
+              disabled={optimizeMargins.isPending}
+            >
+              <Lightbulb className="h-4 w-4 mr-2" />
+              {optimizeMargins.isPending ? 'Analyzing...' : 'Optimize Margins'}
+            </Button>
+            {costBreakdown.menuPrice > 0 && (
+              <Badge variant={status.variant}>
+                {costBreakdown.foodCostPct.toFixed(1)}% Food Cost • {status.label}
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -146,6 +193,15 @@ export function RecipeCostBreakdown({ recipe, ingredients }: RecipeCostBreakdown
           ))}
         </div>
       </CardContent>
+
+      <MarginOptimizationDialog
+        open={showOptimization}
+        onOpenChange={setShowOptimization}
+        recipeName={recipe.name}
+        result={optimizationResult}
+        isLoading={optimizeMargins.isPending}
+        onRetry={handleOptimize}
+      />
     </Card>
   );
 }
