@@ -164,10 +164,11 @@ export default function OnboardingWelcome() {
               <video 
                 src="/videos/hero-demo.mp4"
                 autoPlay
+                muted
                 loop
                 playsInline
                 controls
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain bg-black"
               />
               <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-white/20 rounded-2xl" />
             </motion.div>
