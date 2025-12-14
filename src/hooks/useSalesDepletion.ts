@@ -121,7 +121,7 @@ export function useSalesEventListener(restaurantId?: string) {
         },
         async (payload) => {
           const newEvent = payload.new as Tables<'sales_events'>;
-          const items = newEvent.items as SaleItem[] || [];
+          const items = (Array.isArray(newEvent.items) ? newEvent.items : []) as unknown as SaleItem[];
           
           if (items.length > 0) {
             console.log('New sale event detected, depleting inventory:', items);
@@ -161,7 +161,7 @@ export function useRecordSale() {
         .from('sales_events')
         .insert({
           restaurant_id: restaurantId,
-          items: items as any,
+          items: items as unknown as Tables<'sales_events'>['items'],
           occurred_at: new Date().toISOString()
         })
         .select()
