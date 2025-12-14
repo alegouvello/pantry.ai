@@ -345,8 +345,21 @@ export function Step8GoLive(props: StepProps) {
                 </div>
                 <div className="text-sm space-y-1">
                   {(() => {
-                    // Get up to 4 actual ingredients for the sample PO
-                    const sampleIngredients = (ingredients || []).slice(0, 4);
+                    // Filter out house-made prep items - only show purchasable raw ingredients
+                    const prepRecipeNames = (recipes || [])
+                      .filter(r => r.recipe_type === 'Prep')
+                      .map(r => r.name.toLowerCase());
+                    
+                    const purchasableIngredients = (ingredients || []).filter(ing => {
+                      const nameLower = ing.name.toLowerCase();
+                      // Exclude if ingredient name matches or contains a prep recipe name
+                      return !prepRecipeNames.some(prep => 
+                        nameLower.includes(prep.toLowerCase().replace('house ', '')) ||
+                        prep.toLowerCase().includes(nameLower)
+                      );
+                    });
+                    
+                    const sampleIngredients = purchasableIngredients.slice(0, 4);
                     if (sampleIngredients.length === 0) {
                       return (
                         <div className="text-muted-foreground italic">
