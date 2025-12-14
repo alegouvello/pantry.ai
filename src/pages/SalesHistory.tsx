@@ -22,9 +22,10 @@ import {
   Legend,
 } from 'recharts';
 import { format, subDays, startOfWeek, getHours } from 'date-fns';
-import { TrendingUp, TrendingDown, Calendar, DollarSign, ShoppingBag, ChefHat, ChevronRight, Clock, Filter, X } from 'lucide-react';
+import { TrendingUp, TrendingDown, Calendar, DollarSign, ShoppingBag, ChefHat, ChevronRight, Clock, Filter, X, GitCompare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import heroSales from '@/assets/pages/hero-sales.jpg';
+import SalesComparisonView from '@/components/sales/SalesComparisonView';
 
 type TimeOfDay = 'all' | 'morning' | 'afternoon' | 'evening' | 'night';
 type OrderSize = 'all' | 'small' | 'medium' | 'large';
@@ -72,6 +73,7 @@ export default function SalesHistory() {
   const [dishFilter, setDishFilter] = useState<string>('all');
   const [timeOfDayFilter, setTimeOfDayFilter] = useState<TimeOfDay>('all');
   const [orderSizeFilter, setOrderSizeFilter] = useState<OrderSize>('all');
+  const [showComparison, setShowComparison] = useState(false);
 
   const toggleDateExpand = (dateKey: string) => {
     setExpandedDates(prev => {
@@ -260,6 +262,50 @@ export default function SalesHistory() {
     return firstAvg > 0 ? ((secondAvg - firstAvg) / firstAvg) * 100 : 0;
   }, [dailySales]);
 
+  // Show comparison view if active
+  if (showComparison) {
+    return (
+      <div className="space-y-6">
+        {/* Hero Section for Comparison */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative h-48 md:h-56 rounded-2xl overflow-hidden"
+        >
+          <img 
+            src={heroSales} 
+            alt="Sales comparison" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-transparent" />
+          <div className="absolute inset-0 flex items-center">
+            <div className="px-6 md:px-8">
+              <motion.h1 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                className="text-2xl md:text-3xl font-bold text-foreground mb-2"
+              >
+                Sales Comparison
+              </motion.h1>
+              <motion.p 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className="text-muted-foreground max-w-md"
+              >
+                Compare performance between different time periods
+              </motion.p>
+            </div>
+          </div>
+        </motion.div>
+
+        <SalesComparisonView onClose={() => setShowComparison(false)} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Hero Section */}
@@ -296,6 +342,15 @@ export default function SalesHistory() {
           </div>
         </div>
         <div className="absolute top-4 right-4 flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowComparison(true)}
+            className="backdrop-blur-sm"
+          >
+            <GitCompare className="h-4 w-4 mr-1" />
+            Compare
+          </Button>
           {[7, 14, 30].map((days) => (
             <Button
               key={days}
