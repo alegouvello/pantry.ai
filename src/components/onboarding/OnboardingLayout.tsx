@@ -4,6 +4,8 @@ import { ArrowLeft, ArrowRight, Save, ChefHat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { OnboardingProgressBar } from './OnboardingProgressBar';
 import { SetupHealthScore } from './SetupHealthScore';
+import { useSwipeGesture } from '@/hooks/useSwipeGesture';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import type { ConceptType } from '@/types/onboarding';
 import { CONCEPT_IMAGES } from '@/types/onboarding';
@@ -74,6 +76,8 @@ export function OnboardingLayout({
   className,
   conceptType,
 }: OnboardingLayoutProps) {
+  const isMobile = useIsMobile();
+  
   const backgroundImage = useMemo(() => {
     if (conceptType && CONCEPT_IMAGES[conceptType]) {
       return CONCEPT_IMAGES[conceptType];
@@ -81,8 +85,27 @@ export function OnboardingLayout({
     return null;
   }, [conceptType]);
 
+  // Swipe gesture handlers for mobile navigation
+  const swipeHandlers = useSwipeGesture({
+    onSwipeLeft: () => {
+      if (onNext && !nextDisabled) {
+        onNext();
+      }
+    },
+    onSwipeRight: () => {
+      if (onBack) {
+        onBack();
+      }
+    },
+    minSwipeDistance: 80,
+    maxSwipeTime: 400,
+  });
+
   return (
-    <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
+    <div 
+      className="min-h-screen bg-background flex flex-col relative overflow-hidden"
+      {...(isMobile ? swipeHandlers : {})}
+    >
       {/* Concept-specific background with parallax effect */}
       <AnimatePresence mode="wait">
         {backgroundImage && (
@@ -247,6 +270,12 @@ export function OnboardingLayout({
           transition={{ duration: 0.3, delay: 0.3 }}
           className="border-t bg-background/80 backdrop-blur-md sticky bottom-0 z-40"
         >
+          {/* Mobile swipe hint */}
+          {isMobile && (onBack || (onNext && !nextDisabled)) && (
+            <div className="text-center py-1.5 text-[10px] text-muted-foreground/60 border-b border-border/30">
+              Swipe {onBack ? '→ back' : ''}{onBack && onNext && !nextDisabled ? ' · ' : ''}{onNext && !nextDisabled ? '← next' : ''}
+            </div>
+          )}
           <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
