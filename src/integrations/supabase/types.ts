@@ -209,6 +209,45 @@ export type Database = {
           },
         ]
       }
+      forecast_events: {
+        Row: {
+          created_at: string
+          event_date: string
+          event_type: string
+          id: string
+          impact_percent: number
+          is_recurring: boolean | null
+          name: string
+          notes: string | null
+          restaurant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_date: string
+          event_type?: string
+          id?: string
+          impact_percent?: number
+          is_recurring?: boolean | null
+          name: string
+          notes?: string | null
+          restaurant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_date?: string
+          event_type?: string
+          id?: string
+          impact_percent?: number
+          is_recurring?: boolean | null
+          name?: string
+          notes?: string | null
+          restaurant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ingredient_vendor_maps: {
         Row: {
           conversion: Json | null
