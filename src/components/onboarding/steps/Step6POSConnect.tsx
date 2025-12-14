@@ -44,7 +44,7 @@ export function Step6POSConnect(props: StepProps) {
   const isLocalUpdateRef = useRef(false);
 
   const { data: existingIntegrations, refetch: refetchIntegrations } = useIntegrations(props.restaurantId || undefined);
-  const { data: recipes } = useRecipes();
+  const { data: recipes, refetch: refetchRecipes, isRefetching } = useRecipes();
   const createIntegration = useCreateIntegration();
 
   // Derive POS items from approved recipes (simulating what would come from real POS sync)
@@ -333,6 +333,15 @@ export function Step6POSConnect(props: StepProps) {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetchRecipes()}
+            disabled={isRefetching}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isRefetching ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
           <Badge variant="outline" className="whitespace-nowrap">
             <Sparkles className="w-3 h-3 mr-1" />
             AI-suggested mappings applied
