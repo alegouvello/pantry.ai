@@ -6,7 +6,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Warehouse, Snowflake, Package, Wine, Coffee, Plus, Trash2, Upload, ListChecks, FileSpreadsheet, Loader2, GripVertical, Wand2, UtensilsCrossed } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Warehouse, Snowflake, Package, Wine, Coffee, Plus, Trash2, Upload, ListChecks, FileSpreadsheet, Loader2, GripVertical, Wand2, UtensilsCrossed, Filter, X } from 'lucide-react';
 import { useStorageLocations, useCreateStorageLocation } from '@/hooks/useOnboarding';
 import { useOnboardingContext } from '@/contexts/OnboardingContext';
 import { useToast } from '@/hooks/use-toast';
@@ -108,6 +109,7 @@ export function Step4StorageSetup(props: StepProps) {
   const [storageOverrides, setStorageOverrides] = useState<Record<string, string>>({});
   const [draggedIngredient, setDraggedIngredient] = useState<string | null>(null);
   const [dragOverStorage, setDragOverStorage] = useState<string | null>(null);
+  const [recipeFilter, setRecipeFilter] = useState<string | null>(null);
   
   const isLocalUpdateRef = useRef(false);
   
@@ -398,6 +400,29 @@ export function Step4StorageSetup(props: StepProps) {
     }
   };
 
+  // Get all unique recipes for the filter dropdown
+  const allRecipes = useMemo(() => {
+    if (!ingredientRecipes) return [];
+    const recipeMap = new Map<string, string>();
+    ingredientRecipes.forEach((recipes) => {
+      recipes.forEach(r => recipeMap.set(r.id, r.name));
+    });
+    return Array.from(recipeMap.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [ingredientRecipes]);
+
+  // Filter ingredients by selected recipe
+  const filteredIngredientsByStorage = (storageId: string) => {
+    const storageIngredients = ingredients.filter(ing => ing.storageKey === storageId);
+    if (!recipeFilter || !ingredientRecipes) return storageIngredients;
+    
+    return storageIngredients.filter(ing => {
+      const recipes = ingredientRecipes.get(ing.id) || [];
+      return recipes.some(r => r.id === recipeFilter);
+    });
+  };
+
   const ingredientsByStorage = (storageId: string) =>
     ingredients.filter(ing => ing.storageKey === storageId);
 
@@ -588,73 +613,112 @@ export function Step4StorageSetup(props: StepProps) {
     return (
       <OnboardingLayout {...layoutProps} title="Guided Inventory Count" subtitle={`${countedItems} of ${totalItems} items counted`}>
         <div className="space-y-6">
-        <div className="bg-muted/50 rounded-lg p-4 flex items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">
-            💡 Drag ingredients between storage tabs to reassign them, or use auto-assign.
-          </p>
-          <HoverCard openDelay={200}>
-            <HoverCardTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleAutoAssign}
-                disabled={isAutoAssigning || !ingredients.length}
-                className="shrink-0"
-              >
-                {isAutoAssigning ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Wand2 className="w-4 h-4 mr-2" />
+        <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <p className="text-sm text-muted-foreground">
+              💡 Drag ingredients between storage tabs to reassign them, or use auto-assign.
+            </p>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <Select value={recipeFilter || 'all'} onValueChange={(v) => setRecipeFilter(v === 'all' ? null : v)}>
+                  <SelectTrigger className="w-[200px] h-9 bg-background">
+                    <SelectValue placeholder="Filter by recipe" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    <SelectItem value="all">All ingredients</SelectItem>
+                    {allRecipes.map(recipe => (
+                      <SelectItem key={recipe.id} value={recipe.id}>
+                        {recipe.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {recipeFilter && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-9 w-9"
+                    onClick={() => setRecipeFilter(null)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
                 )}
-                Auto-Assign
-              </Button>
-            </HoverCardTrigger>
-            <HoverCardContent className="w-80" align="end">
-              <div className="space-y-3">
-                <h4 className="font-semibold text-sm">Auto-Assign Categories</h4>
-                <p className="text-xs text-muted-foreground">
-                  Ingredients are assigned based on their category:
-                </p>
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-start gap-2">
-                    <Warehouse className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-                    <div>
-                      <span className="font-medium">Walk-in Cooler</span>
-                      <p className="text-muted-foreground">Dairy, Produce, Vegetables, Fruits, Herbs, Salads, Fresh items</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Snowflake className="w-4 h-4 text-cyan-500 mt-0.5 shrink-0" />
-                    <div>
-                      <span className="font-medium">Freezer</span>
-                      <p className="text-muted-foreground">Frozen items, Ice cream, Seafood, Fish</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Wine className="w-4 h-4 text-purple-500 mt-0.5 shrink-0" />
-                    <div>
-                      <span className="font-medium">Bar</span>
-                      <p className="text-muted-foreground">Beverages, Drinks, Alcohol, Wine, Spirits, Beer</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Package className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-                    <div>
-                      <span className="font-medium">Dry Storage</span>
-                      <p className="text-muted-foreground">Pantry, Canned goods, Oils, Spices, and everything else</p>
-                    </div>
-                  </div>
-                </div>
               </div>
-            </HoverCardContent>
-          </HoverCard>
+              <HoverCard openDelay={200}>
+                <HoverCardTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAutoAssign}
+                    disabled={isAutoAssigning || !ingredients.length}
+                    className="shrink-0"
+                  >
+                    {isAutoAssigning ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Wand2 className="w-4 h-4 mr-2" />
+                    )}
+                    Auto-Assign
+                  </Button>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-80" align="end">
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-sm">Auto-Assign Categories</h4>
+                    <p className="text-xs text-muted-foreground">
+                      Ingredients are assigned based on their category:
+                    </p>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-start gap-2">
+                        <Warehouse className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                        <div>
+                          <span className="font-medium">Walk-in Cooler</span>
+                          <p className="text-muted-foreground">Dairy, Produce, Vegetables, Fruits, Herbs, Salads, Fresh items</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Snowflake className="w-4 h-4 text-cyan-500 mt-0.5 shrink-0" />
+                        <div>
+                          <span className="font-medium">Freezer</span>
+                          <p className="text-muted-foreground">Frozen items, Ice cream, Seafood, Fish</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Wine className="w-4 h-4 text-purple-500 mt-0.5 shrink-0" />
+                        <div>
+                          <span className="font-medium">Bar</span>
+                          <p className="text-muted-foreground">Beverages, Drinks, Alcohol, Wine, Spirits, Beer</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Package className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                        <div>
+                          <span className="font-medium">Dry Storage</span>
+                          <p className="text-muted-foreground">Pantry, Canned goods, Oils, Spices, and everything else</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </HoverCardContent>
+              </HoverCard>
+            </div>
+          </div>
+          {recipeFilter && (
+            <div className="flex items-center gap-2 text-sm">
+              <Badge variant="secondary" className="bg-primary/10 text-primary">
+                <UtensilsCrossed className="w-3 h-3 mr-1" />
+                Showing ingredients for: {allRecipes.find(r => r.id === recipeFilter)?.name}
+              </Badge>
+            </div>
+          )}
         </div>
 
         <Tabs value={activeStorageTab} onValueChange={setActiveStorageTab}>
           <TabsList className="w-full justify-start overflow-x-auto">
             {storageLocations.map(location => {
               const Icon = location.icon;
-              const itemCount = ingredientsByStorage(location.id).length;
+              const filteredCount = filteredIngredientsByStorage(location.id).length;
+              const totalCount = ingredientsByStorage(location.id).length;
               const isDropTarget = draggedIngredient && dragOverStorage === location.id;
               return (
                 <TabsTrigger 
@@ -667,7 +731,9 @@ export function Step4StorageSetup(props: StepProps) {
                 >
                   <Icon className="w-4 h-4" />
                   {location.name}
-                  <Badge variant="secondary" className="ml-1">{itemCount}</Badge>
+                  <Badge variant="secondary" className="ml-1">
+                    {recipeFilter ? `${filteredCount}/${totalCount}` : totalCount}
+                  </Badge>
                 </TabsTrigger>
               );
             })}
@@ -687,14 +753,14 @@ export function Step4StorageSetup(props: StepProps) {
               onDrop={(e) => handleDrop(e as any, location.id)}
             >
               <div className="space-y-3">
-                {ingredientsByStorage(location.id).length === 0 ? (
+                {filteredIngredientsByStorage(location.id).length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                    <p>No ingredients in this location</p>
-                    <p className="text-sm">Drag ingredients here to assign them</p>
+                    <p>{recipeFilter ? 'No matching ingredients in this location' : 'No ingredients in this location'}</p>
+                    <p className="text-sm">{recipeFilter ? 'Try a different recipe filter' : 'Drag ingredients here to assign them'}</p>
                   </div>
                 ) : (
-                  ingredientsByStorage(location.id).map(ingredient => {
+                  filteredIngredientsByStorage(location.id).map(ingredient => {
                     const isNotStocked = notStocked.includes(ingredient.id);
                     const isDragging = draggedIngredient === ingredient.id;
                     const recipes = ingredientRecipes?.get(ingredient.id) || [];
