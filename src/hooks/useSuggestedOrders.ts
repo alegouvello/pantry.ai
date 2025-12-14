@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useLowStockIngredients, useIngredients } from './useIngredients';
 import { useForecast } from './useForecast';
 import { useVendors } from './useVendors';
+import { usePurchaseOrders } from './usePurchaseOrders';
 
 export interface SuggestedOrderItem {
   ingredientId: string;
@@ -85,6 +86,23 @@ export function useSuggestedOrders(forecastDays: number = 3) {
   const { ingredients: forecastIngredients, isLoading: forecastLoading } = useForecast(forecastDays);
   const { data: vendors, isLoading: vendorsLoading } = useVendors();
   const { data: vendorMaps, isLoading: vendorMapsLoading } = useIngredientVendorMaps();
+  const { data: existingOrders, isLoading: ordersLoading } = usePurchaseOrders();
+
+  // Get ingredient IDs that are already in pending (draft/approved/sent) POs
+  const ingredientsInPendingPOs = useMemo(() => {
+    const pendingStatuses = ['draft', 'approved', 'sent', 'partial'];
+    const inPending = new Set<string>();
+    
+    for (const order of existingOrders || []) {
+      if (pendingStatuses.includes(order.status)) {
+        for (const item of order.purchase_order_items || []) {
+          inPending.add(item.ingredient_id);
+        }
+      }
+    }
+    
+    return inPending;
+  }, [existingOrders]);
 
   const suggestions = useMemo(() => {
     if (!lowStockIngredients && !forecastIngredients) {
@@ -101,6 +119,9 @@ export function useSuggestedOrders(forecastDays: number = 3) {
 
     // Add low stock items (current_stock <= reorder_point)
     for (const ingredient of lowStockIngredients || []) {
+      // Skip if already in a pending PO
+      if (ingredientsInPendingPOs.has(ingredient.id)) continue;
+      
       const suggestedQuantity = Math.max(0, ingredient.par_level - ingredient.current_stock);
       
       if (suggestedQuantity > 0) {
@@ -124,6 +145,9 @@ export function useSuggestedOrders(forecastDays: number = 3) {
 
     // Add forecast-driven needs (ingredients with low coverage)
     for (const forecastItem of forecastIngredients || []) {
+      // Skip if already in a pending PO
+      if (ingredientsInPendingPOs.has(forecastItem.ingredientId)) continue;
+      
       if (forecastItem.coverage < 100) {
         const shortage = forecastItem.neededQuantity - forecastItem.currentStock;
         const existing = ingredientNeeds.get(forecastItem.ingredientId);
@@ -225,11 +249,11 @@ export function useSuggestedOrders(forecastDays: number = 3) {
     suggestedOrders.sort((a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency]);
 
     return suggestedOrders;
-  }, [lowStockIngredients, allIngredients, forecastIngredients, vendors, vendorMaps, forecastDays]);
+  }, [lowStockIngredients, allIngredients, forecastIngredients, vendors, vendorMaps, forecastDays, ingredientsInPendingPOs]);
 
   return {
     suggestions,
-    isLoading: lowStockLoading || ingredientsLoading || forecastLoading || vendorsLoading || vendorMapsLoading,
+    isLoading: lowStockLoading || ingredientsLoading || forecastLoading || vendorsLoading || vendorMapsLoading || ordersLoading,
     totalItems: suggestions.reduce((sum, s) => sum + s.items.length, 0),
     totalAmount: suggestions.reduce((sum, s) => sum + s.totalAmount, 0),
   };
