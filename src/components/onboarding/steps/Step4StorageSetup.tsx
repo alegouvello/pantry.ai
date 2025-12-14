@@ -718,13 +718,32 @@ export function Step4StorageSetup(props: StepProps) {
                                 </div>
                                 <p className="text-sm text-muted-foreground">{ingredient.category}</p>
                                 {recipes.length > 0 && (
-                                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                                    <UtensilsCrossed className="w-3 h-3 text-muted-foreground shrink-0" />
-                                    <span className="text-xs text-muted-foreground truncate">
-                                      {recipes.slice(0, 2).map(r => r.name).join(', ')}
-                                      {recipes.length > 2 && ` +${recipes.length - 2} more`}
-                                    </span>
-                                  </div>
+                                  <HoverCard>
+                                    <HoverCardTrigger asChild>
+                                      <div className="flex items-center gap-1.5 mt-1 flex-wrap cursor-pointer hover:opacity-80 transition-opacity">
+                                        <UtensilsCrossed className="w-3 h-3 text-muted-foreground shrink-0" />
+                                        <span className="text-xs text-muted-foreground truncate">
+                                          {recipes.slice(0, 2).map(r => r.name).join(', ')}
+                                          {recipes.length > 2 && (
+                                            <span className="text-primary ml-1 font-medium">+{recipes.length - 2} more</span>
+                                          )}
+                                        </span>
+                                      </div>
+                                    </HoverCardTrigger>
+                                    <HoverCardContent className="w-64" align="start">
+                                      <div className="space-y-2">
+                                        <h4 className="text-sm font-semibold flex items-center gap-2">
+                                          <UtensilsCrossed className="w-4 h-4" />
+                                          Used in {recipes.length} recipe{recipes.length > 1 ? 's' : ''}
+                                        </h4>
+                                        <ul className="text-sm text-muted-foreground space-y-1 max-h-48 overflow-y-auto">
+                                          {recipes.map(recipe => (
+                                            <li key={recipe.id} className="truncate">• {recipe.name}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    </HoverCardContent>
+                                  </HoverCard>
                                 )}
                               </div>
                             </div>
