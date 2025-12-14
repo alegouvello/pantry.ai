@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, DragEvent } from 'react';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,13 +6,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Warehouse, Snowflake, Package, Wine, Coffee, Plus, Trash2, Upload, ListChecks, FileSpreadsheet, Loader2 } from 'lucide-react';
+import { Warehouse, Snowflake, Package, Wine, Coffee, Plus, Trash2, Upload, ListChecks, FileSpreadsheet, Loader2, GripVertical } from 'lucide-react';
 import { useStorageLocations, useCreateStorageLocation } from '@/hooks/useOnboarding';
 import { useOnboardingContext } from '@/contexts/OnboardingContext';
 import { useToast } from '@/hooks/use-toast';
 import { useSyncNotification } from '@/hooks/useSyncNotification';
 import { supabase } from '@/integrations/supabase/client';
-import { useIngredients } from '@/hooks/useIngredients';
+import { useIngredients, useUpdateIngredient } from '@/hooks/useIngredients';
 
 interface StepProps {
   currentStep: number;
@@ -74,6 +74,22 @@ const mapStorageLocationToId = (storageLocation: string | null): string => {
   }
 };
 
+// Map storage location ID back to DB enum value
+const mapIdToStorageLocation = (id: string): string => {
+  switch (id) {
+    case 'default-1':
+      return 'walk_in_cooler';
+    case 'default-2':
+      return 'freezer';
+    case 'default-3':
+      return 'dry_storage';
+    case 'default-4':
+      return 'bar';
+    default:
+      return 'dry_storage';
+  }
+};
+
 export function Step4StorageSetup(props: StepProps) {
   const { toast } = useToast();
   const { conceptType } = useOnboardingContext();
@@ -86,6 +102,9 @@ export function Step4StorageSetup(props: StepProps) {
   const [inventoryCounts, setInventoryCounts] = useState<Record<string, number>>({});
   const [notStocked, setNotStocked] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [storageOverrides, setStorageOverrides] = useState<Record<string, string>>({});
+  const [draggedIngredient, setDraggedIngredient] = useState<string | null>(null);
+  const [dragOverStorage, setDragOverStorage] = useState<string | null>(null);
   
   const isLocalUpdateRef = useRef(false);
   
@@ -94,17 +113,18 @@ export function Step4StorageSetup(props: StepProps) {
 
   const { data: existingLocations, refetch } = useStorageLocations(props.restaurantId || undefined);
   const createStorageLocation = useCreateStorageLocation();
+  const updateIngredient = useUpdateIngredient();
   
   // Fetch real ingredients from the database
   const { data: dbIngredients } = useIngredients();
   
-  // Transform database ingredients to our format
+  // Transform database ingredients to our format, applying any storage overrides
   const ingredients: IngredientItem[] = (dbIngredients || []).map(ing => ({
     id: ing.id,
     name: ing.name,
     category: ing.category,
     unit: ing.unit,
-    storageKey: mapStorageLocationToId(ing.storage_location),
+    storageKey: storageOverrides[ing.id] || mapStorageLocationToId(ing.storage_location),
   }));
 
   // Initialize from database if locations exist
@@ -196,6 +216,63 @@ export function Step4StorageSetup(props: StepProps) {
       ...prev,
       [ingredientId]: (prev[ingredientId] || 0) + amount,
     }));
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (e: DragEvent<HTMLDivElement>, ingredientId: string) => {
+    e.dataTransfer.setData('ingredientId', ingredientId);
+    setDraggedIngredient(ingredientId);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIngredient(null);
+    setDragOverStorage(null);
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>, storageId: string) => {
+    e.preventDefault();
+    setDragOverStorage(storageId);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverStorage(null);
+  };
+
+  const handleDrop = async (e: DragEvent<HTMLDivElement>, targetStorageId: string) => {
+    e.preventDefault();
+    const ingredientId = e.dataTransfer.getData('ingredientId');
+    
+    if (ingredientId && targetStorageId) {
+      // Update local state immediately for responsive UI
+      setStorageOverrides(prev => ({
+        ...prev,
+        [ingredientId]: targetStorageId,
+      }));
+      
+      // Update database
+      const storageLocationValue = mapIdToStorageLocation(targetStorageId);
+      try {
+        await updateIngredient.mutateAsync({
+          id: ingredientId,
+          storage_location: storageLocationValue as any,
+        });
+        toast({
+          title: 'Ingredient moved',
+          description: 'Storage location updated.',
+        });
+      } catch (error) {
+        console.error('Failed to update ingredient storage:', error);
+        // Revert local state on error
+        setStorageOverrides(prev => {
+          const updated = { ...prev };
+          delete updated[ingredientId];
+          return updated;
+        });
+      }
+    }
+    
+    setDraggedIngredient(null);
+    setDragOverStorage(null);
   };
 
   const ingredientsByStorage = (storageId: string) =>
@@ -388,7 +465,7 @@ export function Step4StorageSetup(props: StepProps) {
     <OnboardingLayout {...layoutProps} title="Guided Inventory Count" subtitle={`${countedItems} of ${totalItems} items counted`}>
       <div className="space-y-6">
         <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
-          💡 We've prioritized the top items based on your menu. Focus on these first for 80/20 accuracy.
+          💡 Drag ingredients between storage tabs to reassign them. Count each item or mark as "Not stocked".
         </div>
 
         <Tabs value={activeStorageTab} onValueChange={setActiveStorageTab}>
@@ -396,8 +473,16 @@ export function Step4StorageSetup(props: StepProps) {
             {storageLocations.map(location => {
               const Icon = location.icon;
               const itemCount = ingredientsByStorage(location.id).length;
+              const isDropTarget = draggedIngredient && dragOverStorage === location.id;
               return (
-                <TabsTrigger key={location.id} value={location.id} className="flex items-center gap-2">
+                <TabsTrigger 
+                  key={location.id} 
+                  value={location.id} 
+                  className={`flex items-center gap-2 transition-all ${isDropTarget ? 'ring-2 ring-primary bg-primary/10' : ''}`}
+                  onDragOver={(e) => handleDragOver(e as any, location.id)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e as any, location.id)}
+                >
                   <Icon className="w-4 h-4" />
                   {location.name}
                   <Badge variant="secondary" className="ml-1">{itemCount}</Badge>
@@ -407,20 +492,50 @@ export function Step4StorageSetup(props: StepProps) {
           </TabsList>
 
           {storageLocations.map(location => (
-            <TabsContent key={location.id} value={location.id} className="mt-6">
+            <TabsContent 
+              key={location.id} 
+              value={location.id} 
+              className={`mt-6 min-h-[200px] transition-all rounded-lg ${
+                draggedIngredient && dragOverStorage === location.id 
+                  ? 'ring-2 ring-primary ring-dashed bg-primary/5' 
+                  : ''
+              }`}
+              onDragOver={(e) => handleDragOver(e as any, location.id)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e as any, location.id)}
+            >
               <div className="space-y-3">
-                {ingredientsByStorage(location.id).map(ingredient => {
-                  const isNotStocked = notStocked.includes(ingredient.id);
-                  return (
-                    <Card key={ingredient.id} className={isNotStocked ? 'opacity-50' : ''}>
-                      <CardContent className="py-4">
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{ingredient.name}</span>
+                {ingredientsByStorage(location.id).length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p>No ingredients in this location</p>
+                    <p className="text-sm">Drag ingredients here to assign them</p>
+                  </div>
+                ) : (
+                  ingredientsByStorage(location.id).map(ingredient => {
+                    const isNotStocked = notStocked.includes(ingredient.id);
+                    const isDragging = draggedIngredient === ingredient.id;
+                    return (
+                      <Card 
+                        key={ingredient.id} 
+                        className={`cursor-grab active:cursor-grabbing transition-all ${
+                          isNotStocked ? 'opacity-50' : ''
+                        } ${isDragging ? 'opacity-50 scale-95' : ''}`}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, ingredient.id)}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <CardContent className="py-4">
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3 flex-1">
+                              <GripVertical className="w-4 h-4 text-muted-foreground/50" />
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">{ingredient.name}</span>
+                                </div>
+                                <p className="text-sm text-muted-foreground">{ingredient.category}</p>
+                              </div>
                             </div>
-                            <p className="text-sm text-muted-foreground">{ingredient.category}</p>
-                          </div>
 
                           <div className="flex items-center gap-3">
                             <div className="flex items-center gap-1">
@@ -466,7 +581,8 @@ export function Step4StorageSetup(props: StepProps) {
                       </CardContent>
                     </Card>
                   );
-                })}
+                })
+              )}
               </div>
             </TabsContent>
           ))}
