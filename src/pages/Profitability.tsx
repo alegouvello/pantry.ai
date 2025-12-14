@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, DollarSign, ArrowUpDown, ArrowUp, ArrowDown, LogIn } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ import {
 import { useRecipes, RecipeWithIngredients } from '@/hooks/useRecipes';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
+import heroImage from '@/assets/pages/hero-profitability.jpg';
 
 type SortKey = 'name' | 'category' | 'totalCost' | 'menuPrice' | 'foodCostPercentage' | 'profit';
 type SortDirection = 'asc' | 'desc';
@@ -29,6 +31,23 @@ interface RecipeWithProfitability {
   profit: number;
   profitMargin: number;
 }
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.2 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] as const },
+  },
+};
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('en-US', {
@@ -54,6 +73,7 @@ export default function Profitability() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
         <div className="text-center space-y-2">
+          <DollarSign className="h-16 w-16 text-primary mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-foreground">Sign in required</h1>
           <p className="text-muted-foreground">
             Please sign in to view profitability analysis.
@@ -69,7 +89,6 @@ export default function Profitability() {
     );
   }
 
-  // Calculate profitability data
   const calculateProfitability = (recipe: RecipeWithIngredients): RecipeWithProfitability | null => {
     const totalCost = recipe.recipe_ingredients?.reduce((sum, ri) => {
       return sum + (ri.quantity * (ri.ingredients?.unit_cost || 0));
@@ -98,7 +117,6 @@ export default function Profitability() {
     ?.map(calculateProfitability)
     .filter((r): r is RecipeWithProfitability => r !== null) || [];
 
-  // Sort recipes
   const sortedRecipes = [...profitableRecipes].sort((a, b) => {
     const aValue = a[sortKey];
     const bValue = b[sortKey];
@@ -132,33 +150,52 @@ export default function Profitability() {
       : <ArrowDown className="h-4 w-4 ml-1" />;
   };
 
-  // Summary metrics
   const averageFoodCost = profitableRecipes.length > 0
     ? profitableRecipes.reduce((sum, r) => sum + r.foodCostPercentage, 0) / profitableRecipes.length
     : 0;
   
   const totalProfit = profitableRecipes.reduce((sum, r) => sum + r.profit, 0);
-  
   const highCostRecipes = profitableRecipes.filter(r => r.foodCostPercentage > 35).length;
   const optimalRecipes = profitableRecipes.filter(r => r.foodCostPercentage <= 30).length;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Recipe Profitability</h1>
-        <p className="text-muted-foreground">
-          Analyze food costs and profit margins across your menu
-        </p>
-      </div>
+    <motion.div 
+      className="space-y-8"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* Hero Section */}
+      <motion.div 
+        variants={itemVariants}
+        className="relative h-48 md:h-56 rounded-2xl overflow-hidden"
+      >
+        <img 
+          src={heroImage} 
+          alt="Profitability" 
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-transparent" />
+        <div className="absolute inset-0 flex items-center px-8 md:px-12">
+          <div className="space-y-3">
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
+              Recipe Profitability
+            </h1>
+            <p className="text-muted-foreground max-w-md">
+              Analyze food costs and profit margins across your menu.
+            </p>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card variant="elevated">
+      <motion.div 
+        variants={itemVariants}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+      >
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Avg Food Cost
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Avg Food Cost</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -175,29 +212,23 @@ export default function Profitability() {
           </CardContent>
         </Card>
 
-        <Card variant="elevated">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Profit (per unit)
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Profit (per unit)</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <Skeleton className="h-8 w-24" />
             ) : (
-              <span className="text-2xl font-bold text-primary">
-                {formatCurrency(totalProfit)}
-              </span>
+              <span className="text-2xl font-bold text-primary">{formatCurrency(totalProfit)}</span>
             )}
           </CardContent>
         </Card>
 
-        <Card variant="elevated">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Optimal Recipes (≤30%)
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Optimal Recipes (≤30%)</CardTitle>
             <TrendingDown className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
@@ -206,19 +237,15 @@ export default function Profitability() {
             ) : (
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold text-primary">{optimalRecipes}</span>
-                <span className="text-sm text-muted-foreground">
-                  of {profitableRecipes.length}
-                </span>
+                <span className="text-sm text-muted-foreground">of {profitableRecipes.length}</span>
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card variant="elevated">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              High Cost Recipes (&gt;35%)
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">High Cost (&gt;35%)</CardTitle>
             <TrendingUp className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
@@ -227,142 +254,101 @@ export default function Profitability() {
             ) : (
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold text-destructive">{highCostRecipes}</span>
-                {highCostRecipes > 0 && (
-                  <Badge variant="destructive">Needs Review</Badge>
-                )}
+                {highCostRecipes > 0 && <Badge variant="destructive">Needs Review</Badge>}
               </div>
             )}
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
 
       {/* Profitability Table */}
-      <Card variant="elevated">
-        <CardHeader>
-          <CardTitle>Recipe Analysis</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : error ? (
-            <p className="text-destructive text-center py-8">
-              Error loading recipes: {error.message}
-            </p>
-          ) : profitableRecipes.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground mb-4">
-                No recipes with menu prices found. Add menu prices to your recipes to see profitability analysis.
+      <motion.div variants={itemVariants}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-medium">Recipe Analysis</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : error ? (
+              <p className="text-destructive text-center py-8">
+                Error loading recipes: {error.message}
               </p>
-              <Link to="/recipes">
-                <Button variant="accent">Go to Recipes</Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 font-semibold hover:bg-transparent"
-                        onClick={() => handleSort('name')}
-                      >
-                        Recipe
-                        <SortIcon columnKey="name" />
-                      </Button>
-                    </TableHead>
-                    <TableHead>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 font-semibold hover:bg-transparent"
-                        onClick={() => handleSort('category')}
-                      >
-                        Category
-                        <SortIcon columnKey="category" />
-                      </Button>
-                    </TableHead>
-                    <TableHead className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 font-semibold hover:bg-transparent ml-auto"
-                        onClick={() => handleSort('totalCost')}
-                      >
-                        Cost
-                        <SortIcon columnKey="totalCost" />
-                      </Button>
-                    </TableHead>
-                    <TableHead className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 font-semibold hover:bg-transparent ml-auto"
-                        onClick={() => handleSort('menuPrice')}
-                      >
-                        Menu Price
-                        <SortIcon columnKey="menuPrice" />
-                      </Button>
-                    </TableHead>
-                    <TableHead className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 font-semibold hover:bg-transparent ml-auto"
-                        onClick={() => handleSort('foodCostPercentage')}
-                      >
-                        Food Cost %
-                        <SortIcon columnKey="foodCostPercentage" />
-                      </Button>
-                    </TableHead>
-                    <TableHead className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 font-semibold hover:bg-transparent ml-auto"
-                        onClick={() => handleSort('profit')}
-                      >
-                        Profit
-                        <SortIcon columnKey="profit" />
-                      </Button>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedRecipes.map((recipe) => (
-                    <TableRow key={recipe.id}>
-                      <TableCell className="font-medium">{recipe.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{recipe.category}</Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(recipe.totalCost)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(recipe.menuPrice)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Badge variant={getFoodCostBadgeVariant(recipe.foodCostPercentage)}>
-                          {recipe.foodCostPercentage.toFixed(1)}%
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-medium text-primary">
-                        {formatCurrency(recipe.profit)}
-                      </TableCell>
+            ) : profitableRecipes.length === 0 ? (
+              <div className="text-center py-12">
+                <DollarSign className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                <p className="text-muted-foreground mb-4">
+                  No recipes with menu prices found. Add menu prices to see profitability.
+                </p>
+                <Link to="/recipes">
+                  <Button variant="accent">Go to Recipes</Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>
+                        <Button variant="ghost" size="sm" className="h-auto p-0 font-semibold hover:bg-transparent" onClick={() => handleSort('name')}>
+                          Recipe <SortIcon columnKey="name" />
+                        </Button>
+                      </TableHead>
+                      <TableHead>
+                        <Button variant="ghost" size="sm" className="h-auto p-0 font-semibold hover:bg-transparent" onClick={() => handleSort('category')}>
+                          Category <SortIcon columnKey="category" />
+                        </Button>
+                      </TableHead>
+                      <TableHead className="text-right">
+                        <Button variant="ghost" size="sm" className="h-auto p-0 font-semibold hover:bg-transparent ml-auto" onClick={() => handleSort('totalCost')}>
+                          Cost <SortIcon columnKey="totalCost" />
+                        </Button>
+                      </TableHead>
+                      <TableHead className="text-right">
+                        <Button variant="ghost" size="sm" className="h-auto p-0 font-semibold hover:bg-transparent ml-auto" onClick={() => handleSort('menuPrice')}>
+                          Menu Price <SortIcon columnKey="menuPrice" />
+                        </Button>
+                      </TableHead>
+                      <TableHead className="text-right">
+                        <Button variant="ghost" size="sm" className="h-auto p-0 font-semibold hover:bg-transparent ml-auto" onClick={() => handleSort('foodCostPercentage')}>
+                          Food Cost % <SortIcon columnKey="foodCostPercentage" />
+                        </Button>
+                      </TableHead>
+                      <TableHead className="text-right">
+                        <Button variant="ghost" size="sm" className="h-auto p-0 font-semibold hover:bg-transparent ml-auto" onClick={() => handleSort('profit')}>
+                          Profit <SortIcon columnKey="profit" />
+                        </Button>
+                      </TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedRecipes.map((recipe) => (
+                      <TableRow key={recipe.id}>
+                        <TableCell className="font-medium">{recipe.name}</TableCell>
+                        <TableCell><Badge variant="outline">{recipe.category}</Badge></TableCell>
+                        <TableCell className="text-right">{formatCurrency(recipe.totalCost)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(recipe.menuPrice)}</TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant={getFoodCostBadgeVariant(recipe.foodCostPercentage)}>
+                            {recipe.foodCostPercentage.toFixed(1)}%
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-medium text-primary">
+                          {formatCurrency(recipe.profit)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }
