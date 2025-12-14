@@ -133,15 +133,15 @@ export function InventoryTable({ ingredients }: InventoryTableProps) {
             />
           </div>
           <Select 
-            value={selectedRecipeId || ''} 
-            onValueChange={(v) => setSelectedRecipeId(v || null)}
+            value={selectedRecipeId || 'all'} 
+            onValueChange={(v) => setSelectedRecipeId(v === 'all' ? null : v)}
           >
             <SelectTrigger className="w-[180px] bg-muted/50">
               <ChefHat className="h-4 w-4 mr-2 text-muted-foreground" />
               <SelectValue placeholder="Filter by recipe" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Recipes</SelectItem>
+              <SelectItem value="all">All Recipes</SelectItem>
               {recipes?.map((recipe) => (
                 <SelectItem key={recipe.id} value={recipe.id}>
                   {recipe.name}
