@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -21,8 +21,8 @@ import {
   Legend,
 } from 'recharts';
 import { format, subDays, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
-import { TrendingUp, TrendingDown, Calendar, DollarSign, ShoppingBag, ChefHat } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { TrendingUp, TrendingDown, Calendar, DollarSign, ShoppingBag, ChefHat, ChevronDown, ChevronRight, Clock } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import heroSales from '@/assets/pages/hero-sales.jpg';
 
 interface SaleItem {
@@ -50,7 +50,19 @@ const COLORS = [
 
 export default function SalesHistory() {
   const [dateRange, setDateRange] = useState<7 | 14 | 30>(30);
+  const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
 
+  const toggleDateExpand = (dateKey: string) => {
+    setExpandedDates(prev => {
+      const next = new Set(prev);
+      if (next.has(dateKey)) {
+        next.delete(dateKey);
+      } else {
+        next.add(dateKey);
+      }
+      return next;
+    });
+  };
   // Fetch sales events
   const { data: salesEvents, isLoading } = useQuery({
     queryKey: ['sales-history', dateRange],
@@ -72,10 +84,11 @@ export default function SalesHistory() {
   });
 
   // Process data for charts
-  const { dailySales, topDishes, weeklyTrend, totalRevenue, totalOrders, avgOrderValue } = useMemo(() => {
+  const { dailySales, dailyOrders, topDishes, weeklyTrend, totalRevenue, totalOrders, avgOrderValue } = useMemo(() => {
     if (!salesEvents?.length) {
       return {
         dailySales: [],
+        dailyOrders: new Map<string, SalesEvent[]>(),
         topDishes: [],
         weeklyTrend: [],
         totalRevenue: 0,
@@ -85,7 +98,8 @@ export default function SalesHistory() {
     }
 
     // Daily sales aggregation
-    const dailyMap = new Map<string, { date: string; orders: number; items: number; revenue: number }>();
+    const dailyMap = new Map<string, { dateKey: string; date: string; orders: number; items: number; revenue: number }>();
+    const dailyOrdersMap = new Map<string, SalesEvent[]>();
     const dishMap = new Map<string, { name: string; count: number; revenue: number }>();
 
     let totalItems = 0;
@@ -95,7 +109,7 @@ export default function SalesHistory() {
       const date = format(new Date(event.occurred_at), 'MMM dd');
       const dateKey = format(new Date(event.occurred_at), 'yyyy-MM-dd');
       
-      const existing = dailyMap.get(dateKey) || { date, orders: 0, items: 0, revenue: 0 };
+      const existing = dailyMap.get(dateKey) || { dateKey, date, orders: 0, items: 0, revenue: 0 };
       
       const items = Array.isArray(event.items) ? event.items : [];
       const orderItems = items.reduce((sum, item) => sum + (item.quantity || 1), 0);
@@ -105,6 +119,11 @@ export default function SalesHistory() {
       existing.items += orderItems;
       existing.revenue += orderRevenue;
       dailyMap.set(dateKey, existing);
+
+      // Group orders by date
+      const existingOrders = dailyOrdersMap.get(dateKey) || [];
+      existingOrders.push(event);
+      dailyOrdersMap.set(dateKey, existingOrders);
 
       totalOrderCount += 1;
       totalItems += orderItems;
@@ -120,7 +139,7 @@ export default function SalesHistory() {
     });
 
     const dailySales = Array.from(dailyMap.values()).sort((a, b) => 
-      new Date(a.date).getTime() - new Date(b.date).getTime()
+      new Date(a.dateKey).getTime() - new Date(b.dateKey).getTime()
     );
 
     const topDishes = Array.from(dishMap.values())
@@ -145,6 +164,7 @@ export default function SalesHistory() {
 
     return {
       dailySales,
+      dailyOrders: dailyOrdersMap,
       topDishes,
       weeklyTrend,
       totalRevenue: estimatedRevenue,
@@ -505,11 +525,11 @@ export default function SalesHistory() {
         </Card>
       </div>
 
-      {/* Weekly Summary Table */}
+      {/* Sales Details Table with Expandable Rows */}
       <Card>
         <CardHeader>
           <CardTitle>Sales Details</CardTitle>
-          <CardDescription>Daily breakdown of orders and items sold</CardDescription>
+          <CardDescription>Click on a date to view individual orders</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -523,23 +543,129 @@ export default function SalesHistory() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="pb-3 text-left text-sm font-medium text-muted-foreground">Date</th>
+                    <th className="pb-3 pl-8 text-left text-sm font-medium text-muted-foreground">Date</th>
                     <th className="pb-3 text-right text-sm font-medium text-muted-foreground">Orders</th>
                     <th className="pb-3 text-right text-sm font-medium text-muted-foreground">Items Sold</th>
                     <th className="pb-3 text-right text-sm font-medium text-muted-foreground">Est. Revenue</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {dailySales.slice().reverse().map((day, i) => (
-                    <tr key={i} className="border-b border-border/50 last:border-0">
-                      <td className="py-3 text-sm font-medium">{day.date}</td>
-                      <td className="py-3 text-right text-sm">{day.orders}</td>
-                      <td className="py-3 text-right text-sm">{day.items}</td>
-                      <td className="py-3 text-right text-sm font-medium text-primary">
-                        ${day.revenue.toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
+                  {dailySales.slice().reverse().map((day) => {
+                    const isExpanded = expandedDates.has(day.dateKey);
+                    const dayOrders = dailyOrders.get(day.dateKey) || [];
+                    
+                    return (
+                      <React.Fragment key={day.dateKey}>
+                        {/* Date Row - Clickable */}
+                        <tr 
+                          className="border-b border-border/50 cursor-pointer hover:bg-muted/30 transition-colors"
+                          onClick={() => toggleDateExpand(day.dateKey)}
+                        >
+                          <td className="py-3 text-sm font-medium">
+                            <div className="flex items-center gap-2">
+                              <motion.div
+                                initial={false}
+                                animate={{ rotate: isExpanded ? 90 : 0 }}
+                                transition={{ duration: 0.2 }}
+                              >
+                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                              </motion.div>
+                              {day.date}
+                            </div>
+                          </td>
+                          <td className="py-3 text-right text-sm">{day.orders}</td>
+                          <td className="py-3 text-right text-sm">{day.items}</td>
+                          <td className="py-3 text-right text-sm font-medium text-primary">
+                            ${day.revenue.toLocaleString()}
+                          </td>
+                        </tr>
+                        
+                        {/* Expanded Order Details */}
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <tr>
+                              <td colSpan={4} className="p-0">
+                                <motion.div
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="bg-muted/20 border-b border-border/50 px-4 py-3">
+                                    <div className="space-y-3">
+                                      {dayOrders.sort((a, b) => 
+                                        new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime()
+                                      ).map((order, orderIndex) => {
+                                        const orderItems = Array.isArray(order.items) ? order.items : [];
+                                        const orderTotal = orderItems.reduce((sum, item) => sum + (item.quantity || 1), 0) * 25;
+                                        
+                                        return (
+                                          <div 
+                                            key={order.id} 
+                                            className="bg-card rounded-lg p-4 border border-border/50"
+                                          >
+                                            <div className="flex items-center justify-between mb-3">
+                                              <div className="flex items-center gap-3">
+                                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                                  <ShoppingBag className="h-4 w-4 text-primary" />
+                                                </div>
+                                                <div>
+                                                  <p className="text-sm font-medium">Order #{orderIndex + 1}</p>
+                                                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                    <Clock className="h-3 w-3" />
+                                                    {format(new Date(order.occurred_at), 'h:mm a')}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                              <div className="text-right">
+                                                <p className="text-sm font-medium text-primary">${orderTotal.toLocaleString()}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                  {orderItems.reduce((sum, item) => sum + (item.quantity || 1), 0)} items
+                                                </p>
+                                              </div>
+                                            </div>
+                                            
+                                            {orderItems.length > 0 ? (
+                                              <div className="space-y-2">
+                                                {orderItems.map((item, itemIndex) => (
+                                                  <div 
+                                                    key={itemIndex}
+                                                    className="flex items-center justify-between py-1.5 px-3 rounded bg-muted/30"
+                                                  >
+                                                    <div className="flex items-center gap-2">
+                                                      <ChefHat className="h-3.5 w-3.5 text-muted-foreground" />
+                                                      <span className="text-sm">{item.recipe_name || item.recipe_id}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                      <Badge variant="muted" className="text-xs">
+                                                        ×{item.quantity || 1}
+                                                      </Badge>
+                                                      <span className="text-sm text-muted-foreground w-16 text-right">
+                                                        ${((item.quantity || 1) * 25).toLocaleString()}
+                                                      </span>
+                                                    </div>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            ) : (
+                                              <p className="text-sm text-muted-foreground text-center py-2">
+                                                No item details available
+                                              </p>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              </td>
+                            </tr>
+                          )}
+                        </AnimatePresence>
+                      </React.Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
