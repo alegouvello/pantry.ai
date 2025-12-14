@@ -1,5 +1,6 @@
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Clock, Sparkles, Check, ChefHat } from 'lucide-react';
+import { ArrowRight, Clock, Sparkles, Check, ChefHat, Volume2, VolumeX } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/onboarding/hero-welcome.jpg';
@@ -23,6 +24,16 @@ const videoVariants = {
 };
 
 export default function OnboardingWelcome() {
+  const [isMuted, setIsMuted] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setIsMuted(!isMuted);
+    }
+  };
+
   const features = [
     'AI-powered recipe costing & inventory tracking',
     'Smart reorder alerts before you run out',
@@ -186,6 +197,7 @@ export default function OnboardingWelcome() {
                 {/* Phone screen */}
                 <div className="relative aspect-[9/19.5] rounded-[2.25rem] overflow-hidden bg-black">
                   <video 
+                    ref={videoRef}
                     src="/videos/onboarding-demo.mp4"
                     autoPlay
                     muted
@@ -193,6 +205,29 @@ export default function OnboardingWelcome() {
                     playsInline
                     className="absolute inset-0 w-full h-full object-cover"
                   />
+                  
+                  {/* Unmute overlay button */}
+                  <motion.button
+                    onClick={toggleMute}
+                    className="absolute bottom-4 right-4 z-30 flex items-center gap-2 px-3 py-2 rounded-full bg-black/60 backdrop-blur-sm text-white text-sm font-medium hover:bg-black/80 transition-colors"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 1, duration: 0.3 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    {isMuted ? (
+                      <>
+                        <VolumeX className="w-4 h-4" />
+                        <span>Tap for sound</span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-4 h-4" />
+                        <span>Sound on</span>
+                      </>
+                    )}
+                  </motion.button>
                 </div>
                 
                 {/* Home indicator */}
