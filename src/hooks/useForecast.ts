@@ -5,6 +5,38 @@ import { useForecastEvents } from './useForecastEvents';
 import { addDays, startOfDay, format } from 'date-fns';
 import { WeatherData } from './useWeatherForecast';
 
+// Hook to get pending order quantities by ingredient
+function usePendingOrderQuantities() {
+  return useQuery({
+    queryKey: ['pending_order_quantities'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('purchase_orders')
+        .select(`
+          status,
+          purchase_order_items (
+            ingredient_id,
+            quantity
+          )
+        `)
+        .in('status', ['draft', 'approved', 'sent', 'partial']);
+      
+      if (error) throw error;
+      
+      // Aggregate quantities by ingredient
+      const pendingByIngredient = new Map<string, number>();
+      for (const order of data || []) {
+        for (const item of order.purchase_order_items || []) {
+          const existing = pendingByIngredient.get(item.ingredient_id) || 0;
+          pendingByIngredient.set(item.ingredient_id, existing + Number(item.quantity));
+        }
+      }
+      
+      return pendingByIngredient;
+    }
+  });
+}
+
 // Types for forecast data
 export interface DishForecast {
   recipeId: string;
@@ -163,6 +195,7 @@ export function useRecipesWithIngredients() {
 export function useForecast(daysAhead: number = 3, restaurantId?: string, weatherData?: WeatherData[]) {
   const { data: salesPatterns, isLoading: patternsLoading } = useSalesPatterns();
   const { data: recipes, isLoading: recipesLoading } = useRecipesWithIngredients();
+  const { data: pendingOrders, isLoading: pendingLoading } = usePendingOrderQuantities();
   
   // Fetch restaurant data including hours and seats for capacity constraints
   const { data: restaurant } = useQuery({
@@ -363,10 +396,15 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string, weathe
     dishForecasts.sort((a, b) => b.predictedQuantity - a.predictedQuantity);
     
     // Convert ingredient needs to array with risk assessment
+    // Include pending order quantities in coverage calculation
     const ingredientRequirements: IngredientRequirement[] = [];
     ingredientNeeds.forEach((need) => {
+      // Get pending order quantity for this ingredient
+      const pendingQuantity = pendingOrders?.get(need.ingredientId) || 0;
+      const effectiveStock = need.currentStock + pendingQuantity;
+      
       const coverage = need.neededQuantity > 0 
-        ? (need.currentStock / need.neededQuantity) * 100 
+        ? (effectiveStock / need.neededQuantity) * 100 
         : 100;
       
       let risk: 'high' | 'medium' | 'low' = 'low';
@@ -375,6 +413,7 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string, weathe
       
       ingredientRequirements.push({
         ...need,
+        currentStock: effectiveStock, // Show effective stock (current + pending)
         coverage,
         risk
       });
@@ -397,11 +436,11 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string, weathe
       capacityConstrained,
       maxDailyCovers
     };
-  }, [salesPatterns, recipes, daysAhead, events, today, weatherData, restaurant]);
+  }, [salesPatterns, recipes, daysAhead, events, today, weatherData, restaurant, pendingOrders]);
   
   return {
     ...forecast,
-    isLoading: patternsLoading || recipesLoading || eventsLoading,
+    isLoading: patternsLoading || recipesLoading || eventsLoading || pendingLoading,
     salesPatterns,
     recipes,
     events
