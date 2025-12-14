@@ -59,6 +59,80 @@ export type Database = {
         }
         Relationships: []
       }
+      cost_snapshot_summaries: {
+        Row: {
+          avg_food_cost_pct: number
+          created_at: string
+          id: string
+          recipes_high: number
+          recipes_on_target: number
+          recipes_warning: number
+          total_recipes: number
+          week_start: string
+        }
+        Insert: {
+          avg_food_cost_pct?: number
+          created_at?: string
+          id?: string
+          recipes_high?: number
+          recipes_on_target?: number
+          recipes_warning?: number
+          total_recipes?: number
+          week_start: string
+        }
+        Update: {
+          avg_food_cost_pct?: number
+          created_at?: string
+          id?: string
+          recipes_high?: number
+          recipes_on_target?: number
+          recipes_warning?: number
+          total_recipes?: number
+          week_start?: string
+        }
+        Relationships: []
+      }
+      cost_snapshots: {
+        Row: {
+          created_at: string
+          food_cost_pct: number | null
+          id: string
+          menu_price: number | null
+          recipe_id: string | null
+          recipe_name: string
+          snapshot_date: string
+          total_cost: number
+        }
+        Insert: {
+          created_at?: string
+          food_cost_pct?: number | null
+          id?: string
+          menu_price?: number | null
+          recipe_id?: string | null
+          recipe_name: string
+          snapshot_date?: string
+          total_cost?: number
+        }
+        Update: {
+          created_at?: string
+          food_cost_pct?: number | null
+          id?: string
+          menu_price?: number | null
+          recipe_id?: string | null
+          recipe_name?: string
+          snapshot_date?: string
+          total_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_snapshots_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrichment_snapshots: {
         Row: {
           confidence: string | null
