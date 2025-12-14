@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Upload, Download, LogIn, Package, Sparkles, AlertTriangle } from 'lucide-react';
+import { Plus, Upload, Download, LogIn, Package, Sparkles, AlertTriangle, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { InventoryTable } from '@/components/inventory/InventoryTable';
 import { ParLevelSuggestionDialog } from '@/components/inventory/ParLevelSuggestionDialog';
@@ -9,11 +9,11 @@ import { Card } from '@/components/ui/card';
 import { useIngredients, useUpdateIngredient } from '@/hooks/useIngredients';
 import { useSuggestParLevels } from '@/hooks/useSuggestParLevels';
 import { useRealtimeAlerts, useLowStockCheck } from '@/hooks/useRealtimeAlerts';
+import { useQuickReorder } from '@/hooks/useQuickReorder';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import heroImage from '@/assets/pages/hero-inventory.jpg';
-
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -37,6 +37,7 @@ export default function Inventory() {
   const updateIngredient = useUpdateIngredient();
   const suggestParLevels = useSuggestParLevels();
   const { checkLowStock } = useLowStockCheck();
+  const { lowStockCount, createQuickReorder, isCreating } = useQuickReorder();
   
   // Enable realtime alerts
   useRealtimeAlerts();
@@ -193,6 +194,17 @@ export default function Inventory() {
                 <Plus className="h-4 w-4 mr-2" />
                 Add Item
               </Button>
+              {lowStockCount > 0 && (
+                <Button 
+                  variant="default" 
+                  size="sm"
+                  onClick={() => createQuickReorder()}
+                  disabled={isCreating}
+                >
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  {isCreating ? 'Creating...' : `Quick Reorder (${lowStockCount})`}
+                </Button>
+              )}
               <Button 
                 variant="outline" 
                 size="sm" 
