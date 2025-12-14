@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { TrendingUp, Calendar, Package, AlertTriangle, Loader2, Info, Sparkles, Cloud } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { TrendingUp, Calendar, Package, AlertTriangle, Info, Sparkles, Cloud } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,14 +10,31 @@ import { useForecast } from '@/hooks/useForecast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ForecastCalendar } from '@/components/forecast/ForecastCalendar';
 import { ForecastEventDialog } from '@/components/forecast/ForecastEventDialog';
-import { useWeatherForecast, getWeatherIcon } from '@/hooks/useWeatherForecast';
+import { useWeatherForecast } from '@/hooks/useWeatherForecast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import heroImage from '@/assets/pages/hero-forecast.jpg';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1, delayChildren: 0.2 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] as const },
+  },
+};
 
 export default function Forecast() {
   const [daysAhead, setDaysAhead] = useState(3);
   
-  // Get first restaurant for the user's org
   const { data: restaurant } = useQuery({
     queryKey: ['user-restaurant'],
     queryFn: async () => {
@@ -38,26 +56,44 @@ export default function Forecast() {
   const hasHistoricalData = salesPatterns && salesPatterns.length > 0;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Forecast</h1>
-          <p className="text-muted-foreground">
-            Predicted demand and ingredient needs based on historical patterns
-          </p>
+    <motion.div 
+      className="space-y-8"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* Hero Section */}
+      <motion.div 
+        variants={itemVariants}
+        className="relative h-48 md:h-56 rounded-2xl overflow-hidden"
+      >
+        <img 
+          src={heroImage} 
+          alt="Forecast" 
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-transparent" />
+        <div className="absolute inset-0 flex items-center px-8 md:px-12">
+          <div className="space-y-3">
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
+              Forecast
+            </h1>
+            <p className="text-muted-foreground max-w-md">
+              Predicted demand and ingredient needs based on patterns.
+            </p>
+            <div className="flex gap-3 pt-2">
+              <Button variant="accent" size="sm">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Generate Orders
+              </Button>
+              <ForecastEventDialog restaurantId={restaurantId} />
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <ForecastEventDialog restaurantId={restaurantId} />
-          <Button variant="accent">
-            <TrendingUp className="h-4 w-4 mr-2" />
-            Generate Orders
-          </Button>
-        </div>
-      </div>
+      </motion.div>
 
       {/* Time Range Selector */}
-      <div className="flex gap-2">
+      <motion.div variants={itemVariants} className="flex gap-2">
         <Button 
           variant={daysAhead === 3 ? "secondary" : "ghost"} 
           size="sm"
@@ -79,56 +115,57 @@ export default function Forecast() {
         >
           Next 14 Days
         </Button>
-      </div>
+      </motion.div>
 
       {/* Data Source Indicator */}
       {!isLoading && (
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <motion.div 
+          variants={itemVariants}
+          className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground"
+        >
           <div className="flex items-center gap-2">
             <Info className="h-4 w-4" />
             {hasHistoricalData ? (
               <span>
-                Forecast based on <strong>{salesPatterns.length}</strong> historical sales patterns
+                Forecast based on <strong>{salesPatterns.length}</strong> historical patterns
               </span>
             ) : (
               <span>
-                Using default estimates. Connect POS or add sales data for accurate forecasting.
+                Using default estimates. Connect POS for accurate forecasting.
               </span>
             )}
           </div>
           {hasEventImpact && (
             <div className="flex items-center gap-1 text-primary">
               <Sparkles className="h-4 w-4" />
-              <span>
-                <strong>{events?.length || 0}</strong> events factored in
-              </span>
+              <span><strong>{events?.length || 0}</strong> events factored in</span>
             </div>
           )}
           {weatherData?.city && (
             <div className="flex items-center gap-1 text-blue-600">
               <Cloud className="h-4 w-4" />
-              <span>
-                Weather for <strong>{weatherData.city}</strong>
-              </span>
+              <span>Weather for <strong>{weatherData.city}</strong></span>
             </div>
           )}
-        </div>
+        </motion.div>
       )}
 
       {/* Event Calendar */}
       {restaurantId && (
-        <ForecastCalendar 
-          restaurantId={restaurantId} 
-          daysAhead={daysAhead} 
-          weatherData={weatherData?.forecast}
-        />
+        <motion.div variants={itemVariants}>
+          <ForecastCalendar 
+            restaurantId={restaurantId} 
+            daysAhead={daysAhead} 
+            weatherData={weatherData?.forecast}
+          />
+        </motion.div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Predicted Dish Sales */}
-        <Card variant="elevated">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" />
               Predicted Sales (Next {daysAhead} Days)
             </CardTitle>
@@ -149,38 +186,23 @@ export default function Forecast() {
                 <TooltipProvider key={dish.recipeId}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div
-                        className="flex items-center justify-between p-4 rounded-lg bg-muted/30 animate-slide-up cursor-pointer hover:bg-muted/50 transition-colors"
-                        style={{ animationDelay: `${index * 50}ms` }}
-                      >
+                      <div className="flex items-center justify-between p-4 rounded-lg bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <span className="text-lg font-bold text-primary">
-                              #{index + 1}
-                            </span>
+                            <span className="text-lg font-bold text-primary">#{index + 1}</span>
                           </div>
                           <div>
                             <p className="font-medium text-foreground">{dish.recipeName}</p>
                             <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                {dish.category}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {dish.confidence}% confidence
-                              </span>
+                              <Badge variant="outline" className="text-xs">{dish.category}</Badge>
+                              <span className="text-xs text-muted-foreground">{dish.confidence}% confidence</span>
                               {dish.eventImpact && (
-                                <Badge 
-                                  variant={dish.eventImpact > 0 ? 'high' : 'low'} 
-                                  className="text-xs"
-                                >
+                                <Badge variant={dish.eventImpact > 0 ? 'high' : 'low'} className="text-xs">
                                   {dish.eventImpact > 0 ? '+' : ''}{dish.eventImpact}% event
                                 </Badge>
                               )}
                               {dish.weatherImpact && (
-                                <Badge 
-                                  variant={dish.weatherImpact > 0 ? 'default' : 'destructive'} 
-                                  className="text-xs"
-                                >
+                                <Badge variant={dish.weatherImpact > 0 ? 'default' : 'destructive'} className="text-xs">
                                   <Cloud className="h-3 w-3 mr-1" />
                                   {dish.weatherImpact > 0 ? '+' : ''}{dish.weatherImpact}%
                                 </Badge>
@@ -189,9 +211,7 @@ export default function Forecast() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-2xl font-bold text-foreground">
-                            {dish.predictedQuantity}
-                          </p>
+                          <p className="text-2xl font-bold text-foreground">{dish.predictedQuantity}</p>
                           <p className="text-xs text-muted-foreground">portions</p>
                         </div>
                       </div>
@@ -203,14 +223,6 @@ export default function Forecast() {
                           Est. revenue: ${(dish.menuPrice * dish.predictedQuantity).toFixed(0)}
                         </p>
                       )}
-                      {(dish.eventImpact || dish.weatherImpact) && (
-                        <p className="text-xs mt-1">
-                          Adjusted by: 
-                          {dish.eventImpact ? ` ${dish.eventImpact > 0 ? '+' : ''}${dish.eventImpact}% events` : ''}
-                          {dish.eventImpact && dish.weatherImpact ? ',' : ''}
-                          {dish.weatherImpact ? ` ${dish.weatherImpact > 0 ? '+' : ''}${dish.weatherImpact}% weather` : ''}
-                        </p>
-                      )}
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -220,9 +232,9 @@ export default function Forecast() {
         </Card>
 
         {/* Ingredient Requirements */}
-        <Card variant="elevated">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
               <Package className="h-4 w-4 text-accent" />
               Ingredient Requirements
             </CardTitle>
@@ -239,24 +251,19 @@ export default function Forecast() {
                 <p className="text-sm">Forecast will show ingredient needs</p>
               </div>
             ) : (
-              ingredients.slice(0, 10).map((item, index) => {
+              ingredients.slice(0, 10).map((item) => {
                 const coveragePercent = Math.min(100, item.coverage);
                 return (
                   <TooltipProvider key={item.ingredientId}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div
-                          className="space-y-2 animate-slide-up cursor-pointer"
-                          style={{ animationDelay: `${index * 50}ms` }}
-                        >
+                        <div className="space-y-2 cursor-pointer">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               {item.risk === 'high' && (
                                 <AlertTriangle className="h-4 w-4 text-destructive" />
                               )}
-                              <span className="font-medium text-foreground">
-                                {item.ingredientName}
-                              </span>
+                              <span className="font-medium text-foreground">{item.ingredientName}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-sm text-muted-foreground">
@@ -264,29 +271,20 @@ export default function Forecast() {
                               </span>
                               <Badge
                                 variant={
-                                  item.risk === 'high'
-                                    ? 'low'
-                                    : item.risk === 'medium'
-                                    ? 'medium'
-                                    : 'high'
+                                  item.risk === 'high' ? 'low' :
+                                  item.risk === 'medium' ? 'medium' : 'high'
                                 }
                               >
-                                {item.risk === 'high'
-                                  ? 'Order Now'
-                                  : item.risk === 'medium'
-                                  ? 'Monitor'
-                                  : 'OK'}
+                                {item.risk === 'high' ? 'Order Now' :
+                                 item.risk === 'medium' ? 'Monitor' : 'OK'}
                               </Badge>
                             </div>
                           </div>
                           <Progress
                             value={coveragePercent}
                             className={`h-2 ${
-                              item.risk === 'high'
-                                ? '[&>div]:bg-destructive'
-                                : item.risk === 'medium'
-                                ? '[&>div]:bg-warning'
-                                : '[&>div]:bg-success'
+                              item.risk === 'high' ? '[&>div]:bg-destructive' :
+                              item.risk === 'medium' ? '[&>div]:bg-warning' : '[&>div]:bg-success'
                             }`}
                           />
                         </div>
@@ -295,9 +293,7 @@ export default function Forecast() {
                         <p className="font-medium mb-1">Used in:</p>
                         <ul className="text-sm text-muted-foreground">
                           {item.recipes.slice(0, 5).map((r, i) => (
-                            <li key={i}>
-                              {r.name}: {r.quantity.toFixed(1)} {item.unit}
-                            </li>
+                            <li key={i}>{r.name}: {r.quantity.toFixed(1)} {item.unit}</li>
                           ))}
                           {item.recipes.length > 5 && (
                             <li>...and {item.recipes.length - 5} more</li>
@@ -311,27 +307,27 @@ export default function Forecast() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
 
       {/* Validation Queue */}
-      <Card variant="elevated">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base font-semibold">
-            Validation Queue
-          </CardTitle>
-          <Badge variant="secondary">Coming Soon</Badge>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>Validation items will appear here</p>
-            <p className="text-sm">
-              When the system detects mismatches between predicted and actual usage, 
-              you'll see suggestions to update recipes or par levels.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+      <motion.div variants={itemVariants}>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base font-medium">Validation Queue</CardTitle>
+            <Badge variant="secondary">Coming Soon</Badge>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8 text-muted-foreground">
+              <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>Validation items will appear here</p>
+              <p className="text-sm">
+                When mismatches are detected between predicted and actual usage, 
+                you'll see suggestions to update recipes.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }
