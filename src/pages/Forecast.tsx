@@ -1,24 +1,18 @@
-import { TrendingUp, Calendar, Package, AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
+import { TrendingUp, Calendar, Package, AlertTriangle, Loader2, Info } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { mockRecipes, mockIngredients } from '@/data/mockData';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useForecast } from '@/hooks/useForecast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Forecast() {
-  // Mock forecast data
-  const forecastedDishes = [
-    { name: 'Chicken Parmesan', predicted: 45, confidence: 92 },
-    { name: 'Mushroom Risotto', predicted: 32, confidence: 87 },
-    { name: 'Caprese Salad', predicted: 28, confidence: 85 },
-  ];
+  const [daysAhead, setDaysAhead] = useState(3);
+  const { dishes, ingredients, isLoading, salesPatterns } = useForecast(daysAhead);
 
-  const ingredientForecast = [
-    { name: 'Chicken Breast', current: 12, needed: 24, unit: 'lb', risk: 'high' },
-    { name: 'Roma Tomatoes', current: 5, needed: 18, unit: 'lb', risk: 'high' },
-    { name: 'Parmesan Cheese', current: 3, needed: 6, unit: 'lb', risk: 'medium' },
-    { name: 'Arborio Rice', current: 20, needed: 8, unit: 'lb', risk: 'low' },
-  ];
+  const hasHistoricalData = salesPatterns && salesPatterns.length > 0;
 
   return (
     <div className="space-y-6">
@@ -27,7 +21,7 @@ export default function Forecast() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Forecast</h1>
           <p className="text-muted-foreground">
-            Predicted demand and ingredient needs
+            Predicted demand and ingredient needs based on historical patterns
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -44,16 +38,44 @@ export default function Forecast() {
 
       {/* Time Range Selector */}
       <div className="flex gap-2">
-        <Button variant="secondary" size="sm">
+        <Button 
+          variant={daysAhead === 3 ? "secondary" : "ghost"} 
+          size="sm"
+          onClick={() => setDaysAhead(3)}
+        >
           Next 3 Days
         </Button>
-        <Button variant="ghost" size="sm">
+        <Button 
+          variant={daysAhead === 7 ? "secondary" : "ghost"} 
+          size="sm"
+          onClick={() => setDaysAhead(7)}
+        >
           Next 7 Days
         </Button>
-        <Button variant="ghost" size="sm">
+        <Button 
+          variant={daysAhead === 14 ? "secondary" : "ghost"} 
+          size="sm"
+          onClick={() => setDaysAhead(14)}
+        >
           Next 14 Days
         </Button>
       </div>
+
+      {/* Data Source Indicator */}
+      {!isLoading && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Info className="h-4 w-4" />
+          {hasHistoricalData ? (
+            <span>
+              Forecast based on <strong>{salesPatterns.length}</strong> historical sales patterns
+            </span>
+          ) : (
+            <span>
+              Using default estimates. Connect POS or add sales data for accurate forecasting.
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Predicted Dish Sales */}
@@ -61,37 +83,67 @@ export default function Forecast() {
           <CardHeader>
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" />
-              Predicted Sales (Next 3 Days)
+              Predicted Sales (Next {daysAhead} Days)
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {forecastedDishes.map((dish, index) => (
-              <div
-                key={dish.name}
-                className="flex items-center justify-between p-4 rounded-lg bg-muted/30 animate-slide-up"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <span className="text-lg font-bold text-primary">
-                      #{index + 1}
-                    </span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">{dish.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {dish.confidence}% confidence
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-foreground">
-                    {dish.predicted}
-                  </p>
-                  <p className="text-xs text-muted-foreground">portions</p>
-                </div>
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-20 w-full" />
+              ))
+            ) : dishes.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No recipes found</p>
+                <p className="text-sm">Add recipes to see forecasted sales</p>
               </div>
-            ))}
+            ) : (
+              dishes.slice(0, 10).map((dish, index) => (
+                <TooltipProvider key={dish.recipeId}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div
+                        className="flex items-center justify-between p-4 rounded-lg bg-muted/30 animate-slide-up cursor-pointer hover:bg-muted/50 transition-colors"
+                        style={{ animationDelay: `${index * 50}ms` }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <span className="text-lg font-bold text-primary">
+                              #{index + 1}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-foreground">{dish.recipeName}</p>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                {dish.category}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {dish.confidence}% confidence
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-foreground">
+                            {dish.predictedQuantity}
+                          </p>
+                          <p className="text-xs text-muted-foreground">portions</p>
+                        </div>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">
+                      <p>Based on {hasHistoricalData ? 'historical patterns' : 'category defaults'}</p>
+                      {dish.menuPrice && (
+                        <p className="text-muted-foreground">
+                          Est. revenue: ${(dish.menuPrice * dish.predictedQuantity).toFixed(0)}
+                        </p>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ))
+            )}
           </CardContent>
         </Card>
 
@@ -104,57 +156,87 @@ export default function Forecast() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {ingredientForecast.map((item, index) => {
-              const coverage = Math.min(100, (item.current / item.needed) * 100);
-              return (
-                <div
-                  key={item.name}
-                  className="space-y-2 animate-slide-up"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {item.risk === 'high' && (
-                        <AlertTriangle className="h-4 w-4 text-destructive" />
-                      )}
-                      <span className="font-medium text-foreground">
-                        {item.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">
-                        {item.current} / {item.needed} {item.unit}
-                      </span>
-                      <Badge
-                        variant={
-                          item.risk === 'high'
-                            ? 'low'
-                            : item.risk === 'medium'
-                            ? 'medium'
-                            : 'high'
-                        }
-                      >
-                        {item.risk === 'high'
-                          ? 'Order Now'
-                          : item.risk === 'medium'
-                          ? 'Monitor'
-                          : 'OK'}
-                      </Badge>
-                    </div>
-                  </div>
-                  <Progress
-                    value={coverage}
-                    className={`h-2 ${
-                      item.risk === 'high'
-                        ? '[&>div]:bg-destructive'
-                        : item.risk === 'medium'
-                        ? '[&>div]:bg-warning'
-                        : '[&>div]:bg-success'
-                    }`}
-                  />
-                </div>
-              );
-            })}
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full" />
+              ))
+            ) : ingredients.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No ingredient requirements</p>
+                <p className="text-sm">Forecast will show ingredient needs</p>
+              </div>
+            ) : (
+              ingredients.slice(0, 10).map((item, index) => {
+                const coveragePercent = Math.min(100, item.coverage);
+                return (
+                  <TooltipProvider key={item.ingredientId}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div
+                          className="space-y-2 animate-slide-up cursor-pointer"
+                          style={{ animationDelay: `${index * 50}ms` }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              {item.risk === 'high' && (
+                                <AlertTriangle className="h-4 w-4 text-destructive" />
+                              )}
+                              <span className="font-medium text-foreground">
+                                {item.ingredientName}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">
+                                {item.currentStock.toFixed(1)} / {item.neededQuantity.toFixed(1)} {item.unit}
+                              </span>
+                              <Badge
+                                variant={
+                                  item.risk === 'high'
+                                    ? 'low'
+                                    : item.risk === 'medium'
+                                    ? 'medium'
+                                    : 'high'
+                                }
+                              >
+                                {item.risk === 'high'
+                                  ? 'Order Now'
+                                  : item.risk === 'medium'
+                                  ? 'Monitor'
+                                  : 'OK'}
+                              </Badge>
+                            </div>
+                          </div>
+                          <Progress
+                            value={coveragePercent}
+                            className={`h-2 ${
+                              item.risk === 'high'
+                                ? '[&>div]:bg-destructive'
+                                : item.risk === 'medium'
+                                ? '[&>div]:bg-warning'
+                                : '[&>div]:bg-success'
+                            }`}
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="left" className="max-w-xs">
+                        <p className="font-medium mb-1">Used in:</p>
+                        <ul className="text-sm text-muted-foreground">
+                          {item.recipes.slice(0, 5).map((r, i) => (
+                            <li key={i}>
+                              {r.name}: {r.quantity.toFixed(1)} {item.unit}
+                            </li>
+                          ))}
+                          {item.recipes.length > 5 && (
+                            <li>...and {item.recipes.length - 5} more</li>
+                          )}
+                        </ul>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                );
+              })
+            )}
           </CardContent>
         </Card>
       </div>
@@ -165,50 +247,16 @@ export default function Forecast() {
           <CardTitle className="text-base font-semibold">
             Validation Queue
           </CardTitle>
-          <Badge variant="warning">2 items</Badge>
+          <Badge variant="secondary">Coming Soon</Badge>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="p-4 rounded-lg border border-warning/30 bg-warning/5">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="font-medium text-foreground">
-                  Recipe yield mismatch detected
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Chicken Parmesan uses 15% more chicken than expected. Update
-                  recipe?
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  Ignore
-                </Button>
-                <Button variant="accent" size="sm">
-                  Accept
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-lg border border-border bg-muted/30">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="font-medium text-foreground">
-                  Higher than usual waste rate
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Fresh Basil waste increased 40% this week. Adjust par levels?
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  Ignore
-                </Button>
-                <Button variant="accent" size="sm">
-                  Review
-                </Button>
-              </div>
-            </div>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p>Validation items will appear here</p>
+            <p className="text-sm">
+              When the system detects mismatches between predicted and actual usage, 
+              you'll see suggestions to update recipes or par levels.
+            </p>
           </div>
         </CardContent>
       </Card>
