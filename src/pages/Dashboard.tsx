@@ -6,17 +6,21 @@ import {
   TrendingUp,
   ShoppingCart,
   LogIn,
+  ChefHat,
+  Utensils,
 } from 'lucide-react';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { AlertCard } from '@/components/dashboard/AlertCard';
 import { InventoryQuickView } from '@/components/dashboard/InventoryQuickView';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
+import { RecipeSummary } from '@/components/dashboard/RecipeSummary';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIngredients, useLowStockIngredients } from '@/hooks/useIngredients';
 import { useActiveAlerts, useResolveAlert } from '@/hooks/useAlerts';
 import { usePurchaseOrdersByStatus } from '@/hooks/usePurchaseOrders';
+import { useRecipes } from '@/hooks/useRecipes';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 
@@ -26,6 +30,7 @@ export default function Dashboard() {
   const { data: lowStockItems, isLoading: lowStockLoading } = useLowStockIngredients();
   const { data: activeAlerts, isLoading: alertsLoading } = useActiveAlerts();
   const { data: pendingOrders } = usePurchaseOrdersByStatus(['draft', 'approved', 'sent']);
+  const { data: recipes } = useRecipes();
   const resolveAlert = useResolveAlert();
 
   const handleResolveAlert = (id: string) => {
@@ -35,11 +40,11 @@ export default function Dashboard() {
   // Calculate metrics
   const totalIngredients = ingredients?.length ?? 0;
   const lowStockCount = lowStockItems?.length ?? 0;
-  const totalInventoryValue = ingredients?.reduce(
-    (sum, item) => sum + (item.current_stock * item.unit_cost),
-    0
-  ) ?? 0;
   const pendingOrdersCount = pendingOrders?.length ?? 0;
+  
+  // Recipe metrics
+  const dishRecipes = recipes?.filter(r => r.recipe_type !== 'Prep') || [];
+  const totalDishes = dishRecipes.length;
 
   // Show login prompt if not authenticated
   if (!authLoading && !user) {
@@ -64,6 +69,14 @@ export default function Dashboard() {
 
   const isLoading = ingredientsLoading || lowStockLoading || alertsLoading;
 
+  // Get time-appropriate greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -71,14 +84,16 @@ export default function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground">
-            Good morning! Here's your inventory overview.
+            {getGreeting()}! Here's your restaurant overview.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline">
-            <Clock className="h-4 w-4 mr-2" />
-            Cycle Count
-          </Button>
+          <Link to="/inventory">
+            <Button variant="outline">
+              <Clock className="h-4 w-4 mr-2" />
+              Cycle Count
+            </Button>
+          </Link>
           <Link to="/orders">
             <Button variant="accent">
               <ShoppingCart className="h-4 w-4 mr-2" />
@@ -102,24 +117,23 @@ export default function Dashboard() {
         ) : (
           <>
             <MetricCard
-              title="Total Items"
+              title="Menu Items"
+              value={totalDishes}
+              subtitle="Active dishes"
+              icon={Utensils}
+            />
+            <MetricCard
+              title="Ingredients"
               value={totalIngredients}
-              subtitle="Active ingredients"
+              subtitle="In inventory"
               icon={Package}
             />
             <MetricCard
               title="Low Stock"
               value={lowStockCount}
-              subtitle="Needs attention"
+              subtitle="Needs reorder"
               icon={AlertTriangle}
               variant="warning"
-            />
-            <MetricCard
-              title="Inventory Value"
-              value={`$${totalInventoryValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-              subtitle="Total cost value"
-              icon={DollarSign}
-              variant="accent"
             />
             <MetricCard
               title="Pending Orders"
@@ -134,8 +148,8 @@ export default function Dashboard() {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Alerts Section */}
-        <div className="lg:col-span-2 space-y-4">
+        {/* Left Column - Alerts */}
+        <div className="lg:col-span-2 space-y-6">
           <Card variant="elevated">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -151,8 +165,8 @@ export default function Dashboard() {
             <CardContent className="space-y-3">
               {alertsLoading ? (
                 <div className="space-y-3">
-                  {[...Array(3)].map((_, i) => (
-                    <Skeleton key={i} className="h-24 w-full" />
+                  {[...Array(2)].map((_, i) => (
+                    <Skeleton key={i} className="h-20 w-full" />
                   ))}
                 </div>
               ) : activeAlerts && activeAlerts.length > 0 ? (
@@ -176,15 +190,14 @@ export default function Dashboard() {
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>No active alerts</p>
+                  <p className="text-sm">No active alerts</p>
+                  <p className="text-xs mt-1">Your inventory looks great!</p>
                 </div>
               )}
             </CardContent>
           </Card>
-        </div>
 
-        {/* Sidebar Widgets */}
-        <div className="space-y-6">
+          {/* Low Stock Quick View */}
           <InventoryQuickView 
             ingredients={lowStockItems?.map(item => ({
               id: item.id,
@@ -199,6 +212,11 @@ export default function Dashboard() {
               lastUpdated: new Date(item.updated_at),
             })) || []} 
           />
+        </div>
+
+        {/* Right Column - Recipe Summary & Activity */}
+        <div className="space-y-6">
+          <RecipeSummary />
           <RecentActivity />
         </div>
       </div>
