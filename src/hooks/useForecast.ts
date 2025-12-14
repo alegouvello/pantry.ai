@@ -247,16 +247,18 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string, weathe
         
         let basePrediction: number;
         let dayConfidence: number;
+        let hasHistoricalData = false;
         
-        if (pattern) {
+        if (pattern && pattern.sampleSize > 0) {
           basePrediction = pattern.avgQuantity;
           // Confidence based on sample size (more data = higher confidence)
           dayConfidence = Math.min(95, 50 + pattern.sampleSize * 5);
+          hasHistoricalData = true;
         } else {
-          // No historical data - use default estimate based on category
-          basePrediction = recipe.category === 'Mains' ? 8 : 
-                           recipe.category === 'Appetizers' ? 6 : 4;
-          dayConfidence = 40; // Low confidence for defaults
+          // No historical data - skip this recipe for this day
+          // We only forecast dishes with actual sales history
+          basePrediction = 0;
+          dayConfidence = 0;
         }
         
         // Apply event and weather impact to prediction (combined)
