@@ -12,6 +12,7 @@ import { useOnboardingContext } from '@/contexts/OnboardingContext';
 import { useToast } from '@/hooks/use-toast';
 import { useSyncNotification } from '@/hooks/useSyncNotification';
 import { supabase } from '@/integrations/supabase/client';
+import { useIngredients } from '@/hooks/useIngredients';
 
 interface StepProps {
   currentStep: number;
@@ -33,6 +34,14 @@ interface StorageLocationItem {
   isNew?: boolean;
 }
 
+interface IngredientItem {
+  id: string;
+  name: string;
+  category: string;
+  unit: string;
+  storageKey: string; // maps to storage location
+}
+
 const defaultStorageLocations: StorageLocationItem[] = [
   { id: 'default-1', name: 'Walk-in Cooler', icon: Warehouse, color: 'text-blue-500', isNew: true },
   { id: 'default-2', name: 'Freezer', icon: Snowflake, color: 'text-cyan-500', isNew: true },
@@ -49,19 +58,21 @@ const getIconForName = (name: string) => {
   return { icon: Package, color: 'text-gray-500' };
 };
 
-// Mock ingredients for inventory count
-const mockIngredients = [
-  { id: '1', name: 'Fresh Mozzarella', category: 'Dairy', unit: 'kg', suggested: true, storageId: 'default-1' },
-  { id: '2', name: 'San Marzano Tomatoes', category: 'Canned Goods', unit: 'cans', suggested: true, storageId: 'default-3' },
-  { id: '3', name: 'Olive Oil', category: 'Oils', unit: 'L', suggested: true, storageId: 'default-3' },
-  { id: '4', name: 'Fresh Basil', category: 'Herbs', unit: 'bunch', suggested: true, storageId: 'default-1' },
-  { id: '5', name: 'Pizza Dough', category: 'Prepared', unit: 'portions', suggested: true, storageId: 'default-1' },
-  { id: '6', name: 'Parmesan', category: 'Dairy', unit: 'kg', suggested: true, storageId: 'default-1' },
-  { id: '7', name: 'Romaine Lettuce', category: 'Produce', unit: 'heads', suggested: true, storageId: 'default-1' },
-  { id: '8', name: 'Salmon Fillet', category: 'Seafood', unit: 'kg', suggested: true, storageId: 'default-2' },
-  { id: '9', name: 'Butter', category: 'Dairy', unit: 'kg', suggested: true, storageId: 'default-1' },
-  { id: '10', name: 'Lemons', category: 'Produce', unit: 'pieces', suggested: false, storageId: 'default-1' },
-];
+// Map DB storage_location enum to our default storage location IDs
+const mapStorageLocationToId = (storageLocation: string | null): string => {
+  switch (storageLocation) {
+    case 'walk_in_cooler':
+      return 'default-1';
+    case 'freezer':
+      return 'default-2';
+    case 'dry_storage':
+      return 'default-3';
+    case 'bar':
+      return 'default-4';
+    default:
+      return 'default-3'; // Default to dry storage
+  }
+};
 
 export function Step4StorageSetup(props: StepProps) {
   const { toast } = useToast();
@@ -83,6 +94,18 @@ export function Step4StorageSetup(props: StepProps) {
 
   const { data: existingLocations, refetch } = useStorageLocations(props.restaurantId || undefined);
   const createStorageLocation = useCreateStorageLocation();
+  
+  // Fetch real ingredients from the database
+  const { data: dbIngredients } = useIngredients();
+  
+  // Transform database ingredients to our format
+  const ingredients: IngredientItem[] = (dbIngredients || []).map(ing => ({
+    id: ing.id,
+    name: ing.name,
+    category: ing.category,
+    unit: ing.unit,
+    storageKey: mapStorageLocationToId(ing.storage_location),
+  }));
 
   // Initialize from database if locations exist
   useEffect(() => {
@@ -176,10 +199,10 @@ export function Step4StorageSetup(props: StepProps) {
   };
 
   const ingredientsByStorage = (storageId: string) =>
-    mockIngredients.filter(ing => ing.storageId === storageId);
+    ingredients.filter(ing => ing.storageKey === storageId);
 
   const countedItems = Object.keys(inventoryCounts).length + notStocked.length;
-  const totalItems = mockIngredients.length;
+  const totalItems = ingredients.length;
 
   if (phase === 'storage') {
     return (
@@ -395,9 +418,6 @@ export function Step4StorageSetup(props: StepProps) {
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{ingredient.name}</span>
-                              {ingredient.suggested && (
-                                <Badge variant="secondary" className="text-xs">Critical</Badge>
-                              )}
                             </div>
                             <p className="text-sm text-muted-foreground">{ingredient.category}</p>
                           </div>
