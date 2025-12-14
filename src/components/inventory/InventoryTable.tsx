@@ -36,6 +36,7 @@ import { Ingredient } from '@/types/inventory';
 import { cn } from '@/lib/utils';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useIngredientRecipes } from '@/hooks/useIngredientRecipes';
+import { RecipeCostBreakdown } from './RecipeCostBreakdown';
 
 interface InventoryTableProps {
   ingredients: Ingredient[];
@@ -50,13 +51,14 @@ export function InventoryTable({ ingredients }: InventoryTableProps) {
   const { data: recipes } = useRecipes();
   const { data: ingredientRecipesMap } = useIngredientRecipes();
 
+  // Get selected recipe data
+  const selectedRecipe = selectedRecipeId 
+    ? recipes?.find(r => r.id === selectedRecipeId) 
+    : null;
+
   // Get ingredient IDs for selected recipe
-  const selectedRecipeIngredientIds = selectedRecipeId && recipes
-    ? new Set(
-        recipes
-          .find(r => r.id === selectedRecipeId)
-          ?.recipe_ingredients.map(ri => ri.ingredient_id) || []
-      )
+  const selectedRecipeIngredientIds = selectedRecipe
+    ? new Set(selectedRecipe.recipe_ingredients.map(ri => ri.ingredient_id))
     : null;
 
   const filteredIngredients = ingredients
@@ -151,6 +153,14 @@ export function InventoryTable({ ingredients }: InventoryTableProps) {
           </Select>
         </div>
       </CardHeader>
+      
+      {/* Recipe Cost Breakdown */}
+      {selectedRecipe && (
+        <div className="px-6 pt-2">
+          <RecipeCostBreakdown recipe={selectedRecipe} ingredients={ingredients} />
+        </div>
+      )}
+
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full">
