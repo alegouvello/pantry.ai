@@ -162,6 +162,14 @@ export default function OnboardingWelcome() {
             variants={videoVariants}
             initial="hidden"
             animate="visible"
+            whileInView={{
+              y: [0, -10, 0],
+              transition: {
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }
+            }}
           >
             {/* Phone frame */}
             <div className="relative">
