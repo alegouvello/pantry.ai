@@ -138,41 +138,53 @@ export default function OnboardingWelcome() {
           </motion.div>
         </div>
 
-        {/* Right side - Video with Background */}
-        <div className="flex-1 relative overflow-hidden">
-          {/* Background image */}
-          <img 
-            src={heroImage} 
-            alt="" 
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          {/* Gradient overlays for blending */}
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/60 to-background/30" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-background/40" />
-          
-          {/* Video container */}
-          <div className="absolute inset-0 flex items-center justify-center p-8 lg:p-12">
-            <motion.div 
-              className="relative w-full max-w-2xl aspect-video rounded-2xl overflow-hidden shadow-2xl"
-              variants={videoVariants}
-              initial="hidden"
-              animate="visible"
-              style={{
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1)'
-              }}
-            >
-              <video 
-                src="/videos/hero-demo.mp4"
-                autoPlay
-                muted
-                loop
-                playsInline
-                controls
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 pointer-events-none ring-1 ring-inset ring-white/20 rounded-2xl" />
-            </motion.div>
+        {/* Right side - Vertical Video in Phone Mockup */}
+        <div className="flex-1 relative overflow-hidden flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10">
+          {/* Decorative background elements */}
+          <div className="absolute inset-0">
+            <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-1/4 left-1/4 w-48 h-48 bg-primary/5 rounded-full blur-2xl" />
           </div>
+          
+          {/* Phone mockup container */}
+          <motion.div 
+            className="relative z-10"
+            variants={videoVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {/* Phone frame */}
+            <div className="relative">
+              {/* Phone outer shell */}
+              <div 
+                className="relative w-[280px] sm:w-[320px] lg:w-[360px] rounded-[3rem] p-3 bg-gradient-to-b from-zinc-800 to-zinc-900 shadow-2xl"
+                style={{
+                  boxShadow: '0 50px 100px -20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                }}
+              >
+                {/* Phone notch */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-7 bg-zinc-900 rounded-b-2xl z-20" />
+                
+                {/* Phone screen */}
+                <div className="relative aspect-[9/19.5] rounded-[2.25rem] overflow-hidden bg-black">
+                  <video 
+                    src="/videos/hero-demo.mp4"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                </div>
+                
+                {/* Home indicator */}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1/3 h-1 bg-zinc-600 rounded-full" />
+              </div>
+              
+              {/* Glow effect behind phone */}
+              <div className="absolute -inset-10 bg-primary/20 blur-3xl rounded-full -z-10" />
+            </div>
+          </motion.div>
         </div>
       </main>
     </div>
