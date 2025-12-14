@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Warehouse, Snowflake, Package, Wine, Coffee, Plus, Trash2, Upload, ListChecks, FileSpreadsheet, Loader2, GripVertical } from 'lucide-react';
+import { Warehouse, Snowflake, Package, Wine, Coffee, Plus, Trash2, Upload, ListChecks, FileSpreadsheet, Loader2, GripVertical, Wand2 } from 'lucide-react';
 import { useStorageLocations, useCreateStorageLocation } from '@/hooks/useOnboarding';
 import { useOnboardingContext } from '@/contexts/OnboardingContext';
 import { useToast } from '@/hooks/use-toast';
@@ -275,6 +275,94 @@ export function Step4StorageSetup(props: StepProps) {
     setDragOverStorage(null);
   };
 
+  // Auto-assign ingredients to storage locations based on category
+  const getCategoryStorageMapping = (category: string): string => {
+    const lowerCategory = category.toLowerCase();
+    
+    // Walk-in Cooler (default-1): Fresh items, dairy, produce, proteins
+    if (lowerCategory.includes('dairy') || 
+        lowerCategory.includes('produce') || 
+        lowerCategory.includes('vegetable') ||
+        lowerCategory.includes('fruit') ||
+        lowerCategory.includes('herb') ||
+        lowerCategory.includes('salad') ||
+        lowerCategory.includes('fresh')) {
+      return 'default-1';
+    }
+    
+    // Freezer (default-2): Frozen items, ice cream, seafood (if frozen)
+    if (lowerCategory.includes('frozen') || 
+        lowerCategory.includes('ice cream') ||
+        lowerCategory.includes('seafood') ||
+        lowerCategory.includes('fish')) {
+      return 'default-2';
+    }
+    
+    // Bar (default-4): Beverages, alcohol, wine, spirits
+    if (lowerCategory.includes('beverage') || 
+        lowerCategory.includes('drink') ||
+        lowerCategory.includes('alcohol') ||
+        lowerCategory.includes('wine') ||
+        lowerCategory.includes('spirit') ||
+        lowerCategory.includes('beer') ||
+        lowerCategory.includes('liquor') ||
+        lowerCategory.includes('bar')) {
+      return 'default-4';
+    }
+    
+    // Dry Storage (default-3): Everything else - pantry, canned, oils, spices, etc.
+    return 'default-3';
+  };
+
+  const [isAutoAssigning, setIsAutoAssigning] = useState(false);
+
+  const handleAutoAssign = async () => {
+    if (!ingredients.length) return;
+    
+    setIsAutoAssigning(true);
+    const newOverrides: Record<string, string> = {};
+    const updates: { id: string; storage_location: string }[] = [];
+    
+    for (const ingredient of ingredients) {
+      const targetStorage = getCategoryStorageMapping(ingredient.category);
+      if (targetStorage !== ingredient.storageKey) {
+        newOverrides[ingredient.id] = targetStorage;
+        updates.push({
+          id: ingredient.id,
+          storage_location: mapIdToStorageLocation(targetStorage),
+        });
+      }
+    }
+    
+    // Update local state immediately
+    setStorageOverrides(prev => ({ ...prev, ...newOverrides }));
+    
+    // Update database in batch
+    try {
+      await Promise.all(
+        updates.map(update =>
+          updateIngredient.mutateAsync({
+            id: update.id,
+            storage_location: update.storage_location as any,
+          })
+        )
+      );
+      toast({
+        title: 'Auto-assign complete',
+        description: `${updates.length} ingredients assigned to storage locations.`,
+      });
+    } catch (error) {
+      console.error('Failed to auto-assign:', error);
+      toast({
+        title: 'Error',
+        description: 'Some ingredients could not be updated.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsAutoAssigning(false);
+    }
+  };
+
   const ingredientsByStorage = (storageId: string) =>
     ingredients.filter(ing => ing.storageKey === storageId);
 
@@ -464,8 +552,24 @@ export function Step4StorageSetup(props: StepProps) {
   return (
     <OnboardingLayout {...layoutProps} title="Guided Inventory Count" subtitle={`${countedItems} of ${totalItems} items counted`}>
       <div className="space-y-6">
-        <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
-          💡 Drag ingredients between storage tabs to reassign them. Count each item or mark as "Not stocked".
+        <div className="bg-muted/50 rounded-lg p-4 flex items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            💡 Drag ingredients between storage tabs to reassign them, or use auto-assign.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleAutoAssign}
+            disabled={isAutoAssigning || !ingredients.length}
+            className="shrink-0"
+          >
+            {isAutoAssigning ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Wand2 className="w-4 h-4 mr-2" />
+            )}
+            Auto-Assign
+          </Button>
         </div>
 
         <Tabs value={activeStorageTab} onValueChange={setActiveStorageTab}>
