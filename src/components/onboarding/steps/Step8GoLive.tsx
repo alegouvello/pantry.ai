@@ -352,7 +352,6 @@ export function Step8GoLive(props: StepProps) {
                     
                     const purchasableIngredients = (ingredients || []).filter(ing => {
                       const nameLower = ing.name.toLowerCase();
-                      // Exclude if ingredient name matches or contains a prep recipe name
                       return !prepRecipeNames.some(prep => 
                         nameLower.includes(prep.toLowerCase().replace('house ', '')) ||
                         prep.toLowerCase().includes(nameLower)
@@ -367,27 +366,50 @@ export function Step8GoLive(props: StepProps) {
                         </div>
                       );
                     }
-                    const quantities = [3, 2, 5, 1];
-                    const prices = [12.50, 8.75, 15.00, 22.00];
-                    return sampleIngredients.map((ing, idx) => (
-                      <div key={ing.id} className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          {ing.name} ({quantities[idx]} {ing.unit})
-                        </span>
-                        <span>${(quantities[idx] * prices[idx]).toFixed(2)}</span>
-                      </div>
-                    ));
+                    
+                    // Realistic order quantities and prices for sample PO
+                    const sampleOrders = [
+                      { qty: 2, orderUnit: 'case', price: 45.00 },
+                      { qty: 1, orderUnit: 'case', price: 32.50 },
+                      { qty: 3, orderUnit: 'lb', price: 8.95 },
+                      { qty: 1, orderUnit: 'case', price: 28.00 },
+                    ];
+                    
+                    return sampleIngredients.map((ing, idx) => {
+                      const order = sampleOrders[idx];
+                      return (
+                        <div key={ing.id} className="flex justify-between">
+                          <span className="text-muted-foreground">
+                            {ing.name} ({order.qty} {order.orderUnit})
+                          </span>
+                          <span>${(order.qty * order.price).toFixed(2)}</span>
+                        </div>
+                      );
+                    });
                   })()}
                 </div>
                 <div className="flex justify-between pt-2 border-t font-medium">
                   <span>Total Estimate</span>
                   <span>
                     ${(() => {
-                      const sampleCount = Math.min((ingredients || []).length, 4);
-                      if (sampleCount === 0) return '0.00';
-                      const quantities = [3, 2, 5, 1];
-                      const prices = [12.50, 8.75, 15.00, 22.00];
-                      const total = quantities.slice(0, sampleCount).reduce((acc, qty, idx) => acc + qty * prices[idx], 0);
+                      const sampleOrders = [
+                        { qty: 2, price: 45.00 },
+                        { qty: 1, price: 32.50 },
+                        { qty: 3, price: 8.95 },
+                        { qty: 1, price: 28.00 },
+                      ];
+                      const prepRecipeNames = (recipes || [])
+                        .filter(r => r.recipe_type === 'Prep')
+                        .map(r => r.name.toLowerCase());
+                      const purchasableCount = (ingredients || []).filter(ing => {
+                        const nameLower = ing.name.toLowerCase();
+                        return !prepRecipeNames.some(prep => 
+                          nameLower.includes(prep.toLowerCase().replace('house ', '')) ||
+                          prep.toLowerCase().includes(nameLower)
+                        );
+                      }).slice(0, 4).length;
+                      if (purchasableCount === 0) return '0.00';
+                      const total = sampleOrders.slice(0, purchasableCount).reduce((acc, o) => acc + o.qty * o.price, 0);
                       return total.toFixed(2);
                     })()}
                   </span>
