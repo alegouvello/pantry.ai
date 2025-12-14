@@ -93,9 +93,11 @@ export function Step8GoLive(props: StepProps) {
   // Calculate actual setup status
   const getSetupItems = (): SetupItem[] => {
     const hasRestaurant = !!restaurant?.name;
-    // Menu items are imported as recipes - count total recipes as menu items
+    // Menu items are dish recipes (not prep recipes)
+    const dishRecipes = recipes?.filter(r => r.recipe_type !== 'Prep') || [];
+    const menuItemCount = dishRecipes.length;
+    const hasMenu = menuItemCount > 0;
     const totalRecipes = recipes?.length || 0;
-    const hasMenu = totalRecipes > 0;
     const hasRecipes = totalRecipes > 0;
     const approvedRecipes = recipes?.filter(r => r.status === 'Approved').length || 0;
     const hasStorageLocations = (storageLocations?.length || 0) > 0;
@@ -113,7 +115,7 @@ export function Step8GoLive(props: StepProps) {
       },
       {
         id: 'menu',
-        label: `Menu imported (${totalRecipes} items)`,
+        label: `Menu imported (${menuItemCount} dishes)`,
         status: hasMenu ? 'complete' : 'incomplete',
         impact: 'critical',
         icon: <FileText className="w-4 h-4" />,
