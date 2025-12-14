@@ -1,14 +1,16 @@
 import { motion } from 'framer-motion';
-import { Plus, Upload, Search, LogIn, ChefHat } from 'lucide-react';
+import { Plus, Upload, Search, LogIn, ChefHat, LayoutGrid, Grid3X3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RecipeCard } from '@/components/recipes/RecipeCard';
 import { RecipeEditorDialog } from '@/components/recipes/RecipeEditorDialog';
 import { NewRecipeDialog } from '@/components/recipes/NewRecipeDialog';
 import { ImportRecipeDialog } from '@/components/recipes/ImportRecipeDialog';
+import { MenuEngineeringMatrix } from '@/components/recipes/MenuEngineeringMatrix';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import { StaggeredGrid, StaggeredItem } from '@/components/ui/staggered-grid';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRecipes, useDeleteRecipe, RecipeWithIngredients } from '@/hooks/useRecipes';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +37,7 @@ const itemVariants = {
 
 export default function Recipes() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'matrix'>('grid');
   const [editingRecipe, setEditingRecipe] = useState<RecipeWithIngredients | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [newRecipeOpen, setNewRecipeOpen] = useState(false);
@@ -168,15 +171,29 @@ export default function Recipes() {
         </div>
       </motion.div>
 
-      {/* Search */}
-      <motion.div variants={itemVariants} className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search recipes..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
-        />
+      {/* Search and View Toggle */}
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="relative max-w-md w-full sm:w-auto">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search recipes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'grid' | 'matrix')}>
+          <TabsList>
+            <TabsTrigger value="grid" className="gap-2">
+              <LayoutGrid className="h-4 w-4" />
+              <span className="hidden sm:inline">Grid</span>
+            </TabsTrigger>
+            <TabsTrigger value="matrix" className="gap-2">
+              <Grid3X3 className="h-4 w-4" />
+              <span className="hidden sm:inline">Matrix</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </motion.div>
 
       {/* Content */}
@@ -208,6 +225,11 @@ export default function Recipes() {
               </Button>
             )}
           </Card>
+        ) : viewMode === 'matrix' ? (
+          <MenuEngineeringMatrix 
+            recipes={filteredRecipes} 
+            onRecipeClick={handleEdit}
+          />
         ) : (
           <StaggeredGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredRecipes.map((recipe) => (
