@@ -237,11 +237,19 @@ export function InventoryTable({ ingredients }: InventoryTableProps) {
                                       {ingredientRecipesMap.get(item.id)!.length}
                                     </Badge>
                                   </TooltipTrigger>
-                                  <TooltipContent side="right" className="max-w-xs">
-                                    <p className="font-medium mb-1">Used in:</p>
-                                    <ul className="text-xs space-y-0.5">
+                                  <TooltipContent side="right" className="max-w-xs p-2">
+                                    <p className="font-medium mb-1.5 text-xs text-muted-foreground">Click to filter:</p>
+                                    <ul className="space-y-1">
                                       {ingredientRecipesMap.get(item.id)!.map(r => (
-                                        <li key={r.id}>{r.name}</li>
+                                        <li key={r.id}>
+                                          <button
+                                            onClick={() => setSelectedRecipeId(r.id)}
+                                            className="text-xs text-left w-full px-2 py-1 rounded hover:bg-muted transition-colors flex items-center gap-1.5"
+                                          >
+                                            <ChefHat className="h-3 w-3 text-primary" />
+                                            {r.name}
+                                          </button>
+                                        </li>
                                       ))}
                                     </ul>
                                   </TooltipContent>
