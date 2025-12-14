@@ -8,6 +8,7 @@ import { NewRecipeDialog } from '@/components/recipes/NewRecipeDialog';
 import { ImportRecipeDialog } from '@/components/recipes/ImportRecipeDialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
+import { StaggeredGrid, StaggeredItem } from '@/components/ui/staggered-grid';
 import { useRecipes, useDeleteRecipe, RecipeWithIngredients } from '@/hooks/useRecipes';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -208,16 +209,17 @@ export default function Recipes() {
             )}
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <StaggeredGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredRecipes.map((recipe) => (
-              <RecipeCard
-                key={recipe.id}
-                recipe={mapRecipeForCard(recipe)}
-                onEdit={() => handleEdit(recipe)}
-                onDelete={() => handleDelete(recipe.id)}
-              />
+              <StaggeredItem key={recipe.id}>
+                <RecipeCard
+                  recipe={mapRecipeForCard(recipe)}
+                  onEdit={() => handleEdit(recipe)}
+                  onDelete={() => handleDelete(recipe.id)}
+                />
+              </StaggeredItem>
             ))}
-          </div>
+          </StaggeredGrid>
         )}
       </motion.div>
 
