@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useMemo } from 'react';
 import { useForecastEvents } from './useForecastEvents';
-import { addDays, startOfDay } from 'date-fns';
+import { addDays, startOfDay, format } from 'date-fns';
+import { WeatherData } from './useWeatherForecast';
 
 // Types for forecast data
 export interface DishForecast {
@@ -14,6 +15,7 @@ export interface DishForecast {
   dayOfWeek: number;
   menuPrice: number | null;
   eventImpact?: number;
+  weatherImpact?: number;
 }
 
 export interface IngredientRequirement {
@@ -135,7 +137,7 @@ export function useRecipesWithIngredients() {
 }
 
 // Main forecasting hook
-export function useForecast(daysAhead: number = 3, restaurantId?: string) {
+export function useForecast(daysAhead: number = 3, restaurantId?: string, weatherData?: WeatherData[]) {
   const { data: salesPatterns, isLoading: patternsLoading } = useSalesPatterns();
   const { data: recipes, isLoading: recipesLoading } = useRecipesWithIngredients();
   
@@ -145,14 +147,14 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string) {
   const { events, isLoading: eventsLoading } = useForecastEvents(restaurantId, today, endDate);
   
   const forecast = useMemo(() => {
-    if (!recipes) return { dishes: [], ingredients: [], hasEventImpact: false };
+    if (!recipes) return { dishes: [], ingredients: [], hasEventImpact: false, hasWeatherImpact: false };
     
     const forecastDays: Date[] = [];
     for (let i = 0; i < daysAhead; i++) {
       forecastDays.push(addDays(today, i));
     }
     
-    // Build a map of date -> total impact percent
+    // Build a map of date -> total event impact percent
     const eventImpactMap = new Map<string, number>();
     for (const event of events) {
       const dateKey = event.event_date;
@@ -160,7 +162,16 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string) {
       eventImpactMap.set(dateKey, existing + Number(event.impact_percent));
     }
     
+    // Build a map of date -> weather impact percent
+    const weatherImpactMap = new Map<string, number>();
+    if (weatherData) {
+      for (const weather of weatherData) {
+        weatherImpactMap.set(weather.date, weather.impact);
+      }
+    }
+    
     const hasEventImpact = eventImpactMap.size > 0;
+    const hasWeatherImpact = weatherImpactMap.size > 0;
     
     // Calculate dish forecasts
     const dishForecasts: DishForecast[] = [];
@@ -178,11 +189,13 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string) {
       let confidenceSum = 0;
       let forecastCount = 0;
       let totalEventImpact = 0;
+      let totalWeatherImpact = 0;
       
       for (const forecastDay of forecastDays) {
         const dayOfWeek = getDayOfWeek(forecastDay);
-        const dateKey = forecastDay.toISOString().split('T')[0];
+        const dateKey = format(forecastDay, 'yyyy-MM-dd');
         const eventImpact = eventImpactMap.get(dateKey) || 0;
+        const weatherImpact = weatherImpactMap.get(dateKey) || 0;
         
         // Find historical pattern for this recipe on this day of week
         const pattern = salesPatterns?.find(
@@ -203,10 +216,12 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string) {
           dayConfidence = 40; // Low confidence for defaults
         }
         
-        // Apply event impact to prediction
-        const adjustedPrediction = basePrediction * (1 + eventImpact / 100);
-        totalPredicted += adjustedPrediction;
+        // Apply event and weather impact to prediction (combined)
+        const combinedImpact = eventImpact + weatherImpact;
+        const adjustedPrediction = basePrediction * (1 + combinedImpact / 100);
+        totalPredicted += Math.max(0, adjustedPrediction); // Never go negative
         totalEventImpact += eventImpact;
+        totalWeatherImpact += weatherImpact;
         confidenceSum += dayConfidence;
         forecastCount++;
       }
@@ -214,6 +229,7 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string) {
       const predictedQuantity = Math.round(totalPredicted);
       const avgConfidence = forecastCount > 0 ? Math.round(confidenceSum / forecastCount) : 40;
       const avgEventImpact = forecastCount > 0 ? Math.round(totalEventImpact / forecastCount) : 0;
+      const avgWeatherImpact = forecastCount > 0 ? Math.round(totalWeatherImpact / forecastCount) : 0;
       
       if (predictedQuantity > 0) {
         dishForecasts.push({
@@ -224,7 +240,8 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string) {
           confidence: avgConfidence,
           dayOfWeek: getDayOfWeek(today),
           menuPrice: recipe.menu_price,
-          eventImpact: avgEventImpact !== 0 ? avgEventImpact : undefined
+          eventImpact: avgEventImpact !== 0 ? avgEventImpact : undefined,
+          weatherImpact: avgWeatherImpact !== 0 ? avgWeatherImpact : undefined
         });
         
         // Calculate ingredient needs based on predicted dish sales
@@ -283,9 +300,10 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string) {
     return {
       dishes: dishForecasts,
       ingredients: ingredientRequirements,
-      hasEventImpact
+      hasEventImpact,
+      hasWeatherImpact
     };
-  }, [salesPatterns, recipes, daysAhead, events, today]);
+  }, [salesPatterns, recipes, daysAhead, events, today, weatherData]);
   
   return {
     ...forecast,

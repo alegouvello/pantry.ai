@@ -32,8 +32,8 @@ export default function Forecast() {
   const restaurantId = restaurant?.id;
   const city = (restaurant?.address as { city?: string })?.city || 'New York';
   
-  const { dishes, ingredients, isLoading, salesPatterns, hasEventImpact, events } = useForecast(daysAhead, restaurantId);
   const { data: weatherData, isLoading: weatherLoading } = useWeatherForecast(city, undefined, undefined, Math.min(daysAhead, 5));
+  const { dishes, ingredients, isLoading, salesPatterns, hasEventImpact, hasWeatherImpact, events } = useForecast(daysAhead, restaurantId, weatherData?.forecast);
 
   const hasHistoricalData = salesPatterns && salesPatterns.length > 0;
 
@@ -176,6 +176,15 @@ export default function Forecast() {
                                   {dish.eventImpact > 0 ? '+' : ''}{dish.eventImpact}% event
                                 </Badge>
                               )}
+                              {dish.weatherImpact && (
+                                <Badge 
+                                  variant={dish.weatherImpact > 0 ? 'default' : 'destructive'} 
+                                  className="text-xs"
+                                >
+                                  <Cloud className="h-3 w-3 mr-1" />
+                                  {dish.weatherImpact > 0 ? '+' : ''}{dish.weatherImpact}%
+                                </Badge>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -192,6 +201,14 @@ export default function Forecast() {
                       {dish.menuPrice && (
                         <p className="text-muted-foreground">
                           Est. revenue: ${(dish.menuPrice * dish.predictedQuantity).toFixed(0)}
+                        </p>
+                      )}
+                      {(dish.eventImpact || dish.weatherImpact) && (
+                        <p className="text-xs mt-1">
+                          Adjusted by: 
+                          {dish.eventImpact ? ` ${dish.eventImpact > 0 ? '+' : ''}${dish.eventImpact}% events` : ''}
+                          {dish.eventImpact && dish.weatherImpact ? ',' : ''}
+                          {dish.weatherImpact ? ` ${dish.weatherImpact > 0 ? '+' : ''}${dish.weatherImpact}% weather` : ''}
                         </p>
                       )}
                     </TooltipContent>
