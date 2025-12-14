@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, DragEvent } from 'react';
+import { useState, useEffect, useRef, useMemo, DragEvent } from 'react';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -118,41 +118,12 @@ export function Step4StorageSetup(props: StepProps) {
   const updateIngredient = useUpdateIngredient();
   
   // Fetch real ingredients from the database
-  const { data: dbIngredients } = useIngredients();
+  const { data: dbIngredients, isLoading: isLoadingIngredients } = useIngredients();
   
-  // Map storage_location enum to storage location ID (either DB UUID or default ID)
-  const getStorageIdForIngredient = (storageLocation: string | null): string => {
-    // If we have existing DB locations, match by name
+  // Compute effective storage locations - prefer DB locations over defaults
+  const effectiveStorageLocations = useMemo(() => {
     if (existingLocations && existingLocations.length > 0) {
-      const nameMap: Record<string, string> = {
-        'walk_in_cooler': 'Walk-in Cooler',
-        'freezer': 'Freezer', 
-        'dry_storage': 'Dry Storage',
-        'bar': 'Bar',
-      };
-      const targetName = nameMap[storageLocation || 'dry_storage'] || 'Dry Storage';
-      const matchedLocation = existingLocations.find(loc => 
-        loc.name.toLowerCase() === targetName.toLowerCase()
-      );
-      if (matchedLocation) return matchedLocation.id;
-    }
-    // Fall back to default IDs if no DB locations
-    return mapStorageLocationToId(storageLocation);
-  };
-  
-  // Transform database ingredients to our format, applying any storage overrides
-  const ingredients: IngredientItem[] = (dbIngredients || []).map(ing => ({
-    id: ing.id,
-    name: ing.name,
-    category: ing.category,
-    unit: ing.unit,
-    storageKey: storageOverrides[ing.id] || getStorageIdForIngredient(ing.storage_location),
-  }));
-
-  // Initialize from database if locations exist
-  useEffect(() => {
-    if (existingLocations && existingLocations.length > 0) {
-      const mappedLocations = existingLocations.map(loc => {
+      return existingLocations.map(loc => {
         const { icon, color } = getIconForName(loc.name);
         return {
           id: loc.id,
@@ -162,10 +133,48 @@ export function Step4StorageSetup(props: StepProps) {
           isNew: false,
         };
       });
-      setStorageLocations(mappedLocations);
-      setActiveStorageTab(mappedLocations[0]?.id || 'default-1');
     }
+    return defaultStorageLocations;
   }, [existingLocations]);
+  
+  // Map storage_location enum to storage location ID based on effective locations
+  const getStorageIdForIngredient = (storageLocation: string | null): string => {
+    const nameMap: Record<string, string> = {
+      'walk_in_cooler': 'Walk-in Cooler',
+      'freezer': 'Freezer', 
+      'dry_storage': 'Dry Storage',
+      'bar': 'Bar',
+    };
+    const targetName = nameMap[storageLocation || 'dry_storage'] || 'Dry Storage';
+    
+    // Match against effective storage locations
+    const matchedLocation = effectiveStorageLocations.find(loc => 
+      loc.name.toLowerCase() === targetName.toLowerCase()
+    );
+    if (matchedLocation) return matchedLocation.id;
+    
+    // Fall back to first storage location if no match
+    return effectiveStorageLocations[0]?.id || 'default-1';
+  };
+  
+  // Transform database ingredients to our format, applying any storage overrides
+  const ingredients: IngredientItem[] = useMemo(() => {
+    return (dbIngredients || []).map(ing => ({
+      id: ing.id,
+      name: ing.name,
+      category: ing.category,
+      unit: ing.unit,
+      storageKey: storageOverrides[ing.id] || getStorageIdForIngredient(ing.storage_location),
+    }));
+  }, [dbIngredients, storageOverrides, effectiveStorageLocations]);
+
+  // Sync state with effective locations
+  useEffect(() => {
+    if (existingLocations && existingLocations.length > 0) {
+      setStorageLocations(effectiveStorageLocations);
+      setActiveStorageTab(effectiveStorageLocations[0]?.id || 'default-1');
+    }
+  }, [existingLocations, effectiveStorageLocations]);
 
   // Real-time sync for multi-tab support
   useEffect(() => {
