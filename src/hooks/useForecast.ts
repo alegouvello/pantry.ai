@@ -55,32 +55,55 @@ export function useSalesPatterns() {
       
       if (error) throw error;
       
-      // Aggregate sales by recipe and day of week
-      const patternMap = new Map<string, Map<number, { total: number; count: number; recipeName: string }>>();
+      // First, aggregate by recipe + date to get daily totals
+      // Then aggregate by day of week to get average daily sales
+      const dailyTotalsMap = new Map<string, Map<string, { quantity: number; recipeName: string; dayOfWeek: number }>>();
       
       for (const event of salesEvents || []) {
-        const dayOfWeek = getDayOfWeek(new Date(event.occurred_at));
+        const eventDate = new Date(event.occurred_at);
+        const dateKey = format(eventDate, 'yyyy-MM-dd');
+        const dayOfWeek = getDayOfWeek(eventDate);
         const items = event.items as Array<{ recipe_id: string; recipe_name: string; quantity: number }> || [];
         
         for (const item of items) {
           if (!item.recipe_id) continue;
           
-          if (!patternMap.has(item.recipe_id)) {
-            patternMap.set(item.recipe_id, new Map());
+          const recipeKey = item.recipe_id;
+          if (!dailyTotalsMap.has(recipeKey)) {
+            dailyTotalsMap.set(recipeKey, new Map());
           }
           
-          const recipePatterns = patternMap.get(item.recipe_id)!;
-          const existing = recipePatterns.get(dayOfWeek) || { total: 0, count: 0, recipeName: item.recipe_name };
+          const recipeDailyMap = dailyTotalsMap.get(recipeKey)!;
+          const existing = recipeDailyMap.get(dateKey) || { quantity: 0, recipeName: item.recipe_name, dayOfWeek };
           
-          recipePatterns.set(dayOfWeek, {
-            total: existing.total + (item.quantity || 1),
-            count: existing.count + 1,
-            recipeName: item.recipe_name
+          recipeDailyMap.set(dateKey, {
+            quantity: existing.quantity + (item.quantity || 1),
+            recipeName: item.recipe_name,
+            dayOfWeek
           });
         }
       }
       
-      // Convert to patterns array
+      // Now aggregate daily totals by day of week
+      const patternMap = new Map<string, Map<number, { total: number; daysCount: number; recipeName: string }>>();
+      
+      dailyTotalsMap.forEach((dailyMap, recipeId) => {
+        if (!patternMap.has(recipeId)) {
+          patternMap.set(recipeId, new Map());
+        }
+        const recipePatterns = patternMap.get(recipeId)!;
+        
+        dailyMap.forEach((dayData) => {
+          const existing = recipePatterns.get(dayData.dayOfWeek) || { total: 0, daysCount: 0, recipeName: dayData.recipeName };
+          recipePatterns.set(dayData.dayOfWeek, {
+            total: existing.total + dayData.quantity,
+            daysCount: existing.daysCount + 1, // Count unique days, not orders
+            recipeName: dayData.recipeName
+          });
+        });
+      });
+      
+      // Convert to patterns array with correct average (total per day of week / number of those days)
       const patterns: SalesPattern[] = [];
       patternMap.forEach((dayPatterns, recipeId) => {
         dayPatterns.forEach((data, dayOfWeek) => {
@@ -88,9 +111,9 @@ export function useSalesPatterns() {
             recipeId,
             recipeName: data.recipeName,
             dayOfWeek,
-            avgQuantity: data.total / data.count,
+            avgQuantity: data.total / data.daysCount, // Now correctly averages per day
             totalSales: data.total,
-            sampleSize: data.count
+            sampleSize: data.daysCount
           });
         });
       });
