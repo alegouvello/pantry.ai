@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TrendingUp, Calendar, Package, AlertTriangle, Loader2, Info, Sparkles } from 'lucide-react';
+import { TrendingUp, Calendar, Package, AlertTriangle, Loader2, Info, Sparkles, Cloud } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,12 +9,31 @@ import { useForecast } from '@/hooks/useForecast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ForecastCalendar } from '@/components/forecast/ForecastCalendar';
 import { ForecastEventDialog } from '@/components/forecast/ForecastEventDialog';
+import { useWeatherForecast, getWeatherIcon } from '@/hooks/useWeatherForecast';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Forecast() {
   const [daysAhead, setDaysAhead] = useState(3);
-  // TODO: Get restaurantId from context/auth
-  const restaurantId = 'demo-restaurant-id';
+  
+  // Get first restaurant for the user's org
+  const { data: restaurant } = useQuery({
+    queryKey: ['user-restaurant'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('restaurants')
+        .select('id, name, address')
+        .limit(1)
+        .single();
+      return data;
+    },
+  });
+  
+  const restaurantId = restaurant?.id;
+  const city = (restaurant?.address as { city?: string })?.city || 'New York';
+  
   const { dishes, ingredients, isLoading, salesPatterns, hasEventImpact, events } = useForecast(daysAhead, restaurantId);
+  const { data: weatherData, isLoading: weatherLoading } = useWeatherForecast(city, undefined, undefined, Math.min(daysAhead, 5));
 
   const hasHistoricalData = salesPatterns && salesPatterns.length > 0;
 
@@ -85,11 +104,25 @@ export default function Forecast() {
               </span>
             </div>
           )}
+          {weatherData?.city && (
+            <div className="flex items-center gap-1 text-blue-600">
+              <Cloud className="h-4 w-4" />
+              <span>
+                Weather for <strong>{weatherData.city}</strong>
+              </span>
+            </div>
+          )}
         </div>
       )}
 
       {/* Event Calendar */}
-      <ForecastCalendar restaurantId={restaurantId} daysAhead={daysAhead} />
+      {restaurantId && (
+        <ForecastCalendar 
+          restaurantId={restaurantId} 
+          daysAhead={daysAhead} 
+          weatherData={weatherData?.forecast}
+        />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Predicted Dish Sales */}
