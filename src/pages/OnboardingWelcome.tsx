@@ -227,17 +227,6 @@ export default function OnboardingWelcome() {
                     </motion.div>
                   </motion.div>
                   
-                  {/* Initial hint */}
-                  {isMuted && (
-                    <motion.div
-                      className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm text-white text-xs font-medium"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 1.5, duration: 0.3 }}
-                    >
-                      Tap for sound
-                    </motion.div>
-                  )}
                 </div>
                 
                 {/* Home indicator */}
