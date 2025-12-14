@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.suggest-par-levels]
 verify_jwt = false
+
+[functions.optimize-margins]
+verify_jwt = false
