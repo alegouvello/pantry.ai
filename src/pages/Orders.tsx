@@ -1,15 +1,21 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, FileText, LogIn, ShoppingCart } from 'lucide-react';
+import { Plus, FileText, LogIn, ShoppingCart, Sparkles, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PurchaseOrderCard } from '@/components/orders/PurchaseOrderCard';
+import { SuggestedOrderCard } from '@/components/orders/SuggestedOrderCard';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { usePurchaseOrders, useApprovePurchaseOrder, useSendPurchaseOrder } from '@/hooks/usePurchaseOrders';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { usePurchaseOrders, useApprovePurchaseOrder, useSendPurchaseOrder, useCreatePurchaseOrder } from '@/hooks/usePurchaseOrders';
 import { useVendors } from '@/hooks/useVendors';
+import { useSuggestedOrders, SuggestedOrder } from '@/hooks/useSuggestedOrders';
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import heroImage from '@/assets/pages/hero-orders.jpg';
 
 const containerVariants = {
@@ -30,11 +36,15 @@ const itemVariants = {
 };
 
 export default function Orders() {
+  const [forecastDays, setForecastDays] = useState(3);
   const { user, loading: authLoading } = useAuth();
   const { data: orders, isLoading: ordersLoading } = usePurchaseOrders();
   const { data: vendors, isLoading: vendorsLoading } = useVendors();
+  const { suggestions, isLoading: suggestionsLoading, totalItems: suggestedItemCount } = useSuggestedOrders(forecastDays);
   const approveMutation = useApprovePurchaseOrder();
   const sendMutation = useSendPurchaseOrder();
+  const createMutation = useCreatePurchaseOrder();
+  const { toast } = useToast();
 
   if (!authLoading && !user) {
     return (
@@ -62,6 +72,63 @@ export default function Orders() {
 
   const handleSend = (id: string) => {
     sendMutation.mutate(id);
+  };
+
+  const handleCreateFromSuggestion = async (suggestion: SuggestedOrder) => {
+    if (suggestion.vendorId === 'unassigned') {
+      toast({
+        title: 'Cannot create order',
+        description: 'Please assign vendors to ingredients first.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      // Create the purchase order
+      const { data: newOrder, error: poError } = await supabase
+        .from('purchase_orders')
+        .insert({
+          vendor_id: suggestion.vendorId,
+          total_amount: suggestion.totalAmount,
+          status: 'draft',
+          notes: `Auto-generated from ${suggestion.reason}`,
+        })
+        .select()
+        .single();
+
+      if (poError) throw poError;
+
+      // Create order items
+      const orderItems = suggestion.items.map(item => ({
+        purchase_order_id: newOrder.id,
+        ingredient_id: item.ingredientId,
+        quantity: item.suggestedQuantity,
+        unit: item.unit,
+        unit_cost: item.unitCost,
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('purchase_order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      toast({
+        title: 'Order created',
+        description: `Draft PO for ${suggestion.vendorName} with ${suggestion.items.length} items.`,
+      });
+
+      // Refresh orders
+      window.location.reload(); // Simple refresh - could use queryClient.invalidateQueries instead
+    } catch (error) {
+      console.error('Failed to create order:', error);
+      toast({
+        title: 'Failed to create order',
+        description: 'Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const draftOrders = orders?.filter((o) => o.status === 'draft') || [];
@@ -130,8 +197,17 @@ export default function Orders() {
 
       {/* Tabs */}
       <motion.div variants={itemVariants}>
-        <Tabs defaultValue="drafts" className="space-y-6">
+        <Tabs defaultValue="suggested" className="space-y-6">
           <TabsList>
+            <TabsTrigger value="suggested" className="gap-2">
+              <Sparkles className="h-3.5 w-3.5" />
+              Suggested
+              {suggestedItemCount > 0 && (
+                <Badge variant="accent" className="h-5 px-1.5 text-xs">
+                  {suggestedItemCount}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="drafts" className="gap-2">
               Drafts
               {draftOrders.length > 0 && (
@@ -143,13 +219,67 @@ export default function Orders() {
             <TabsTrigger value="active" className="gap-2">
               Active
               {activeOrders.length > 0 && (
-                <Badge variant="accent" className="h-5 px-1.5 text-xs">
+                <Badge variant="secondary" className="h-5 px-1.5 text-xs">
                   {activeOrders.length}
                 </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="completed">Completed</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="suggested" className="space-y-6">
+            {/* Forecast period selector */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <h3 className="text-lg font-semibold">AI-Suggested Orders</h3>
+                <p className="text-sm text-muted-foreground">
+                  Based on current inventory and {forecastDays}-day demand forecast
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Select value={forecastDays.toString()} onValueChange={(v) => setForecastDays(parseInt(v))}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="3">3 days</SelectItem>
+                    <SelectItem value="7">7 days</SelectItem>
+                    <SelectItem value="14">14 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {suggestionsLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[...Array(3)].map((_, i) => (
+                  <Card key={i} className="p-5">
+                    <Skeleton className="h-10 w-10 rounded-xl mb-4" />
+                    <Skeleton className="h-5 w-32 mb-2" />
+                    <Skeleton className="h-32 w-full" />
+                  </Card>
+                ))}
+              </div>
+            ) : suggestions.length === 0 ? (
+              <Card className="p-12 text-center">
+                <Sparkles className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                <h3 className="font-semibold text-foreground mb-2">All stocked up!</h3>
+                <p className="text-muted-foreground">
+                  No orders suggested. Inventory levels are sufficient for the {forecastDays}-day forecast.
+                </p>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {suggestions.map((suggestion) => (
+                  <SuggestedOrderCard
+                    key={suggestion.vendorId}
+                    suggestion={suggestion}
+                    onCreateOrder={handleCreateFromSuggestion}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
 
           <TabsContent value="drafts" className="space-y-4">
             {ordersLoading ? (
