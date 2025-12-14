@@ -141,14 +141,14 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string, weathe
   const { data: salesPatterns, isLoading: patternsLoading } = useSalesPatterns();
   const { data: recipes, isLoading: recipesLoading } = useRecipesWithIngredients();
   
-  // Fetch restaurant hours for closed days
+  // Fetch restaurant data including hours and seats for capacity constraints
   const { data: restaurant } = useQuery({
-    queryKey: ['restaurant-hours-forecast', restaurantId],
+    queryKey: ['restaurant-forecast-data', restaurantId],
     queryFn: async () => {
       if (!restaurantId) return null;
       const { data, error } = await supabase
         .from('restaurants')
-        .select('hours')
+        .select('hours, seats')
         .eq('id', restaurantId)
         .single();
       if (error) throw error;
@@ -163,7 +163,7 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string, weathe
   const { events, isLoading: eventsLoading } = useForecastEvents(restaurantId, today, endDate);
   
   const forecast = useMemo(() => {
-    if (!recipes) return { dishes: [], ingredients: [], hasEventImpact: false, hasWeatherImpact: false };
+    if (!recipes) return { dishes: [], ingredients: [], hasEventImpact: false, hasWeatherImpact: false, capacityConstrained: false };
     
     const forecastDays: Date[] = [];
     for (let i = 0; i < daysAhead; i++) {
@@ -209,6 +209,15 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string, weathe
     
     const hasEventImpact = eventImpactMap.size > 0;
     const hasWeatherImpact = weatherImpactMap.size > 0;
+    
+    // Seat capacity for demand ceiling calculations
+    // Assume avg 2 turns per service and avg 1.5 dishes per cover if seats are configured
+    const seats = restaurant?.seats || null;
+    const avgTurnsPerDay = 2; // Typical lunch + dinner turns
+    const avgDishesPerCover = 1.5;
+    const maxDailyCovers = seats ? seats * avgTurnsPerDay : null;
+    const maxDailyDishes = maxDailyCovers ? Math.round(maxDailyCovers * avgDishesPerCover) : null;
+    let capacityConstrained = false;
     
     // Calculate dish forecasts
     const dishForecasts: DishForecast[] = [];
@@ -312,6 +321,21 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string, weathe
       }
     }
     
+    // Apply capacity constraint: if total predicted dishes exceed max capacity, scale down proportionally
+    const totalPredictedDishes = dishForecasts.reduce((sum, d) => sum + d.predictedQuantity, 0);
+    if (maxDailyDishes && totalPredictedDishes > maxDailyDishes * daysAhead) {
+      const scaleFactor = (maxDailyDishes * daysAhead) / totalPredictedDishes;
+      capacityConstrained = true;
+      for (const dish of dishForecasts) {
+        dish.predictedQuantity = Math.round(dish.predictedQuantity * scaleFactor);
+      }
+      // Also scale ingredient needs
+      ingredientNeeds.forEach((need) => {
+        need.neededQuantity = need.neededQuantity * scaleFactor;
+        need.recipes = need.recipes.map(r => ({ ...r, quantity: r.quantity * scaleFactor }));
+      });
+    }
+    
     // Sort dishes by predicted quantity
     dishForecasts.sort((a, b) => b.predictedQuantity - a.predictedQuantity);
     
@@ -346,7 +370,9 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string, weathe
       dishes: dishForecasts,
       ingredients: ingredientRequirements,
       hasEventImpact,
-      hasWeatherImpact
+      hasWeatherImpact,
+      capacityConstrained,
+      maxDailyCovers
     };
   }, [salesPatterns, recipes, daysAhead, events, today, weatherData, restaurant]);
   

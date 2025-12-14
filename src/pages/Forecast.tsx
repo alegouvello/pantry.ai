@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Calendar, Package, AlertTriangle, Info, Sparkles, Cloud } from 'lucide-react';
+import { TrendingUp, Calendar, Package, AlertTriangle, Info, Sparkles, Cloud, Users } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -73,7 +73,7 @@ export default function Forecast() {
   const city = (restaurant?.address as { city?: string })?.city || 'New York';
   
   const { data: weatherData, isLoading: weatherLoading } = useWeatherForecast(city, undefined, undefined, Math.min(daysAhead, 5));
-  const { dishes, ingredients, isLoading, salesPatterns, hasEventImpact, hasWeatherImpact, events } = useForecast(daysAhead, restaurantId, weatherData?.forecast);
+  const { dishes, ingredients, isLoading, salesPatterns, hasEventImpact, hasWeatherImpact, events, capacityConstrained, maxDailyCovers } = useForecast(daysAhead, restaurantId, weatherData?.forecast);
 
   const hasHistoricalData = salesPatterns && salesPatterns.length > 0;
 
@@ -167,6 +167,12 @@ export default function Forecast() {
             <div className="flex items-center gap-1 text-blue-600">
               <Cloud className="h-4 w-4" />
               <span>Weather for <strong>{weatherData.city}</strong></span>
+            </div>
+          )}
+          {capacityConstrained && maxDailyCovers && (
+            <div className="flex items-center gap-1 text-amber-600">
+              <Users className="h-4 w-4" />
+              <span>Capped to <strong>{maxDailyCovers}</strong> covers/day ({restaurant?.name ? `${(restaurant as any).seats || 0} seats` : 'seat capacity'})</span>
             </div>
           )}
         </motion.div>
