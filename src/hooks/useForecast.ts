@@ -141,7 +141,23 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string, weathe
   const { data: salesPatterns, isLoading: patternsLoading } = useSalesPatterns();
   const { data: recipes, isLoading: recipesLoading } = useRecipesWithIngredients();
   
-  // Get events for the forecast period
+  // Fetch restaurant hours for closed days
+  const { data: restaurant } = useQuery({
+    queryKey: ['restaurant-hours-forecast', restaurantId],
+    queryFn: async () => {
+      if (!restaurantId) return null;
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('hours')
+        .eq('id', restaurantId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!restaurantId,
+  });
+  
+  // Get events for the forecast period (including closures)
   const today = startOfDay(new Date());
   const endDate = addDays(today, daysAhead);
   const { events, isLoading: eventsLoading } = useForecastEvents(restaurantId, today, endDate);
@@ -154,12 +170,33 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string, weathe
       forecastDays.push(addDays(today, i));
     }
     
+    // Parse business hours to determine regularly closed days
+    const closedDaysOfWeek = new Set<number>();
+    if (restaurant?.hours && typeof restaurant.hours === 'object') {
+      const hours = restaurant.hours as Record<string, { closed?: boolean }>;
+      const dayMap: Record<string, number> = {
+        sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+        thursday: 4, friday: 5, saturday: 6
+      };
+      Object.entries(hours).forEach(([day, config]) => {
+        if (config?.closed) {
+          closedDaysOfWeek.add(dayMap[day.toLowerCase()]);
+        }
+      });
+    }
+    
     // Build a map of date -> total event impact percent
     const eventImpactMap = new Map<string, number>();
+    const closureDates = new Set<string>();
     for (const event of events) {
       const dateKey = event.event_date;
-      const existing = eventImpactMap.get(dateKey) || 0;
-      eventImpactMap.set(dateKey, existing + Number(event.impact_percent));
+      if (event.event_type === 'closure') {
+        closureDates.add(dateKey);
+        eventImpactMap.set(dateKey, -100); // Full closure
+      } else {
+        const existing = eventImpactMap.get(dateKey) || 0;
+        eventImpactMap.set(dateKey, existing + Number(event.impact_percent));
+      }
     }
     
     // Build a map of date -> weather impact percent
@@ -194,6 +231,12 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string, weathe
       for (const forecastDay of forecastDays) {
         const dayOfWeek = getDayOfWeek(forecastDay);
         const dateKey = format(forecastDay, 'yyyy-MM-dd');
+        
+        // Skip days that are regularly closed or have a closure event
+        if (closedDaysOfWeek.has(dayOfWeek) || closureDates.has(dateKey)) {
+          continue;
+        }
+        
         const eventImpact = eventImpactMap.get(dateKey) || 0;
         const weatherImpact = weatherImpactMap.get(dateKey) || 0;
         
@@ -303,7 +346,7 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string, weathe
       hasEventImpact,
       hasWeatherImpact
     };
-  }, [salesPatterns, recipes, daysAhead, events, today, weatherData]);
+  }, [salesPatterns, recipes, daysAhead, events, today, weatherData, restaurant]);
   
   return {
     ...forecast,
