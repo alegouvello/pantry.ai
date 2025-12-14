@@ -138,8 +138,18 @@ export default function OnboardingWelcome() {
           </motion.div>
         </div>
 
-        {/* Right side - Vertical Video in Phone Mockup */}
-        <div className="flex-1 relative overflow-hidden flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10">
+        {/* Right side - Vertical Video in Phone Mockup with Background */}
+        <div className="flex-1 relative overflow-hidden flex items-center justify-center">
+          {/* Background image */}
+          <img 
+            src={heroImage} 
+            alt="" 
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Gradient overlays for blending */}
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-background/40" />
+          
           {/* Decorative background elements */}
           <div className="absolute inset-0">
             <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
