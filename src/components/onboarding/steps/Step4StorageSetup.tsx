@@ -13,6 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useSyncNotification } from '@/hooks/useSyncNotification';
 import { supabase } from '@/integrations/supabase/client';
 import { useIngredients, useUpdateIngredient } from '@/hooks/useIngredients';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 
 interface StepProps {
   currentStep: number;
@@ -556,20 +558,62 @@ export function Step4StorageSetup(props: StepProps) {
           <p className="text-sm text-muted-foreground">
             💡 Drag ingredients between storage tabs to reassign them, or use auto-assign.
           </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAutoAssign}
-            disabled={isAutoAssigning || !ingredients.length}
-            className="shrink-0"
-          >
-            {isAutoAssigning ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Wand2 className="w-4 h-4 mr-2" />
-            )}
-            Auto-Assign
-          </Button>
+          <HoverCard openDelay={200}>
+            <HoverCardTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAutoAssign}
+                disabled={isAutoAssigning || !ingredients.length}
+                className="shrink-0"
+              >
+                {isAutoAssigning ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Wand2 className="w-4 h-4 mr-2" />
+                )}
+                Auto-Assign
+              </Button>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-80" align="end">
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm">Auto-Assign Categories</h4>
+                <p className="text-xs text-muted-foreground">
+                  Ingredients are assigned based on their category:
+                </p>
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-start gap-2">
+                    <Warehouse className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                    <div>
+                      <span className="font-medium">Walk-in Cooler</span>
+                      <p className="text-muted-foreground">Dairy, Produce, Vegetables, Fruits, Herbs, Salads, Fresh items</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Snowflake className="w-4 h-4 text-cyan-500 mt-0.5 shrink-0" />
+                    <div>
+                      <span className="font-medium">Freezer</span>
+                      <p className="text-muted-foreground">Frozen items, Ice cream, Seafood, Fish</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Wine className="w-4 h-4 text-purple-500 mt-0.5 shrink-0" />
+                    <div>
+                      <span className="font-medium">Bar</span>
+                      <p className="text-muted-foreground">Beverages, Drinks, Alcohol, Wine, Spirits, Beer</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Package className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                    <div>
+                      <span className="font-medium">Dry Storage</span>
+                      <p className="text-muted-foreground">Pantry, Canned goods, Oils, Spices, and everything else</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </HoverCardContent>
+          </HoverCard>
         </div>
 
         <Tabs value={activeStorageTab} onValueChange={setActiveStorageTab}>
