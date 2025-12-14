@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Calendar, Package, AlertTriangle, Info, Sparkles, Cloud, Users } from 'lucide-react';
+import { TrendingUp, Calendar, Package, AlertTriangle, Info, Sparkles, Cloud, Users, Truck } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -306,6 +306,12 @@ export default function Forecast() {
                                 <AlertTriangle className="h-4 w-4 text-destructive" />
                               )}
                               <span className="font-medium text-foreground">{item.ingredientName}</span>
+                              {item.pendingQuantity && item.pendingQuantity > 0 && (
+                                <Badge variant="outline" className="text-xs gap-1 text-blue-600 border-blue-600/30 bg-blue-50 dark:bg-blue-950/30">
+                                  <Truck className="h-3 w-3" />
+                                  +{formatQuantity(item.pendingQuantity, item.unit)} on order
+                                </Badge>
+                              )}
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-sm text-muted-foreground">

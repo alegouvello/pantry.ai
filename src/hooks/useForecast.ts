@@ -56,6 +56,7 @@ export interface IngredientRequirement {
   unit: string;
   currentStock: number;
   neededQuantity: number;
+  pendingQuantity?: number;
   coverage: number;
   risk: 'high' | 'medium' | 'low';
   recipes: { name: string; quantity: number }[];
@@ -414,6 +415,7 @@ export function useForecast(daysAhead: number = 3, restaurantId?: string, weathe
       ingredientRequirements.push({
         ...need,
         currentStock: effectiveStock, // Show effective stock (current + pending)
+        pendingQuantity, // Expose pending quantity for UI badge
         coverage,
         risk
       });
