@@ -416,7 +416,7 @@ export function Step6POSConnect(props: StepProps) {
           </Table>
         </Card>
 
-        {/* Test Sync Preview */}
+        {/* Test Sync Preview - shows actual mapped recipes with their ingredients */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Test Sync Preview</CardTitle>
@@ -428,8 +428,27 @@ export function Step6POSConnect(props: StepProps) {
             <div className="bg-muted/50 rounded-lg p-4 text-sm">
               <p className="font-medium mb-2">Sample Order #1234</p>
               <ul className="space-y-1 text-muted-foreground">
-                <li>• 1x Margherita Pizza → -250g dough, -100g tomatoes, -150g mozzarella</li>
-                <li>• 2x Caesar Salad → -400g romaine, -120ml dressing</li>
+                {(() => {
+                  // Get first 2 mapped recipes to show as sample
+                  const mappedRecipeIds = Object.values(mappings).filter(Boolean).slice(0, 2);
+                  if (mappedRecipeIds.length === 0) {
+                    return <li className="text-muted-foreground italic">Map recipes above to see inventory impact</li>;
+                  }
+                  return mappedRecipeIds.map((recipeId, idx) => {
+                    const recipe = recipes?.find(r => r.id === recipeId);
+                    if (!recipe) return null;
+                    const qty = idx === 0 ? 1 : 2;
+                    const ingredients = recipe.recipe_ingredients?.slice(0, 3) || [];
+                    const ingredientText = ingredients.length > 0
+                      ? ingredients.map(ri => `-${ri.quantity * qty}${ri.unit} ${ri.ingredients?.name || 'ingredient'}`).join(', ')
+                      : 'no ingredients';
+                    return (
+                      <li key={recipeId}>
+                        • {qty}x {recipe.name} → {ingredientText}
+                      </li>
+                    );
+                  });
+                })()}
               </ul>
             </div>
           </CardContent>
