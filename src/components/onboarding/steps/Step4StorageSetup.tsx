@@ -313,9 +313,21 @@ export function Step4StorageSetup(props: StepProps) {
   };
 
   // Auto-assign ingredients to storage locations based on category AND ingredient name
+  // Returns the actual storage location ID from effectiveStorageLocations
   const getCategoryStorageMapping = (category: string, ingredientName?: string): string => {
     const lowerCategory = category.toLowerCase();
     const lowerName = (ingredientName || '').toLowerCase();
+    
+    // Helper to find storage location by name pattern
+    const findStorageByName = (patterns: string[]): string | null => {
+      for (const pattern of patterns) {
+        const match = effectiveStorageLocations.find(loc => 
+          loc.name.toLowerCase().includes(pattern)
+        );
+        if (match) return match.id;
+      }
+      return null;
+    };
     
     // Check ingredient name for specific keywords that override category
     // Walk-in Cooler items by name
@@ -338,17 +350,17 @@ export function Step4StorageSetup(props: StepProps) {
         lowerName.includes('yogurt') ||
         lowerName.includes('mayonnaise') ||
         lowerName.includes('aioli')) {
-      return 'default-1'; // Walk-in Cooler
+      return findStorageByName(['cooler', 'fridge', 'walk']) || effectiveStorageLocations[0]?.id || 'default-1';
     }
     
     // Freezer items by name
     if (lowerName.includes('frozen') || 
         lowerName.includes('ice cream') ||
         lowerName.includes('sorbet')) {
-      return 'default-2';
+      return findStorageByName(['freezer']) || effectiveStorageLocations[1]?.id || 'default-2';
     }
     
-    // Walk-in Cooler (default-1): Fresh items, dairy, produce, proteins
+    // Walk-in Cooler: Fresh items, dairy, produce, proteins
     if (lowerCategory.includes('dairy') || 
         lowerCategory.includes('produce') || 
         lowerCategory.includes('vegetable') ||
@@ -358,18 +370,18 @@ export function Step4StorageSetup(props: StepProps) {
         lowerCategory.includes('protein') ||
         lowerCategory.includes('meat') ||
         lowerCategory.includes('fresh')) {
-      return 'default-1';
+      return findStorageByName(['cooler', 'fridge', 'walk']) || effectiveStorageLocations[0]?.id || 'default-1';
     }
     
-    // Freezer (default-2): Frozen items, ice cream, seafood (if frozen)
+    // Freezer: Frozen items, ice cream, seafood
     if (lowerCategory.includes('frozen') || 
         lowerCategory.includes('ice cream') ||
         lowerCategory.includes('seafood') ||
         lowerCategory.includes('fish')) {
-      return 'default-2';
+      return findStorageByName(['freezer']) || effectiveStorageLocations[1]?.id || 'default-2';
     }
     
-    // Bar (default-4): Beverages, alcohol, wine, spirits
+    // Bar: Beverages, alcohol, wine, spirits
     if (lowerCategory.includes('beverage') || 
         lowerCategory.includes('drink') ||
         lowerCategory.includes('alcohol') ||
@@ -378,11 +390,11 @@ export function Step4StorageSetup(props: StepProps) {
         lowerCategory.includes('beer') ||
         lowerCategory.includes('liquor') ||
         lowerCategory.includes('bar')) {
-      return 'default-4';
+      return findStorageByName(['bar']) || effectiveStorageLocations[3]?.id || 'default-4';
     }
     
-    // Dry Storage (default-3): Everything else - pantry, canned, oils, spices, etc.
-    return 'default-3';
+    // Dry Storage: Everything else
+    return findStorageByName(['dry', 'storage', 'pantry']) || effectiveStorageLocations[2]?.id || 'default-3';
   };
 
   const [isAutoAssigning, setIsAutoAssigning] = useState(false);
