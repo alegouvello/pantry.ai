@@ -6,13 +6,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Warehouse, Snowflake, Package, Wine, Coffee, Plus, Trash2, Upload, ListChecks, FileSpreadsheet, Loader2, GripVertical, Wand2 } from 'lucide-react';
+import { Warehouse, Snowflake, Package, Wine, Coffee, Plus, Trash2, Upload, ListChecks, FileSpreadsheet, Loader2, GripVertical, Wand2, UtensilsCrossed } from 'lucide-react';
 import { useStorageLocations, useCreateStorageLocation } from '@/hooks/useOnboarding';
 import { useOnboardingContext } from '@/contexts/OnboardingContext';
 import { useToast } from '@/hooks/use-toast';
 import { useSyncNotification } from '@/hooks/useSyncNotification';
 import { supabase } from '@/integrations/supabase/client';
 import { useIngredients, useUpdateIngredient } from '@/hooks/useIngredients';
+import { useIngredientRecipes } from '@/hooks/useIngredientRecipes';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 
@@ -119,6 +120,9 @@ export function Step4StorageSetup(props: StepProps) {
   
   // Fetch real ingredients from the database
   const { data: dbIngredients, isLoading: isLoadingIngredients } = useIngredients();
+  
+  // Fetch recipe info for each ingredient
+  const { data: ingredientRecipes } = useIngredientRecipes();
   
   // Compute effective storage locations - prefer DB locations over defaults
   const effectiveStorageLocations = useMemo(() => {
@@ -693,6 +697,7 @@ export function Step4StorageSetup(props: StepProps) {
                   ingredientsByStorage(location.id).map(ingredient => {
                     const isNotStocked = notStocked.includes(ingredient.id);
                     const isDragging = draggedIngredient === ingredient.id;
+                    const recipes = ingredientRecipes?.get(ingredient.id) || [];
                     return (
                       <Card 
                         key={ingredient.id} 
@@ -707,11 +712,20 @@ export function Step4StorageSetup(props: StepProps) {
                           <div className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3 flex-1">
                               <GripVertical className="w-4 h-4 text-muted-foreground/50" />
-                              <div>
+                              <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2">
                                   <span className="font-medium">{ingredient.name}</span>
                                 </div>
                                 <p className="text-sm text-muted-foreground">{ingredient.category}</p>
+                                {recipes.length > 0 && (
+                                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                    <UtensilsCrossed className="w-3 h-3 text-muted-foreground shrink-0" />
+                                    <span className="text-xs text-muted-foreground truncate">
+                                      {recipes.slice(0, 2).map(r => r.name).join(', ')}
+                                      {recipes.length > 2 && ` +${recipes.length - 2} more`}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             </div>
 
