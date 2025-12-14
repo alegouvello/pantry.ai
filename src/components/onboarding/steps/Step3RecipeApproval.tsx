@@ -16,6 +16,7 @@ import { useOnboardingContext, ParsedDish, ParsedIngredient } from '@/contexts/O
 import { useSaveOnboardingRecipe } from '@/hooks/useSaveOnboardingRecipe';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { supabase } from '@/integrations/supabase/client';
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.98 },
@@ -101,27 +102,20 @@ export function Step3RecipeApproval(props: StepProps) {
 
     setGeneratingImageFor(prev => new Set(prev).add(recipeId));
     try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-recipe-image`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('generate-recipe-image', {
+        body: {
           dishName: recipe.name,
           description: recipe.description,
           section: recipe.section,
           tags: recipe.tags,
           recipeId: recipe.id,
-        }),
+        },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.imageUrl) {
-          setRecipes(prev => prev.map(r => 
-            r.id === recipeId ? { ...r, imageUrl: data.imageUrl } : r
-          ));
-        }
+      if (!error && data?.success && data?.imageUrl) {
+        setRecipes(prev => prev.map(r => 
+          r.id === recipeId ? { ...r, imageUrl: data.imageUrl } : r
+        ));
       }
     } catch (error) {
       console.error('Failed to generate image:', error);

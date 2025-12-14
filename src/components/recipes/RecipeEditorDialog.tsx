@@ -101,33 +101,28 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
     
     setIsGeneratingImage(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-recipe-image`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('generate-recipe-image', {
+        body: {
           dishName: name,
           description: '',
           section: category,
           tags: [],
           recipeId: recipe.id,
-        }),
+        },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.imageUrl) {
-          setImageUrl(data.imageUrl);
-          toast({
-            title: 'Image generated',
-            description: 'Recipe image has been created.',
-          });
-        } else {
-          throw new Error(data.error || 'Failed to generate image');
-        }
+      if (error) {
+        throw new Error(error.message || 'Failed to generate image');
+      }
+      
+      if (data?.success && data?.imageUrl) {
+        setImageUrl(data.imageUrl);
+        toast({
+          title: 'Image generated',
+          description: 'Recipe image has been created.',
+        });
       } else {
-        throw new Error('Failed to generate image');
+        throw new Error(data?.error || 'Failed to generate image');
       }
     } catch (error) {
       console.error('Failed to generate image:', error);
