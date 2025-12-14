@@ -15,6 +15,7 @@ interface RecipeCardProps {
   recipe: Recipe;
   onEdit?: () => void;
   onDelete?: () => void;
+  onClick?: () => void;
 }
 
 const formatCurrency = (value: number) => {
@@ -25,9 +26,13 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
-export function RecipeCard({ recipe, onEdit, onDelete }: RecipeCardProps) {
+export function RecipeCard({ recipe, onEdit, onDelete, onClick }: RecipeCardProps) {
   return (
-    <Card variant="interactive" className="overflow-hidden group">
+    <Card 
+      variant="interactive" 
+      className="overflow-hidden group cursor-pointer" 
+      onClick={onClick}
+    >
       {/* Recipe Image */}
       <div className="relative bg-gradient-to-br from-primary/20 to-primary/5">
         {recipe.imageUrl ? (
@@ -42,7 +47,7 @@ export function RecipeCard({ recipe, onEdit, onDelete }: RecipeCardProps) {
           </div>
         )}
         {/* Overlay with actions */}
-        <div className="absolute top-2 right-2">
+        <div className="absolute top-2 right-2" onClick={(e) => e.stopPropagation()}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
