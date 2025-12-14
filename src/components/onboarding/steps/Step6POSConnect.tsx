@@ -48,13 +48,23 @@ export function Step6POSConnect(props: StepProps) {
   const createIntegration = useCreateIntegration();
 
   // Derive POS items from approved recipes (simulating what would come from real POS sync)
-  const posItems: PosItem[] = (recipes || [])
-    .filter(r => r.status === 'Approved')
-    .map(r => ({
-      id: `pos-${r.id}`,
-      name: r.name,
-      category: r.category,
-    }));
+  // Deduplicate by name to avoid showing the same item multiple times
+  const posItems: PosItem[] = (() => {
+    const approvedRecipes = (recipes || []).filter(r => r.status === 'Approved');
+    const seen = new Set<string>();
+    return approvedRecipes
+      .filter(r => {
+        const key = r.name.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .map(r => ({
+        id: `pos-${r.id}`,
+        name: r.name,
+        category: r.category,
+      }));
+  })();
 
   // Check if already connected
   const connectedIntegration = existingIntegrations?.find(i => i.status === 'connected');
