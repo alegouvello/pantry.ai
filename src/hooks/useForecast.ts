@@ -1,0 +1,296 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useMemo } from 'react';
+
+// Types for forecast data
+export interface DishForecast {
+  recipeId: string;
+  recipeName: string;
+  category: string;
+  predictedQuantity: number;
+  confidence: number;
+  dayOfWeek: number;
+  menuPrice: number | null;
+}
+
+export interface IngredientRequirement {
+  ingredientId: string;
+  ingredientName: string;
+  unit: string;
+  currentStock: number;
+  neededQuantity: number;
+  coverage: number;
+  risk: 'high' | 'medium' | 'low';
+  recipes: { name: string; quantity: number }[];
+}
+
+export interface SalesPattern {
+  recipeId: string;
+  recipeName: string;
+  dayOfWeek: number;
+  avgQuantity: number;
+  totalSales: number;
+  sampleSize: number;
+}
+
+// Get day of week (0 = Sunday, 6 = Saturday)
+const getDayOfWeek = (date: Date) => date.getDay();
+const getDayName = (day: number) => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][day];
+
+// Fetch historical sales patterns by day of week
+export function useSalesPatterns() {
+  return useQuery({
+    queryKey: ['sales_patterns'],
+    queryFn: async () => {
+      // Get sales events with items (items contains recipe/dish info)
+      const { data: salesEvents, error } = await supabase
+        .from('sales_events')
+        .select('*')
+        .order('occurred_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      // Aggregate sales by recipe and day of week
+      const patternMap = new Map<string, Map<number, { total: number; count: number; recipeName: string }>>();
+      
+      for (const event of salesEvents || []) {
+        const dayOfWeek = getDayOfWeek(new Date(event.occurred_at));
+        const items = event.items as Array<{ recipe_id: string; recipe_name: string; quantity: number }> || [];
+        
+        for (const item of items) {
+          if (!item.recipe_id) continue;
+          
+          if (!patternMap.has(item.recipe_id)) {
+            patternMap.set(item.recipe_id, new Map());
+          }
+          
+          const recipePatterns = patternMap.get(item.recipe_id)!;
+          const existing = recipePatterns.get(dayOfWeek) || { total: 0, count: 0, recipeName: item.recipe_name };
+          
+          recipePatterns.set(dayOfWeek, {
+            total: existing.total + (item.quantity || 1),
+            count: existing.count + 1,
+            recipeName: item.recipe_name
+          });
+        }
+      }
+      
+      // Convert to patterns array
+      const patterns: SalesPattern[] = [];
+      patternMap.forEach((dayPatterns, recipeId) => {
+        dayPatterns.forEach((data, dayOfWeek) => {
+          patterns.push({
+            recipeId,
+            recipeName: data.recipeName,
+            dayOfWeek,
+            avgQuantity: data.total / data.count,
+            totalSales: data.total,
+            sampleSize: data.count
+          });
+        });
+      });
+      
+      return patterns;
+    }
+  });
+}
+
+// Fetch all recipes with their ingredients for forecasting
+export function useRecipesWithIngredients() {
+  return useQuery({
+    queryKey: ['recipes_with_ingredients_forecast'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('recipes')
+        .select(`
+          id,
+          name,
+          category,
+          menu_price,
+          yield_amount,
+          yield_unit,
+          recipe_ingredients (
+            ingredient_id,
+            quantity,
+            unit,
+            ingredients (
+              id,
+              name,
+              current_stock,
+              unit,
+              unit_cost
+            )
+          )
+        `)
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+}
+
+// Main forecasting hook
+export function useForecast(daysAhead: number = 3) {
+  const { data: salesPatterns, isLoading: patternsLoading } = useSalesPatterns();
+  const { data: recipes, isLoading: recipesLoading } = useRecipesWithIngredients();
+  
+  const forecast = useMemo(() => {
+    if (!recipes) return { dishes: [], ingredients: [] };
+    
+    const today = new Date();
+    const forecastDays: Date[] = [];
+    for (let i = 0; i < daysAhead; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      forecastDays.push(date);
+    }
+    
+    // Calculate dish forecasts
+    const dishForecasts: DishForecast[] = [];
+    const ingredientNeeds = new Map<string, {
+      ingredientId: string;
+      ingredientName: string;
+      unit: string;
+      currentStock: number;
+      neededQuantity: number;
+      recipes: { name: string; quantity: number }[];
+    }>();
+    
+    for (const recipe of recipes) {
+      let totalPredicted = 0;
+      let confidenceSum = 0;
+      let forecastCount = 0;
+      
+      for (const forecastDay of forecastDays) {
+        const dayOfWeek = getDayOfWeek(forecastDay);
+        
+        // Find historical pattern for this recipe on this day of week
+        const pattern = salesPatterns?.find(
+          p => p.recipeId === recipe.id && p.dayOfWeek === dayOfWeek
+        );
+        
+        if (pattern) {
+          totalPredicted += pattern.avgQuantity;
+          // Confidence based on sample size (more data = higher confidence)
+          const sampleConfidence = Math.min(95, 50 + pattern.sampleSize * 5);
+          confidenceSum += sampleConfidence;
+          forecastCount++;
+        } else {
+          // No historical data - use default estimate based on category
+          const defaultEstimate = recipe.category === 'Mains' ? 8 : 
+                                  recipe.category === 'Appetizers' ? 6 : 4;
+          totalPredicted += defaultEstimate;
+          confidenceSum += 40; // Low confidence for defaults
+          forecastCount++;
+        }
+      }
+      
+      const predictedQuantity = Math.round(totalPredicted);
+      const avgConfidence = forecastCount > 0 ? Math.round(confidenceSum / forecastCount) : 40;
+      
+      if (predictedQuantity > 0) {
+        dishForecasts.push({
+          recipeId: recipe.id,
+          recipeName: recipe.name,
+          category: recipe.category,
+          predictedQuantity,
+          confidence: avgConfidence,
+          dayOfWeek: getDayOfWeek(today),
+          menuPrice: recipe.menu_price
+        });
+        
+        // Calculate ingredient needs based on predicted dish sales
+        for (const ri of recipe.recipe_ingredients || []) {
+          const ingredient = ri.ingredients;
+          if (!ingredient) continue;
+          
+          const neededForRecipe = ri.quantity * predictedQuantity;
+          
+          const existing = ingredientNeeds.get(ingredient.id) || {
+            ingredientId: ingredient.id,
+            ingredientName: ingredient.name,
+            unit: ri.unit || ingredient.unit,
+            currentStock: ingredient.current_stock,
+            neededQuantity: 0,
+            recipes: []
+          };
+          
+          existing.neededQuantity += neededForRecipe;
+          existing.recipes.push({ name: recipe.name, quantity: neededForRecipe });
+          ingredientNeeds.set(ingredient.id, existing);
+        }
+      }
+    }
+    
+    // Sort dishes by predicted quantity
+    dishForecasts.sort((a, b) => b.predictedQuantity - a.predictedQuantity);
+    
+    // Convert ingredient needs to array with risk assessment
+    const ingredientRequirements: IngredientRequirement[] = [];
+    ingredientNeeds.forEach((need) => {
+      const coverage = need.neededQuantity > 0 
+        ? (need.currentStock / need.neededQuantity) * 100 
+        : 100;
+      
+      let risk: 'high' | 'medium' | 'low' = 'low';
+      if (coverage < 50) risk = 'high';
+      else if (coverage < 80) risk = 'medium';
+      
+      ingredientRequirements.push({
+        ...need,
+        coverage,
+        risk
+      });
+    });
+    
+    // Sort by risk (high first) then by needed quantity
+    ingredientRequirements.sort((a, b) => {
+      const riskOrder = { high: 0, medium: 1, low: 2 };
+      if (riskOrder[a.risk] !== riskOrder[b.risk]) {
+        return riskOrder[a.risk] - riskOrder[b.risk];
+      }
+      return b.neededQuantity - a.neededQuantity;
+    });
+    
+    return {
+      dishes: dishForecasts,
+      ingredients: ingredientRequirements
+    };
+  }, [salesPatterns, recipes, daysAhead]);
+  
+  return {
+    ...forecast,
+    isLoading: patternsLoading || recipesLoading,
+    salesPatterns,
+    recipes
+  };
+}
+
+// Hook to get forecast summary by day
+export function useForecastByDay(daysAhead: number = 7) {
+  const { dishes, ingredients, isLoading } = useForecast(daysAhead);
+  
+  const summary = useMemo(() => {
+    const today = new Date();
+    const days = [];
+    
+    for (let i = 0; i < daysAhead; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      
+      days.push({
+        date,
+        dayName: getDayName(date.getDay()),
+        isToday: i === 0,
+        totalDishes: dishes.length,
+        highRiskIngredients: ingredients.filter(ing => ing.risk === 'high').length
+      });
+    }
+    
+    return days;
+  }, [dishes, ingredients, daysAhead]);
+  
+  return { summary, isLoading };
+}
