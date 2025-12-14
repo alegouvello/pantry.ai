@@ -60,6 +60,7 @@ export default function Settings() {
   const [venueType, setVenueType] = useState('');
   const [timezone, setTimezone] = useState('');
   const [currency, setCurrency] = useState('');
+  const [seats, setSeats] = useState<number | ''>('');
   const [street, setStreet] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
@@ -72,6 +73,7 @@ export default function Settings() {
       setVenueType(restaurant.concept_type || '');
       setTimezone(restaurant.timezone || 'America/New_York');
       setCurrency(restaurant.currency || 'USD');
+      setSeats(restaurant.seats ?? '');
       const address = restaurant.address as RestaurantAddress || {};
       setStreet(address.street || '');
       setCity(address.city || '');
@@ -99,6 +101,7 @@ export default function Settings() {
           concept_type: venueType,
           timezone,
           currency,
+          seats: seats === '' ? null : seats,
           address: { street, city, state, zip, country },
         })
         .eq('id', restaurant.id);
@@ -195,6 +198,17 @@ export default function Settings() {
                       <div className="space-y-2">
                         <Label htmlFor="currency">Currency</Label>
                         <Input id="currency" value={currency} onChange={(e) => setCurrency(e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="seats">Number of Seats</Label>
+                        <Input 
+                          id="seats" 
+                          type="number" 
+                          min="1"
+                          value={seats} 
+                          onChange={(e) => setSeats(e.target.value === '' ? '' : parseInt(e.target.value, 10))} 
+                          placeholder="e.g., 50"
+                        />
                       </div>
                     </div>
                     <Button variant="accent" onClick={() => updateRestaurant.mutate()} disabled={updateRestaurant.isPending}>
