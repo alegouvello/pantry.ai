@@ -3,8 +3,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChefHat, Clock, Package, DollarSign, TrendingUp, Sparkles, 
   Loader2, ListOrdered, ImageIcon, X, Pencil, Globe, ExternalLink,
-  Plus, Trash2, Save, GripVertical
+  Plus, Save
 } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import {
   Dialog,
   DialogContent,
@@ -15,8 +30,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
 import { OptimizedImage } from '@/components/ui/optimized-image';
+import { SortableStepItem } from './SortableStepItem';
 import { useGenerateRecipeSteps } from '@/hooks/useGenerateRecipeSteps';
 import { useSearchRecipeSteps } from '@/hooks/useSearchRecipeSteps';
 import { useUpdateRecipe } from '@/hooks/useRecipes';
@@ -198,6 +213,25 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
 
   const handleRemoveStep = (index: number) => {
     setEditedSteps(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      setEditedSteps((items) => {
+        const oldIndex = items.findIndex((_, i) => `step-${i}` === active.id);
+        const newIndex = items.findIndex((_, i) => `step-${i}` === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
   };
 
   return (
@@ -444,36 +478,27 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
                     exit={{ opacity: 0 }}
                     className="space-y-3"
                   >
-                    {editedSteps.map((step, index) => (
-                      <div
-                        key={index}
-                        className="flex gap-3 p-3 rounded-lg bg-muted/30 border border-border/50"
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <SortableContext
+                        items={editedSteps.map((_, i) => `step-${i}`)}
+                        strategy={verticalListSortingStrategy}
                       >
-                        <div className="flex flex-col items-center gap-1">
-                          <div className={cn(
-                            "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold",
-                            "bg-primary text-primary-foreground"
-                          )}>
-                            {index + 1}
-                          </div>
-                          <GripVertical className="h-4 w-4 text-muted-foreground/50" />
-                        </div>
-                        <Textarea
-                          value={step.instruction}
-                          onChange={(e) => handleUpdateStep(index, e.target.value)}
-                          placeholder="Enter step instructions..."
-                          className="flex-1 min-h-[60px] resize-none"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveStep(index)}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                        {editedSteps.map((step, index) => (
+                          <SortableStepItem
+                            key={`step-${index}`}
+                            id={`step-${index}`}
+                            index={index}
+                            instruction={step.instruction}
+                            onUpdate={(instruction) => handleUpdateStep(index, instruction)}
+                            onRemove={() => handleRemoveStep(index)}
+                          />
+                        ))}
+                      </SortableContext>
+                    </DndContext>
                     <Button
                       variant="outline"
                       size="sm"
