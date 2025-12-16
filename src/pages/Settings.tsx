@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { useWeatherForecast, getWeatherIcon } from '@/hooks/useWeatherForecast';
 import { BusinessHoursCard } from '@/components/settings/BusinessHoursCard';
 import { ClosuresCard } from '@/components/settings/ClosuresCard';
+import { LanguageSelector } from '@/components/settings/LanguageSelector';
 import heroImage from '@/assets/pages/hero-settings.jpg';
 
 interface RestaurantAddress {
@@ -383,6 +384,7 @@ export default function Settings() {
                 <CardTitle className="text-base font-medium">{t('settings.accountSettings')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                <LanguageSelector />
                 <div className="space-y-2">
                   <Label>{t('settings.email')}</Label>
                   <Input type="email" placeholder="you@example.com" disabled />

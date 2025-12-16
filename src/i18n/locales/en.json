@@ -565,6 +565,7 @@
     "password": "Password",
     "changePassword": "Change Password",
     "deleteAccount": "Delete Account",
+    "language": "Language",
     "settingsSaved": "Settings saved successfully",
     "failedSave": "Failed to save settings: {{message}}",
     "notifications": {
