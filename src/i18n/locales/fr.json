@@ -524,5 +524,32 @@
       "sourcing": "Approvisionnement",
       "technique": "Technique"
     }
+  },
+  "forecastCalendar": {
+    "title": "Calendrier des événements",
+    "today": "Aujourd'hui",
+    "noEvents": "Aucun événement",
+    "more": "+{{count}} de plus",
+    "weatherImpacts": "Impacts météo inclus",
+    "weatherImpact": "impact météo"
+  },
+  "forecastEvent": {
+    "addEvent": "Ajouter un événement",
+    "editEvent": "Modifier l'événement",
+    "addForecastEvent": "Ajouter un événement prévisionnel",
+    "quickAddHoliday": "Ajout rapide de jour férié",
+    "date": "Date",
+    "pickDate": "Choisir une date",
+    "eventName": "Nom de l'événement",
+    "eventNamePlaceholder": "ex: Super Bowl",
+    "eventType": "Type d'événement",
+    "salesImpact": "Impact prévu sur les ventes",
+    "closedSlow": "-75% (Fermé/Calme)",
+    "veryBusy": "+100% (Très occupé)",
+    "recurring": "Récurrent annuellement",
+    "recurringDesc": "Appliquer cet événement chaque année",
+    "notes": "Notes (Optionnel)",
+    "notesPlaceholder": "Contexte supplémentaire...",
+    "saveChanges": "Enregistrer"
   }
 }

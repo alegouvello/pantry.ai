@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { useForecastEvents, EVENT_TYPES, ForecastEvent } from '@/hooks/useForecastEvents';
 import { ForecastEventDialog } from './ForecastEventDialog';
 import { WeatherData, getWeatherIcon } from '@/hooks/useWeatherForecast';
+import { useTranslation } from 'react-i18next';
 
 interface ForecastCalendarProps {
   restaurantId: string;
@@ -17,6 +18,7 @@ interface ForecastCalendarProps {
 }
 
 export function ForecastCalendar({ restaurantId, daysAhead = 14, weatherData }: ForecastCalendarProps) {
+  const { t } = useTranslation();
   const [startOffset, setStartOffset] = useState(0);
   const [selectedEvent, setSelectedEvent] = useState<ForecastEvent | null>(null);
   
@@ -62,7 +64,7 @@ export function ForecastCalendar({ restaurantId, daysAhead = 14, weatherData }: 
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
             <CalendarDays className="h-4 w-4" />
-            Event Calendar
+            {t('forecastCalendar.title')}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button
@@ -79,7 +81,7 @@ export function ForecastCalendar({ restaurantId, daysAhead = 14, weatherData }: 
               onClick={() => setStartOffset(0)}
               disabled={startOffset === 0}
             >
-              Today
+              {t('forecastCalendar.today')}
             </Button>
             <Button
               variant="ghost"
@@ -161,7 +163,7 @@ export function ForecastCalendar({ restaurantId, daysAhead = 14, weatherData }: 
                         })}
                         {dayEvents.length > 2 && (
                           <div className="text-[10px] text-muted-foreground px-1">
-                            +{dayEvents.length - 2} more
+                            {t('forecastCalendar.more', { count: dayEvents.length - 2 })}
                           </div>
                         )}
                       </div>
@@ -182,7 +184,7 @@ export function ForecastCalendar({ restaurantId, daysAhead = 14, weatherData }: 
                               variant={weather.impact > 0 ? 'default' : 'destructive'} 
                               className="text-[10px] mt-1"
                             >
-                              {weather.impact > 0 ? '+' : ''}{weather.impact}% weather impact
+                              {weather.impact > 0 ? '+' : ''}{weather.impact}% {t('forecastCalendar.weatherImpact')}
                             </Badge>
                           )}
                         </div>
@@ -201,7 +203,7 @@ export function ForecastCalendar({ restaurantId, daysAhead = 14, weatherData }: 
                         ))}
                       </div>
                     ) : !weather && (
-                      <p className="text-xs text-muted-foreground mt-1">No events</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t('forecastCalendar.noEvents')}</p>
                     )}
                   </TooltipContent>
                 </Tooltip>
@@ -215,7 +217,7 @@ export function ForecastCalendar({ restaurantId, daysAhead = 14, weatherData }: 
           {weatherData && weatherData.length > 0 && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Cloud className="h-3 w-3" />
-              <span>Weather impacts included</span>
+              <span>{t('forecastCalendar.weatherImpacts')}</span>
             </div>
           )}
           {EVENT_TYPES.slice(0, 4).map(type => (

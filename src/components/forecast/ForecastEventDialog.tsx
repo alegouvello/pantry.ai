@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { EVENT_TYPES, PRESET_HOLIDAYS, useForecastEvents, ForecastEvent } from '@/hooks/useForecastEvents';
+import { useTranslation } from 'react-i18next';
 
 interface ForecastEventDialogProps {
   restaurantId: string;
@@ -22,6 +23,7 @@ interface ForecastEventDialogProps {
 }
 
 export function ForecastEventDialog({ restaurantId, existingEvent, trigger, onClose }: ForecastEventDialogProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(
     existingEvent ? new Date(existingEvent.event_date) : undefined
@@ -108,20 +110,20 @@ export function ForecastEventDialog({ restaurantId, existingEvent, trigger, onCl
         {trigger || (
           <Button variant="outline" size="sm">
             <Plus className="h-4 w-4 mr-2" />
-            Add Event
+            {t('forecastEvent.addEvent')}
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{existingEvent ? 'Edit Event' : 'Add Forecast Event'}</DialogTitle>
+          <DialogTitle>{existingEvent ? t('forecastEvent.editEvent') : t('forecastEvent.addForecastEvent')}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           {/* Quick preset holidays */}
           {!existingEvent && (
             <div className="space-y-2">
-              <Label className="text-muted-foreground text-xs">Quick Add Holiday</Label>
+              <Label className="text-muted-foreground text-xs">{t('forecastEvent.quickAddHoliday')}</Label>
               <div className="flex flex-wrap gap-1.5">
                 {PRESET_HOLIDAYS.slice(0, 6).map((preset) => (
                   <Button
@@ -140,7 +142,7 @@ export function ForecastEventDialog({ restaurantId, existingEvent, trigger, onCl
 
           {/* Date picker */}
           <div className="space-y-2">
-            <Label>Date</Label>
+            <Label>{t('forecastEvent.date')}</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -151,7 +153,7 @@ export function ForecastEventDialog({ restaurantId, existingEvent, trigger, onCl
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {date ? format(date, 'PPP') : 'Pick a date'}
+                  {date ? format(date, 'PPP') : t('forecastEvent.pickDate')}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -167,17 +169,17 @@ export function ForecastEventDialog({ restaurantId, existingEvent, trigger, onCl
 
           {/* Event name */}
           <div className="space-y-2">
-            <Label>Event Name</Label>
+            <Label>{t('forecastEvent.eventName')}</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Super Bowl Sunday"
+              placeholder={t('forecastEvent.eventNamePlaceholder')}
             />
           </div>
 
           {/* Event type */}
           <div className="space-y-2">
-            <Label>Event Type</Label>
+            <Label>{t('forecastEvent.eventType')}</Label>
             <Select value={eventType} onValueChange={handleEventTypeChange}>
               <SelectTrigger>
                 <SelectValue />
@@ -198,7 +200,7 @@ export function ForecastEventDialog({ restaurantId, existingEvent, trigger, onCl
           {/* Impact slider */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label>Expected Sales Impact</Label>
+              <Label>{t('forecastEvent.salesImpact')}</Label>
               <span className={cn('font-mono font-medium', getImpactColor())}>
                 {impact > 0 ? '+' : ''}{impact}%
               </span>
@@ -212,27 +214,27 @@ export function ForecastEventDialog({ restaurantId, existingEvent, trigger, onCl
               className="w-full"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>-75% (Closed/Slow)</span>
-              <span>+100% (Very Busy)</span>
+              <span>{t('forecastEvent.closedSlow')}</span>
+              <span>{t('forecastEvent.veryBusy')}</span>
             </div>
           </div>
 
           {/* Recurring toggle */}
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label>Recurring Annually</Label>
-              <p className="text-xs text-muted-foreground">Apply this event every year</p>
+              <Label>{t('forecastEvent.recurring')}</Label>
+              <p className="text-xs text-muted-foreground">{t('forecastEvent.recurringDesc')}</p>
             </div>
             <Switch checked={isRecurring} onCheckedChange={setIsRecurring} />
           </div>
 
           {/* Notes */}
           <div className="space-y-2">
-            <Label>Notes (Optional)</Label>
+            <Label>{t('forecastEvent.notes')}</Label>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Any additional context..."
+              placeholder={t('forecastEvent.notesPlaceholder')}
               rows={2}
             />
           </div>
@@ -242,17 +244,17 @@ export function ForecastEventDialog({ restaurantId, existingEvent, trigger, onCl
           {existingEvent ? (
             <Button variant="destructive" size="sm" onClick={handleDelete}>
               <Trash2 className="h-4 w-4 mr-2" />
-              Delete
+              {t('common.delete')}
             </Button>
           ) : (
             <div />
           )}
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleSubmit} disabled={!date || !name}>
-              {existingEvent ? 'Save Changes' : 'Add Event'}
+              {existingEvent ? t('forecastEvent.saveChanges') : t('forecastEvent.addEvent')}
             </Button>
           </div>
         </div>

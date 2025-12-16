@@ -524,5 +524,32 @@
       "sourcing": "Abastecimiento",
       "technique": "Técnica"
     }
+  },
+  "forecastCalendar": {
+    "title": "Calendario de eventos",
+    "today": "Hoy",
+    "noEvents": "Sin eventos",
+    "more": "+{{count}} más",
+    "weatherImpacts": "Impactos climáticos incluidos",
+    "weatherImpact": "impacto climático"
+  },
+  "forecastEvent": {
+    "addEvent": "Agregar evento",
+    "editEvent": "Editar evento",
+    "addForecastEvent": "Agregar evento de pronóstico",
+    "quickAddHoliday": "Agregar día festivo rápido",
+    "date": "Fecha",
+    "pickDate": "Elegir una fecha",
+    "eventName": "Nombre del evento",
+    "eventNamePlaceholder": "ej: Super Bowl",
+    "eventType": "Tipo de evento",
+    "salesImpact": "Impacto esperado en ventas",
+    "closedSlow": "-75% (Cerrado/Lento)",
+    "veryBusy": "+100% (Muy ocupado)",
+    "recurring": "Recurrente anualmente",
+    "recurringDesc": "Aplicar este evento cada año",
+    "notes": "Notas (Opcional)",
+    "notesPlaceholder": "Contexto adicional...",
+    "saveChanges": "Guardar cambios"
   }
 }
