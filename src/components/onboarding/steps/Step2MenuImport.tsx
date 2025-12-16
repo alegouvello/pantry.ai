@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Upload, Link as LinkIcon, ShoppingBag, PenLine, FileText, Loader2, Sparkles, Check, X, ChevronRight, UtensilsCrossed, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Upload, Link as LinkIcon, ShoppingBag, PenLine, FileText, Loader2, Sparkles, Check, X, ChevronRight, UtensilsCrossed, Pencil, Plus, Trash2, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +14,9 @@ import { useOnboardingContext, ParsedDish } from '@/contexts/OnboardingContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface Step2Props {
   currentStep: number;
@@ -28,6 +31,192 @@ interface Step2Props {
 }
 
 type ImportMethod = 'upload' | 'url' | 'pos' | 'manual' | 'auto';
+
+interface SortableDishItemProps {
+  dish: ParsedDish;
+  isSelected: boolean;
+  isEditing: boolean;
+  onToggleSelection: () => void;
+  onStartEdit: () => void;
+  onStopEdit: () => void;
+  onUpdate: (dishId: string, field: 'name' | 'description' | 'price' | 'tags' | 'section', value: string | number | string[]) => void;
+  onDelete: (dishId: string) => void;
+  onSectionChange: (dishId: string, value: string) => void;
+  availableSections: string[];
+  t: ReturnType<typeof useTranslation>['t'];
+}
+
+function SortableDishItem({
+  dish,
+  isSelected,
+  isEditing,
+  onToggleSelection,
+  onStartEdit,
+  onStopEdit,
+  onUpdate,
+  onDelete,
+  onSectionChange,
+  availableSections,
+  t,
+}: SortableDishItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: dish.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "w-full flex items-center gap-3 p-3 rounded-lg border transition-all",
+        isSelected
+          ? "border-primary bg-primary/5"
+          : "border-border hover:border-muted-foreground/30 opacity-60",
+        isDragging && "shadow-lg z-50 bg-background"
+      )}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing p-1 rounded hover:bg-muted flex-shrink-0 touch-none"
+      >
+        <GripVertical className="w-4 h-4 text-muted-foreground" />
+      </button>
+      <button
+        onClick={onToggleSelection}
+        className={cn(
+          "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
+          isSelected
+            ? "border-primary bg-primary"
+            : "border-muted-foreground/40"
+        )}
+      >
+        {isSelected && (
+          <Check className="w-3 h-3 text-primary-foreground" />
+        )}
+      </button>
+      <div className="flex-1 min-w-0">
+        {isEditing ? (
+          <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+            <Input
+              value={dish.name}
+              onChange={(e) => onUpdate(dish.id, 'name', e.target.value)}
+              className="h-8 font-medium"
+              placeholder={t('step2Menu.dishName', 'Dish name')}
+              autoFocus
+            />
+            <Input
+              value={dish.description || ''}
+              onChange={(e) => onUpdate(dish.id, 'description', e.target.value)}
+              placeholder={t('step2Menu.addDescription', 'Add description...')}
+              className="h-8 text-sm"
+            />
+            <div className="flex gap-2">
+              <Select
+                value={dish.section || 'Other'}
+                onValueChange={(value) => onSectionChange(dish.id, value)}
+              >
+                <SelectTrigger className="h-8 w-32">
+                  <SelectValue placeholder={t('step2Menu.selectSection', 'Section')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableSections.map((section) => (
+                    <SelectItem key={section} value={section}>
+                      {section}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="__new__" className="text-primary">
+                    + {t('step2Menu.newSection', 'New Section')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="relative flex-1">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={dish.price || ''}
+                  onChange={(e) => onUpdate(dish.id, 'price', e.target.value ? parseFloat(e.target.value) : 0)}
+                  placeholder="0.00"
+                  className="h-8 text-sm pl-5"
+                />
+              </div>
+            </div>
+            <Input
+              value={dish.tags?.join(', ') || ''}
+              onChange={(e) => onUpdate(dish.id, 'tags', e.target.value.split(',').map(tag => tag.trim()).filter(Boolean))}
+              placeholder={t('step2Menu.addTags', 'Tags (comma separated)')}
+              className="h-8 text-sm"
+            />
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onStopEdit}
+                className="h-7 text-xs"
+              >
+                <Check className="w-3 h-3 mr-1" />
+                {t('common.done', 'Done')}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onDelete(dish.id)}
+                className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="w-3 h-3 mr-1" />
+                {t('common.delete', 'Delete')}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 group">
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-foreground truncate">{dish.name}</p>
+              {dish.description && (
+                <p className="text-sm text-muted-foreground truncate">{dish.description}</p>
+              )}
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onStartEdit();
+              }}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-muted transition-opacity"
+            >
+              <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+          </div>
+        )}
+      </div>
+      {dish.price && !isEditing && (
+        <span className="text-sm font-medium text-muted-foreground flex-shrink-0">
+          ${dish.price.toFixed(2)}
+        </span>
+      )}
+      {dish.tags && dish.tags.length > 0 && !isEditing && (
+        <div className="flex gap-1 flex-shrink-0">
+          {dish.tags.slice(0, 2).map((tag) => (
+            <Badge key={tag} variant="outline" className="text-xs">
+              {tag}
+            </Badge>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Step2MenuImport({
   currentStep,
@@ -348,6 +537,36 @@ export function Step2MenuImport({
     return acc;
   }, {} as Record<string, ParsedDish[]>);
 
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = (event: DragEndEvent, section: string) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const sectionDishes = groupedDishes[section];
+    const oldIndex = sectionDishes.findIndex(d => d.id === active.id);
+    const newIndex = sectionDishes.findIndex(d => d.id === over.id);
+    
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const reorderedSection = arrayMove(sectionDishes, oldIndex, newIndex);
+      
+      // Rebuild full dishes array preserving order from other sections
+      const newDishes: ParsedDish[] = [];
+      Object.entries(groupedDishes).forEach(([sec, dishes]) => {
+        if (sec === section) {
+          newDishes.push(...reorderedSection);
+        } else {
+          newDishes.push(...dishes);
+        }
+      });
+      setPreviewDishes(newDishes);
+    }
+  };
+
   // Preview View
   if (showPreview) {
     return (
@@ -402,142 +621,32 @@ export function Step2MenuImport({
                   <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                     {section} ({dishes.filter(d => selectedDishes.has(d.id)).length}/{dishes.length})
                   </h3>
-                  <div className="space-y-2">
-                    {dishes.map((dish) => (
-                      <div
-                        key={dish.id}
-                        className={cn(
-                          "w-full flex items-center gap-3 p-3 rounded-lg border transition-all",
-                          selectedDishes.has(dish.id)
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-muted-foreground/30 opacity-60"
-                        )}
-                      >
-                        <button
-                          onClick={() => toggleDishSelection(dish.id)}
-                          className={cn(
-                            "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
-                            selectedDishes.has(dish.id)
-                              ? "border-primary bg-primary"
-                              : "border-muted-foreground/40"
-                          )}
-                        >
-                          {selectedDishes.has(dish.id) && (
-                            <Check className="w-3 h-3 text-primary-foreground" />
-                          )}
-                        </button>
-                        <div className="flex-1 min-w-0">
-                          {editingDishId === dish.id ? (
-                            <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
-                              <Input
-                                value={dish.name}
-                                onChange={(e) => updateDish(dish.id, 'name', e.target.value)}
-                                className="h-8 font-medium"
-                                placeholder={t('step2Menu.dishName', 'Dish name')}
-                                autoFocus
-                              />
-                              <Input
-                                value={dish.description || ''}
-                                onChange={(e) => updateDish(dish.id, 'description', e.target.value)}
-                                placeholder={t('step2Menu.addDescription', 'Add description...')}
-                                className="h-8 text-sm"
-                              />
-                              <div className="flex gap-2">
-                                <Select
-                                  value={dish.section || 'Other'}
-                                  onValueChange={(value) => handleSectionChange(dish.id, value)}
-                                >
-                                  <SelectTrigger className="h-8 w-32">
-                                    <SelectValue placeholder={t('step2Menu.selectSection', 'Section')} />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {availableSections.map((section) => (
-                                      <SelectItem key={section} value={section}>
-                                        {section}
-                                      </SelectItem>
-                                    ))}
-                                    <SelectItem value="__new__" className="text-primary">
-                                      + {t('step2Menu.newSection', 'New Section')}
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <div className="relative flex-1">
-                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    value={dish.price || ''}
-                                    onChange={(e) => updateDish(dish.id, 'price', e.target.value ? parseFloat(e.target.value) : 0)}
-                                    placeholder="0.00"
-                                    className="h-8 text-sm pl-5"
-                                  />
-                                </div>
-                              </div>
-                              <Input
-                                value={dish.tags?.join(', ') || ''}
-                                onChange={(e) => updateDish(dish.id, 'tags', e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
-                                placeholder={t('step2Menu.addTags', 'Tags (comma separated)')}
-                                className="h-8 text-sm"
-                              />
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => setEditingDishId(null)}
-                                  className="h-7 text-xs"
-                                >
-                                  <Check className="w-3 h-3 mr-1" />
-                                  {t('common.done', 'Done')}
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => deleteDish(dish.id)}
-                                  className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                                >
-                                  <Trash2 className="w-3 h-3 mr-1" />
-                                  {t('common.delete', 'Delete')}
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2 group">
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-foreground truncate">{dish.name}</p>
-                                {dish.description && (
-                                  <p className="text-sm text-muted-foreground truncate">{dish.description}</p>
-                                )}
-                              </div>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingDishId(dish.id);
-                                }}
-                                className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-muted transition-opacity"
-                              >
-                                <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                        {dish.price && !editingDishId && (
-                          <span className="text-sm font-medium text-muted-foreground flex-shrink-0">
-                            ${dish.price.toFixed(2)}
-                          </span>
-                        )}
-                        {dish.tags && dish.tags.length > 0 && !editingDishId && (
-                          <div className="flex gap-1 flex-shrink-0">
-                            {dish.tags.slice(0, 2).map((tag) => (
-                              <Badge key={tag} variant="outline" className="text-xs">
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={(e) => handleDragEnd(e, section)}
+                  >
+                    <SortableContext items={dishes.map(d => d.id)} strategy={verticalListSortingStrategy}>
+                      <div className="space-y-2">
+                        {dishes.map((dish) => (
+                          <SortableDishItem
+                            key={dish.id}
+                            dish={dish}
+                            isSelected={selectedDishes.has(dish.id)}
+                            isEditing={editingDishId === dish.id}
+                            onToggleSelection={() => toggleDishSelection(dish.id)}
+                            onStartEdit={() => setEditingDishId(dish.id)}
+                            onStopEdit={() => setEditingDishId(null)}
+                            onUpdate={updateDish}
+                            onDelete={deleteDish}
+                            onSectionChange={handleSectionChange}
+                            availableSections={availableSections}
+                            t={t}
+                          />
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </SortableContext>
+                  </DndContext>
                 </div>
               ))}
 
