@@ -5,12 +5,15 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Ingredient } from '@/types/inventory';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface InventoryQuickViewProps {
   ingredients: Ingredient[];
 }
 
 export function InventoryQuickView({ ingredients }: InventoryQuickViewProps) {
+  const { t } = useTranslation();
+  
   const lowStockItems = ingredients
     .filter((i) => i.currentStock <= i.reorderPoint)
     .slice(0, 5);
@@ -33,10 +36,10 @@ export function InventoryQuickView({ ingredients }: InventoryQuickViewProps) {
           <div className="p-1.5 rounded-lg bg-warning/10">
             <Package className="h-4 w-4 text-warning" />
           </div>
-          Low Stock Items
+          {t('dashboard.lowStock.title')}
         </CardTitle>
         <Badge variant="warning" className="text-xs">
-          {lowStockItems.length} items
+          {lowStockItems.length} {t('dashboard.lowStock.items')}
         </Badge>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -45,8 +48,8 @@ export function InventoryQuickView({ ingredients }: InventoryQuickViewProps) {
             <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-success/10 flex items-center justify-center">
               <Package className="h-6 w-6 text-success" />
             </div>
-            <p className="text-sm font-medium text-foreground">All stocked up!</p>
-            <p className="text-xs mt-1">Your inventory is well-stocked.</p>
+            <p className="text-sm font-medium text-foreground">{t('dashboard.lowStock.allStocked')}</p>
+            <p className="text-xs mt-1">{t('dashboard.lowStock.wellStocked')}</p>
           </div>
         ) : (
           lowStockItems.map((item, index) => {

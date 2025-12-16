@@ -122,7 +122,29 @@
       "adjusted": "Adjusted",
       "deliveryReceived": "Delivery received from {{vendor}}",
       "poStatus": "PO {{status}} - {{vendor}}"
+    },
+    "recipeSummary": {
+      "title": "Recipe Overview",
+      "dishes": "dishes",
+      "menuItems": "Menu Items",
+      "prepRecipes": "Prep Recipes",
+      "avgFoodCost": "Avg Food Cost",
+      "targetMargin": "Target: <30% for optimal margins",
+      "needsReview": "Needs Review",
+      "cost": "cost",
+      "noPrice": "No price"
+    },
+    "lowStock": {
+      "title": "Low Stock Items",
+      "items": "items",
+      "allStocked": "All stocked up!",
+      "wellStocked": "Your inventory is well-stocked."
     }
+  },
+  "severity": {
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
   },
   "common": {
     "checking": "Checking...",

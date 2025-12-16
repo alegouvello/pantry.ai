@@ -5,8 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useRecipes } from '@/hooks/useRecipes';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export function RecipeSummary() {
+  const { t } = useTranslation();
   const { data: recipes, isLoading } = useRecipes();
 
   if (isLoading) {
@@ -17,7 +19,7 @@ export function RecipeSummary() {
             <div className="p-1.5 rounded-lg bg-primary/10">
               <ChefHat className="h-4 w-4 text-primary" />
             </div>
-            Recipe Overview
+            {t('dashboard.recipeSummary.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -66,11 +68,11 @@ export function RecipeSummary() {
           <div className="p-1.5 rounded-lg bg-primary/10">
             <ChefHat className="h-4 w-4 text-primary" />
           </div>
-          Recipe Overview
+          {t('dashboard.recipeSummary.title')}
         </CardTitle>
         <Link to="/recipes">
           <Badge variant="secondary" className="text-xs cursor-pointer hover:bg-secondary/80 transition-colors">
-            {dishRecipes.length} dishes
+            {dishRecipes.length} {t('dashboard.recipeSummary.dishes')}
           </Badge>
         </Link>
       </CardHeader>
@@ -83,7 +85,7 @@ export function RecipeSummary() {
             transition={{ duration: 0.2 }}
           >
             <p className="text-3xl font-bold text-foreground">{dishRecipes.length}</p>
-            <p className="text-xs text-muted-foreground mt-1">Menu Items</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('dashboard.recipeSummary.menuItems')}</p>
           </motion.div>
           <motion.div 
             className="bg-muted/30 rounded-xl p-4 text-center border border-border/30"
@@ -91,14 +93,14 @@ export function RecipeSummary() {
             transition={{ duration: 0.2 }}
           >
             <p className="text-3xl font-bold text-foreground">{prepRecipes.length}</p>
-            <p className="text-xs text-muted-foreground mt-1">Prep Recipes</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('dashboard.recipeSummary.prepRecipes')}</p>
           </motion.div>
         </div>
 
         {/* Average Food Cost */}
         <div className="space-y-3 p-4 rounded-xl bg-muted/20 border border-border/30">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Avg Food Cost</span>
+            <span className="text-muted-foreground">{t('dashboard.recipeSummary.avgFoodCost')}</span>
             <span className={`font-semibold ${avgFoodCost > 35 ? 'text-warning' : 'text-success'}`}>
               {avgFoodCost.toFixed(1)}%
             </span>
@@ -108,7 +110,7 @@ export function RecipeSummary() {
             className={`h-2 ${avgFoodCost > 35 ? '[&>div]:bg-warning' : '[&>div]:bg-success'}`}
           />
           <p className="text-xs text-muted-foreground">
-            Target: &lt;30% for optimal margins
+            {t('dashboard.recipeSummary.targetMargin')}
           </p>
         </div>
 
@@ -117,7 +119,7 @@ export function RecipeSummary() {
           <div className="space-y-2">
             <p className="text-sm font-medium flex items-center gap-2 text-warning">
               <AlertCircle className="h-3.5 w-3.5" />
-              Needs Review
+              {t('dashboard.recipeSummary.needsReview')}
             </p>
             <div className="space-y-1">
               {needsAttention.map((recipe, index) => (
@@ -130,7 +132,7 @@ export function RecipeSummary() {
                 >
                   <span className="text-foreground truncate">{recipe.name}</span>
                   <span className="text-muted-foreground text-xs">
-                    {recipe.menu_price ? `${recipe.foodCostPct.toFixed(0)}% cost` : 'No price'}
+                    {recipe.menu_price ? `${recipe.foodCostPct.toFixed(0)}% ${t('dashboard.recipeSummary.cost')}` : t('dashboard.recipeSummary.noPrice')}
                   </span>
                 </motion.div>
               ))}
