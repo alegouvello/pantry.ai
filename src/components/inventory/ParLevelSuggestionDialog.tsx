@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface ParLevelSuggestion {
   par_level: number;
@@ -47,6 +48,7 @@ export function ParLevelSuggestionDialog({
   isLoading,
   onApply,
 }: ParLevelSuggestionDialogProps) {
+  const { t } = useTranslation();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const toggleSelection = (id: string) => {
@@ -88,30 +90,30 @@ export function ParLevelSuggestionDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            AI Par Level Suggestions
+            {t('parLevelDialog.title')}
           </DialogTitle>
           <DialogDescription>
-            Industry-standard par levels based on your restaurant type and ingredient categories.
+            {t('parLevelDialog.description')}
           </DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Analyzing inventory and generating suggestions...</p>
+            <p className="text-muted-foreground">{t('parLevelDialog.analyzing')}</p>
           </div>
         ) : hasSuggestions ? (
           <>
             <div className="flex items-center justify-between pb-2 border-b">
               <div className="text-sm text-muted-foreground">
-                {selectedIds.size} of {Object.keys(suggestions).length} selected
+                {t('parLevelDialog.selected', { selected: selectedIds.size, total: Object.keys(suggestions).length })}
               </div>
               <div className="flex gap-2">
                 <Button variant="ghost" size="sm" onClick={selectAll}>
-                  Select All
+                  {t('parLevelDialog.selectAll')}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={clearSelection}>
-                  Clear
+                  {t('parLevelDialog.clear')}
                 </Button>
               </div>
             </div>
@@ -156,13 +158,13 @@ export function ParLevelSuggestionDialog({
                                   <span className="text-sm text-muted-foreground line-through">
                                     {item.currentParLevel} {item.unit}
                                   </span>
-                                  <span className="text-sm font-medium text-primary">
-                                    → {item.suggestion.par_level} {item.unit}
-                                  </span>
-                                </div>
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  Reorder at: {item.suggestion.reorder_point} {item.unit}
-                                </div>
+                                              <span className="text-sm font-medium text-primary">
+                                                → {item.suggestion.par_level} {item.unit}
+                                              </span>
+                                            </div>
+                                            <div className="text-xs text-muted-foreground mt-1">
+                                              {t('parLevelDialog.reorderAt')} {item.suggestion.reorder_point} {item.unit}
+                                            </div>
                               </div>
                             )}
                           </div>
@@ -182,14 +184,14 @@ export function ParLevelSuggestionDialog({
 
             <div className="flex justify-end gap-3 pt-4 border-t">
               <Button variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button 
                 onClick={handleApply} 
                 disabled={selectedIds.size === 0}
               >
                 <Check className="h-4 w-4 mr-2" />
-                Apply {selectedIds.size} Suggestions
+                {t('parLevelDialog.apply', { count: selectedIds.size })}
               </Button>
             </div>
           </>
@@ -197,10 +199,10 @@ export function ParLevelSuggestionDialog({
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
             <AlertCircle className="h-8 w-8 text-muted-foreground" />
             <p className="text-muted-foreground text-center">
-              No suggestions available. Try again or check your inventory items.
+              {t('parLevelDialog.noSuggestions')}
             </p>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Close
+              {t('parLevelDialog.close')}
             </Button>
           </div>
         )}

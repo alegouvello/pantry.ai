@@ -8,6 +8,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { OptimizationResult, OptimizationSuggestion } from '@/hooks/useOptimizeMargins';
+import { useTranslation } from 'react-i18next';
 
 interface MarginOptimizationDialogProps {
   open: boolean;
@@ -26,19 +27,12 @@ const typeIcons: Record<OptimizationSuggestion['type'], React.ReactNode> = {
   technique: <Wrench className="h-4 w-4" />,
 };
 
-const typeLabels: Record<OptimizationSuggestion['type'], string> = {
-  substitution: 'Substitution',
-  portion: 'Portion',
-  pricing: 'Pricing',
-  sourcing: 'Sourcing',
-  technique: 'Technique',
-};
-
 const impactColors: Record<OptimizationSuggestion['impact'], string> = {
   low: 'bg-muted text-muted-foreground',
   medium: 'bg-accent/20 text-accent-foreground',
   high: 'bg-primary/20 text-primary',
 };
+
 
 export function MarginOptimizationDialog({
   open,
@@ -48,20 +42,22 @@ export function MarginOptimizationDialog({
   isLoading,
   onRetry,
 }: MarginOptimizationDialogProps) {
+  const { t } = useTranslation();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Lightbulb className="h-5 w-5 text-primary" />
-            Margin Optimization: {recipeName}
+            {t('marginDialog.title')} {recipeName}
           </DialogTitle>
         </DialogHeader>
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12 gap-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Analyzing recipe costs...</p>
+            <p className="text-muted-foreground">{t('marginDialog.analyzing')}</p>
           </div>
         ) : result ? (
           <div className="space-y-6">
@@ -72,15 +68,15 @@ export function MarginOptimizationDialog({
                 {result.targetFoodCostPct && (
                   <div className="flex items-center gap-2 text-sm">
                     <TrendingUp className="h-4 w-4 text-primary" />
-                    <span className="text-muted-foreground">Target:</span>
+                    <span className="text-muted-foreground">{t('marginDialog.target')}</span>
                     <span className="font-semibold">{result.targetFoodCostPct}%</span>
                   </div>
                 )}
                 {result.potentialSavings && (
                   <div className="flex items-center gap-2 text-sm">
                     <DollarSign className="h-4 w-4 text-primary" />
-                    <span className="text-muted-foreground">Potential savings:</span>
-                    <span className="font-semibold">${result.potentialSavings.toFixed(2)}/portion</span>
+                    <span className="text-muted-foreground">{t('marginDialog.potentialSavings')}</span>
+                    <span className="font-semibold">${result.potentialSavings.toFixed(2)}{t('marginDialog.perPortion')}</span>
                   </div>
                 )}
               </div>
@@ -88,7 +84,7 @@ export function MarginOptimizationDialog({
 
             {/* Suggestions */}
             <div className="space-y-3">
-              <h4 className="text-sm font-medium text-muted-foreground">Recommendations</h4>
+              <h4 className="text-sm font-medium text-muted-foreground">{t('marginDialog.recommendations')}</h4>
               {result.suggestions.map((suggestion, index) => (
                 <div
                   key={index}
@@ -103,10 +99,10 @@ export function MarginOptimizationDialog({
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <h5 className="font-medium text-foreground">{suggestion.title}</h5>
                         <Badge variant="outline" className="text-xs">
-                          {typeLabels[suggestion.type]}
+                          {t(`marginDialog.types.${suggestion.type}`)}
                         </Badge>
                         <Badge className={`text-xs ${impactColors[suggestion.impact]}`}>
-                          {suggestion.impact} impact
+                          {suggestion.impact} {t('marginDialog.impact')}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">
@@ -128,15 +124,15 @@ export function MarginOptimizationDialog({
             <div className="flex justify-end">
               <Button variant="outline" size="sm" onClick={onRetry}>
                 <RefreshCw className="h-4 w-4 mr-2" />
-                Get New Suggestions
+                {t('marginDialog.getNewSuggestions')}
               </Button>
             </div>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 gap-4">
-            <p className="text-muted-foreground">No suggestions available</p>
+            <p className="text-muted-foreground">{t('marginDialog.noSuggestions')}</p>
             <Button variant="outline" onClick={onRetry}>
-              Try Again
+              {t('marginDialog.tryAgain')}
             </Button>
           </div>
         )}

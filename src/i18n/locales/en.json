@@ -493,5 +493,36 @@
     "comparison": "Period Comparison",
     "exportData": "Export Data",
     "noSalesData": "No sales data available for this period."
+  },
+  "parLevelDialog": {
+    "title": "AI Par Level Suggestions",
+    "description": "Industry-standard par levels based on your restaurant type and ingredient categories.",
+    "analyzing": "Analyzing inventory and generating suggestions...",
+    "selected": "{{selected}} of {{total}} selected",
+    "selectAll": "Select All",
+    "clear": "Clear",
+    "reorderAt": "Reorder at:",
+    "apply": "Apply {{count}} Suggestions",
+    "noSuggestions": "No suggestions available. Try again or check your inventory items.",
+    "close": "Close"
+  },
+  "marginDialog": {
+    "title": "Margin Optimization:",
+    "analyzing": "Analyzing recipe costs...",
+    "target": "Target:",
+    "potentialSavings": "Potential savings:",
+    "perPortion": "/portion",
+    "recommendations": "Recommendations",
+    "impact": "impact",
+    "getNewSuggestions": "Get New Suggestions",
+    "noSuggestions": "No suggestions available",
+    "tryAgain": "Try Again",
+    "types": {
+      "substitution": "Substitution",
+      "portion": "Portion",
+      "pricing": "Pricing",
+      "sourcing": "Sourcing",
+      "technique": "Technique"
+    }
   }
 }
