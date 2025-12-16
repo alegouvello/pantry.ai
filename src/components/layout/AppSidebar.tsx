@@ -18,26 +18,31 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from 'react-i18next';
+
 
 const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/inventory', icon: Package, label: 'Inventory' },
-  { to: '/recipes', icon: ChefHat, label: 'Recipes' },
-  { to: '/profitability', icon: PieChart, label: 'Profitability' },
-  { to: '/orders', icon: ShoppingCart, label: 'Orders' },
-  { to: '/forecast', icon: TrendingUp, label: 'Forecast' },
-  { to: '/sales-history', icon: BarChart3, label: 'Sales History' },
-  { to: '/alerts', icon: AlertTriangle, label: 'Alerts' },
-  { to: '/integrations', icon: Plug, label: 'Integrations' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
+  { to: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
+  { to: '/inventory', icon: Package, labelKey: 'nav.inventory' },
+  { to: '/recipes', icon: ChefHat, labelKey: 'nav.recipes' },
+  { to: '/profitability', icon: PieChart, labelKey: 'nav.profitability' },
+  { to: '/orders', icon: ShoppingCart, labelKey: 'nav.orders' },
+  { to: '/forecast', icon: TrendingUp, labelKey: 'nav.forecast' },
+  { to: '/sales-history', icon: BarChart3, labelKey: 'nav.salesHistory' },
+  { to: '/alerts', icon: AlertTriangle, labelKey: 'nav.alerts' },
+  { to: '/integrations', icon: Plug, labelKey: 'nav.integrations' },
+  { to: '/settings', icon: Settings, labelKey: 'nav.settings' },
 ];
 
+
 export function AppSidebar() {
+  const { t } = useTranslation();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { user, profile, signOut } = useAuth();
   
   const displayName = profile?.full_name || user?.email?.split('@')[0] || 'User';
+
   const initials = displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
@@ -77,8 +82,9 @@ export function AppSidebar() {
             </div>
             {!isCollapsed && (
               <div className="animate-fade-in">
-                <h1 className="text-lg font-semibold text-foreground">Pantry</h1>
-                <p className="text-xs text-muted-foreground">Inventory Pro</p>
+                <h1 className="text-lg font-semibold text-foreground">{t('app.name')}</h1>
+                <p className="text-xs text-muted-foreground">{t('app.tagline')}</p>
+
               </div>
             )}
           </div>
@@ -105,7 +111,7 @@ export function AppSidebar() {
                     )}
                   />
                   {!isCollapsed && (
-                    <span className="animate-fade-in">{item.label}</span>
+                    <span className="animate-fade-in">{t(item.labelKey)}</span>
                   )}
                   {isActive && !isCollapsed && (
                     <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary animate-pulse-subtle" />
@@ -113,6 +119,7 @@ export function AppSidebar() {
                 </NavLink>
               );
             })}
+
           </nav>
 
           {/* Collapse toggle for desktop */}
@@ -123,8 +130,9 @@ export function AppSidebar() {
               className="w-full justify-start gap-3"
               onClick={() => setIsCollapsed(!isCollapsed)}
             >
-              <Menu className="h-5 w-5" />
-              {!isCollapsed && <span>Collapse</span>}
+                <Menu className="h-5 w-5" />
+                {!isCollapsed && <span>{t('nav.collapse')}</span>}
+
             </Button>
           </div>
 
@@ -151,8 +159,9 @@ export function AppSidebar() {
               onClick={signOut}
             >
               <LogOut className="h-4 w-4" />
-              {!isCollapsed && <span>Sign Out</span>}
+              {!isCollapsed && <span>{t('nav.signOut')}</span>}
             </Button>
+
           </div>
         </div>
       </aside>

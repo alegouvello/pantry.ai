@@ -25,6 +25,8 @@ import { usePurchaseOrdersByStatus } from '@/hooks/usePurchaseOrders';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -47,9 +49,11 @@ const itemVariants = {
 };
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const { user, loading: authLoading } = useAuth();
   const { data: ingredients, isLoading: ingredientsLoading } = useIngredients();
   const { data: lowStockItems, isLoading: lowStockLoading } = useLowStockIngredients();
+
   const { data: activeAlerts, isLoading: alertsLoading } = useActiveAlerts();
   const { data: pendingOrders } = usePurchaseOrdersByStatus(['draft', 'approved', 'sent']);
   const { data: recipes } = useRecipes();
@@ -74,18 +78,19 @@ export default function Dashboard() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
         <div className="text-center space-y-2">
           <Package className="h-16 w-16 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-foreground">Welcome to Pantry</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('dashboard.welcomeTitle')}</h1>
           <p className="text-muted-foreground max-w-md">
-            Sign in to access your restaurant's inventory management dashboard.
+            {t('dashboard.welcomeBody')}
           </p>
         </div>
         <Link to="/auth">
           <Button variant="accent" size="lg">
             <LogIn className="h-5 w-5 mr-2" />
-            Sign In to Continue
+            {t('auth.signInToContinue')}
           </Button>
         </Link>
       </div>
+
     );
   }
 
@@ -94,10 +99,11 @@ export default function Dashboard() {
   // Get time-appropriate greeting
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return t('dashboard.greeting.morning');
+    if (hour < 17) return t('dashboard.greeting.afternoon');
+    return t('dashboard.greeting.evening');
   };
+
 
   return (
     <motion.div 
@@ -123,22 +129,23 @@ export default function Dashboard() {
               {getGreeting()}
             </h1>
             <p className="text-muted-foreground max-w-md">
-              Your kitchen is running smoothly. Here's today's overview.
+              {t('dashboard.heroBody')}
             </p>
             <div className="flex gap-3 pt-2">
               <Link to="/orders">
                 <Button variant="accent" size="sm" className="shadow-lg shadow-accent/25">
                   <ShoppingCart className="h-4 w-4 mr-2" />
-                  New Order
+                  {t('dashboard.newOrder')}
                 </Button>
               </Link>
               <Link to="/recipes">
                 <Button variant="outline" size="sm" className="bg-background/50 backdrop-blur-sm">
-                  View Recipes
+                  {t('dashboard.viewRecipes')}
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </Link>
             </div>
+
           </div>
         </div>
       </motion.div>
@@ -160,31 +167,32 @@ export default function Dashboard() {
         ) : (
           <>
             <MetricCard
-              title="Menu Items"
+              title={t('dashboard.metrics.menuItems')}
               value={totalDishes}
-              subtitle="Active dishes"
+              subtitle={t('dashboard.metrics.activeDishes')}
               icon={Utensils}
             />
             <MetricCard
-              title="Ingredients"
+              title={t('dashboard.metrics.ingredients')}
               value={totalIngredients}
-              subtitle="In inventory"
+              subtitle={t('dashboard.metrics.inInventory')}
               icon={Package}
             />
             <MetricCard
-              title="Low Stock"
+              title={t('dashboard.metrics.lowStock')}
               value={lowStockCount}
-              subtitle="Needs reorder"
+              subtitle={t('dashboard.metrics.needsReorder')}
               icon={AlertTriangle}
               variant="warning"
             />
             <MetricCard
-              title="Pending Orders"
+              title={t('dashboard.metrics.pendingOrders')}
               value={pendingOrdersCount}
-              subtitle="Awaiting action"
+              subtitle={t('dashboard.metrics.awaitingAction')}
               icon={TrendingUp}
               variant="success"
             />
+
           </>
         )}
       </motion.div>
@@ -198,13 +206,14 @@ export default function Dashboard() {
             <CardHeader className="flex flex-row items-center justify-between pb-3">
               <CardTitle className="text-base font-medium flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-warning" />
-                Active Alerts
+                {t('dashboard.activeAlerts')}
               </CardTitle>
               <Link to="/alerts">
                 <Button variant="ghost" size="sm" className="text-muted-foreground">
-                  View All
+                  {t('dashboard.viewAll')}
                 </Button>
               </Link>
+
             </CardHeader>
             <CardContent className="space-y-3">
               {alertsLoading ? (
@@ -234,9 +243,10 @@ export default function Dashboard() {
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <ChefHat className="h-10 w-10 mx-auto mb-3 text-success/60" />
-                  <p className="font-medium text-foreground">All clear!</p>
-                  <p className="text-sm">Your inventory looks great.</p>
+                  <p className="font-medium text-foreground">{t('dashboard.allClear')}</p>
+                  <p className="text-sm">{t('dashboard.inventoryLooksGreat')}</p>
                 </div>
+
               )}
             </CardContent>
           </Card>

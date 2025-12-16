@@ -4,6 +4,8 @@ import { ArrowRight, Clock, Sparkles, Check, ChefHat, Volume2, VolumeX } from 'l
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import heroImage from '@/assets/onboarding/hero-welcome.jpg';
+import { useTranslation } from 'react-i18next';
+
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -24,6 +26,7 @@ const videoVariants = {
 };
 
 export default function OnboardingWelcome() {
+  const { t } = useTranslation();
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -35,11 +38,12 @@ export default function OnboardingWelcome() {
   };
 
   const features = [
-    'AI-powered recipe costing & inventory tracking',
-    'Smart reorder alerts before you run out',
-    'Automatic purchase order generation',
-    'POS integration for real-time depletion',
+    t('onboardingWelcome.features.f1'),
+    t('onboardingWelcome.features.f2'),
+    t('onboardingWelcome.features.f3'),
+    t('onboardingWelcome.features.f4'),
   ];
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -51,24 +55,26 @@ export default function OnboardingWelcome() {
               <ChefHat className="w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-lg sm:text-xl font-bold text-foreground">Pantry</h1>
-              <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">AI-Powered Inventory</p>
+              <h1 className="text-lg sm:text-xl font-bold text-foreground">{t('app.name')}</h1>
+              <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">{t('app.tagline')}</p>
+
             </div>
           </div>
           
           <div className="flex items-center gap-2 sm:gap-4">
             <Link to="/auth">
               <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground px-2 sm:px-3">
-                Sign in
+                {t('auth.signInLower')}
               </Button>
             </Link>
             <Link to="/auth?signup=true">
               <Button size="sm" className="gap-1 sm:gap-2 px-3 sm:px-4">
-                <span className="hidden sm:inline">Get Started</span>
-                <span className="sm:hidden">Start</span>
+                <span className="hidden sm:inline">{t('auth.getStarted')}</span>
+                <span className="sm:hidden">{t('auth.start')}</span>
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
+
           </div>
         </div>
       </header>
@@ -89,24 +95,26 @@ export default function OnboardingWelcome() {
                 className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-medium"
               >
                 <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
-                AI does the work. You validate.
+                {t('onboardingWelcome.pill')}
               </motion.div>
+
               
               <motion.h2 
                 variants={itemVariants}
                 className="text-3xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight"
               >
-                Stop guessing.<br />
-                <span className="text-primary">Start knowing.</span>
+                {t('onboardingWelcome.headline1')}<br />
+                <span className="text-primary">{t('onboardingWelcome.headline2')}</span>
               </motion.h2>
+
               
               <motion.p 
                 variants={itemVariants}
                 className="text-base sm:text-xl text-muted-foreground leading-relaxed"
               >
-                AI-powered inventory management that learns your restaurant and 
-                keeps you ahead of shortages, waste, and ordering headaches.
+                {t('onboardingWelcome.body')}
               </motion.p>
+
               
               <motion.div variants={itemVariants} className="space-y-3 sm:space-y-4 pt-2 sm:pt-4">
                 {features.map((feature, index) => (
@@ -128,15 +136,16 @@ export default function OnboardingWelcome() {
               <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 sm:pt-4">
                 <Link to="/auth?signup=true" className="w-full sm:w-auto">
                   <Button size="lg" className="w-full sm:w-auto gap-2 h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg">
-                    Create Free Account
+                    {t('auth.createFreeAccount')}
                     <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                   </Button>
                 </Link>
                 <Link to="/auth" className="w-full sm:w-auto">
                   <Button variant="outline" size="lg" className="w-full sm:w-auto h-12 sm:h-14 px-6 sm:px-8 text-base sm:text-lg">
-                    Sign In
+                    {t('auth.signIn')}
                   </Button>
                 </Link>
+
               </motion.div>
 
               <motion.div 
@@ -144,8 +153,9 @@ export default function OnboardingWelcome() {
                 className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground pt-2 sm:pt-4"
               >
                 <Clock className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-                <span>Setup takes ~15-25 minutes. You'll validate AI drafts.</span>
+                <span>{t('onboardingWelcome.setupNote')}</span>
               </motion.div>
+
             </div>
           </motion.div>
         </div>
