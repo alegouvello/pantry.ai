@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
-
+import { LanguageSelectorCompact } from '@/components/settings/LanguageSelectorCompact';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
@@ -152,6 +152,7 @@ export function AppSidebar() {
                 </div>
               )}
             </div>
+            <LanguageSelectorCompact collapsed={isCollapsed} />
             <Button
               variant="ghost"
               size="sm"
