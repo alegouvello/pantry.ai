@@ -835,6 +835,11 @@
   "step2Menu": {
     "title": "Importez votre menu",
     "subtitle": "Nous extrairons vos plats et générerons des brouillons de recettes",
+    "autoFind": "Recherche automatique",
+    "autoFindDesc": "L'IA recherche votre menu sur le web",
+    "autoFindTitle": "Découverte intelligente du menu",
+    "autoFindExplain": "Nous rechercherons le menu de {{name}} sur le web et extrairons tous les plats automatiquement.",
+    "searchingWeb": "Recherche de votre menu sur le web...",
     "uploadMenu": "Télécharger le menu",
     "uploadDesc": "PDF, JPG ou PNG de votre menu",
     "pasteUrl": "Coller l'URL",

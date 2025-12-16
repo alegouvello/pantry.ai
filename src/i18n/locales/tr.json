@@ -835,6 +835,11 @@
   "step2Menu": {
     "title": "Menünüzü getirin",
     "subtitle": "Yemeklerinizi çıkaracak ve tarif taslakları oluşturacağız",
+    "autoFind": "Otomatik Bul",
+    "autoFindDesc": "AI menünüzü webde arar",
+    "autoFindTitle": "Akıllı Menü Keşfi",
+    "autoFindExplain": "{{name}} menüsünü webde arayacak ve tüm yemekleri otomatik olarak çıkaracağız.",
+    "searchingWeb": "Menünüz webde aranıyor...",
     "uploadMenu": "Menü Yükle",
     "uploadDesc": "Menünüzün PDF, JPG veya PNG'si",
     "pasteUrl": "URL Yapıştır",

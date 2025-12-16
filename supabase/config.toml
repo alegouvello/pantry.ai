@@ -9,6 +9,9 @@ verify_jwt = false
 [functions.scrape-menu-url]
 verify_jwt = false
 
+[functions.find-menu]
+verify_jwt = false
+
 [functions.generate-recipe-image]
 verify_jwt = false
 
