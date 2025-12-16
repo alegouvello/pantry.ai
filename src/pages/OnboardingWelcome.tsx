@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Clock, Sparkles, Check, ChefHat, Volume2, VolumeX } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { LanguageSelectorCompact } from '@/components/settings/LanguageSelectorCompact';
 import heroImage from '@/assets/onboarding/hero-welcome.jpg';
 import { useTranslation } from 'react-i18next';
 
@@ -62,6 +63,7 @@ export default function OnboardingWelcome() {
           </div>
           
           <div className="flex items-center gap-2 sm:gap-4">
+            <LanguageSelectorCompact />
             <Link to="/auth">
               <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground px-2 sm:px-3">
                 {t('auth.signInLower')}
