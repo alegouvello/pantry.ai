@@ -889,6 +889,8 @@
     "prepRecipesTitle": "Prep Recipes (Auto-detected)",
     "prepRecipesNote": "These house-made items will be created as sub-recipes:",
     "confirmDishes": "Confirm {{count}} Dishes",
+    "addDescription": "Add description...",
+    "editDish": "Edit dish",
     "importMenu": "Import Menu"
   },
   "step3Recipe": {

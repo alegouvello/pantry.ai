@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Upload, Link as LinkIcon, ShoppingBag, PenLine, FileText, Loader2, Sparkles, Check, X, ChevronRight, UtensilsCrossed } from 'lucide-react';
+import { Upload, Link as LinkIcon, ShoppingBag, PenLine, FileText, Loader2, Sparkles, Check, X, ChevronRight, UtensilsCrossed, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -52,6 +52,7 @@ export function Step2MenuImport({
   const [previewDishes, setPreviewDishes] = useState<ParsedDish[]>([]);
   const [previewPrepRecipes, setPreviewPrepRecipes] = useState<ParsedDish[]>([]);
   const [selectedDishes, setSelectedDishes] = useState<Set<string>>(new Set());
+  const [editingDishId, setEditingDishId] = useState<string | null>(null);
 
   const importMethods = [
     {
@@ -272,6 +273,12 @@ export function Step2MenuImport({
     setSelectedDishes(new Set());
   };
 
+  const updateDish = (dishId: string, field: 'name' | 'description', value: string) => {
+    setPreviewDishes(prev => prev.map(dish => 
+      dish.id === dishId ? { ...dish, [field]: value } : dish
+    ));
+  };
+
   const handleConfirmDishes = () => {
     const selectedDishList = previewDishes.filter(d => selectedDishes.has(d.id));
     setParsedDishes(selectedDishList);
@@ -349,38 +356,79 @@ export function Step2MenuImport({
                   </h3>
                   <div className="space-y-2">
                     {dishes.map((dish) => (
-                      <button
+                      <div
                         key={dish.id}
-                        onClick={() => toggleDishSelection(dish.id)}
                         className={cn(
-                          "w-full flex items-center gap-3 p-3 rounded-lg border transition-all text-left",
+                          "w-full flex items-center gap-3 p-3 rounded-lg border transition-all",
                           selectedDishes.has(dish.id)
                             ? "border-primary bg-primary/5"
                             : "border-border hover:border-muted-foreground/30 opacity-60"
                         )}
                       >
-                        <div className={cn(
-                          "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
-                          selectedDishes.has(dish.id)
-                            ? "border-primary bg-primary"
-                            : "border-muted-foreground/40"
-                        )}>
+                        <button
+                          onClick={() => toggleDishSelection(dish.id)}
+                          className={cn(
+                            "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
+                            selectedDishes.has(dish.id)
+                              ? "border-primary bg-primary"
+                              : "border-muted-foreground/40"
+                          )}
+                        >
                           {selectedDishes.has(dish.id) && (
                             <Check className="w-3 h-3 text-primary-foreground" />
                           )}
-                        </div>
+                        </button>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-foreground truncate">{dish.name}</p>
-                          {dish.description && (
-                            <p className="text-sm text-muted-foreground truncate">{dish.description}</p>
+                          {editingDishId === dish.id ? (
+                            <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                              <Input
+                                value={dish.name}
+                                onChange={(e) => updateDish(dish.id, 'name', e.target.value)}
+                                className="h-8 font-medium"
+                                autoFocus
+                              />
+                              <Input
+                                value={dish.description || ''}
+                                onChange={(e) => updateDish(dish.id, 'description', e.target.value)}
+                                placeholder={t('step2Menu.addDescription', 'Add description...')}
+                                className="h-8 text-sm"
+                              />
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setEditingDishId(null)}
+                                className="h-7 text-xs"
+                              >
+                                <Check className="w-3 h-3 mr-1" />
+                                {t('common.done', 'Done')}
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 group">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-foreground truncate">{dish.name}</p>
+                                {dish.description && (
+                                  <p className="text-sm text-muted-foreground truncate">{dish.description}</p>
+                                )}
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingDishId(dish.id);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-muted transition-opacity"
+                              >
+                                <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                              </button>
+                            </div>
                           )}
                         </div>
-                        {dish.price && (
+                        {dish.price && !editingDishId && (
                           <span className="text-sm font-medium text-muted-foreground flex-shrink-0">
                             ${dish.price.toFixed(2)}
                           </span>
                         )}
-                        {dish.tags && dish.tags.length > 0 && (
+                        {dish.tags && dish.tags.length > 0 && !editingDishId && (
                           <div className="flex gap-1 flex-shrink-0">
                             {dish.tags.slice(0, 2).map((tag) => (
                               <Badge key={tag} variant="outline" className="text-xs">
@@ -389,7 +437,7 @@ export function Step2MenuImport({
                             ))}
                           </div>
                         )}
-                      </button>
+                      </div>
                     ))}
                   </div>
                 </div>
