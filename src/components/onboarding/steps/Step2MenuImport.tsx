@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Upload, Link as LinkIcon, ShoppingBag, PenLine, FileText, Loader2, Sparkles, Check, X, ChevronRight, UtensilsCrossed, Pencil, Plus } from 'lucide-react';
+import { Upload, Link as LinkIcon, ShoppingBag, PenLine, FileText, Loader2, Sparkles, Check, X, ChevronRight, UtensilsCrossed, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -295,6 +295,18 @@ export function Step2MenuImport({
     setEditingDishId(newDish.id);
   };
 
+  const deleteDish = (dishId: string) => {
+    setPreviewDishes(prev => prev.filter(d => d.id !== dishId));
+    setSelectedDishes(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(dishId);
+      return newSet;
+    });
+    if (editingDishId === dishId) {
+      setEditingDishId(null);
+    }
+  };
+
   const handleConfirmDishes = () => {
     const selectedDishList = previewDishes.filter(d => selectedDishes.has(d.id));
     setParsedDishes(selectedDishList);
@@ -434,15 +446,26 @@ export function Step2MenuImport({
                                   className="h-8 text-sm flex-1"
                                 />
                               </div>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => setEditingDishId(null)}
-                                className="h-7 text-xs"
-                              >
-                                <Check className="w-3 h-3 mr-1" />
-                                {t('common.done', 'Done')}
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setEditingDishId(null)}
+                                  className="h-7 text-xs"
+                                >
+                                  <Check className="w-3 h-3 mr-1" />
+                                  {t('common.done', 'Done')}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => deleteDish(dish.id)}
+                                  className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash2 className="w-3 h-3 mr-1" />
+                                  {t('common.delete', 'Delete')}
+                                </Button>
+                              </div>
                             </div>
                           ) : (
                             <div className="flex items-center gap-2 group">
