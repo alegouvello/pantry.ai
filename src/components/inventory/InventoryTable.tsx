@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Package,
   Search,
@@ -43,6 +44,7 @@ interface InventoryTableProps {
 }
 
 export function InventoryTable({ ingredients }: InventoryTableProps) {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<keyof Ingredient>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -51,24 +53,20 @@ export function InventoryTable({ ingredients }: InventoryTableProps) {
   const { data: recipes } = useRecipes();
   const { data: ingredientRecipesMap } = useIngredientRecipes();
 
-  // Get selected recipe data
   const selectedRecipe = selectedRecipeId 
     ? recipes?.find(r => r.id === selectedRecipeId) 
     : null;
 
-  // Get ingredient IDs for selected recipe
   const selectedRecipeIngredientIds = selectedRecipe
     ? new Set(selectedRecipe.recipe_ingredients.map(ri => ri.ingredient_id))
     : null;
 
   const filteredIngredients = ingredients
     .filter((item) => {
-      // Text search filter
       const matchesSearch = 
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.category.toLowerCase().includes(searchQuery.toLowerCase());
       
-      // Recipe filter
       const matchesRecipe = selectedRecipeIngredientIds 
         ? selectedRecipeIngredientIds.has(item.id)
         : true;
@@ -110,7 +108,7 @@ export function InventoryTable({ ingredients }: InventoryTableProps) {
       <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4">
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
           <Package className="h-5 w-5 text-primary" />
-          Inventory Items
+          {t('inventory.title')}
           {selectedRecipeId && (
             <Badge variant="secondary" className="ml-2 gap-1">
               <ChefHat className="h-3 w-3" />
@@ -128,7 +126,7 @@ export function InventoryTable({ ingredients }: InventoryTableProps) {
           <div className="relative flex-1 sm:w-48">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search..."
+              placeholder={t('common.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 bg-muted/50 border-muted"
@@ -140,10 +138,10 @@ export function InventoryTable({ ingredients }: InventoryTableProps) {
           >
             <SelectTrigger className="w-[180px] bg-muted/50">
               <ChefHat className="h-4 w-4 mr-2 text-muted-foreground" />
-              <SelectValue placeholder="Filter by recipe" />
+              <SelectValue placeholder={t('table.filterByRecipe')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Recipes</SelectItem>
+              <SelectItem value="all">{t('table.allRecipes')}</SelectItem>
               {recipes?.map((recipe) => (
                 <SelectItem key={recipe.id} value={recipe.id}>
                   {recipe.name}
@@ -154,7 +152,6 @@ export function InventoryTable({ ingredients }: InventoryTableProps) {
         </div>
       </CardHeader>
       
-      {/* Recipe Cost Breakdown */}
       {selectedRecipe && (
         <div className="px-6 pt-2">
           <RecipeCostBreakdown recipe={selectedRecipe} ingredients={ingredients} />
@@ -171,13 +168,13 @@ export function InventoryTable({ ingredients }: InventoryTableProps) {
                     className="flex items-center gap-1 text-xs font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground"
                     onClick={() => handleSort('name')}
                   >
-                    Item
+                    {t('table.item')}
                     <ArrowUpDown className="h-3 w-3" />
                   </button>
                 </th>
                 <th className="px-6 py-3 text-left">
                   <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Category
+                    {t('table.category')}
                   </span>
                 </th>
                 <th className="px-6 py-3 text-left">
@@ -185,28 +182,28 @@ export function InventoryTable({ ingredients }: InventoryTableProps) {
                     className="flex items-center gap-1 text-xs font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground"
                     onClick={() => handleSort('currentStock')}
                   >
-                    Stock
+                    {t('table.stock')}
                     <ArrowUpDown className="h-3 w-3" />
                   </button>
                 </th>
                 <th className="px-6 py-3 text-left">
                   <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Par Level
+                    {t('table.parLevel')}
                   </span>
                 </th>
                 <th className="px-6 py-3 text-left">
                   <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Location
+                    {t('table.location')}
                   </span>
                 </th>
                 <th className="px-6 py-3 text-left">
                   <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Status
+                    {t('table.status')}
                   </span>
                 </th>
                 <th className="px-6 py-3 text-right">
                   <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Actions
+                    {t('table.actions')}
                   </span>
                 </th>
               </tr>
@@ -248,7 +245,7 @@ export function InventoryTable({ ingredients }: InventoryTableProps) {
                                     </Badge>
                                   </TooltipTrigger>
                                   <TooltipContent side="right" className="max-w-xs p-2">
-                                    <p className="font-medium mb-1.5 text-xs text-muted-foreground">Click to filter:</p>
+                                    <p className="font-medium mb-1.5 text-xs text-muted-foreground">{t('common.clickToFilter')}</p>
                                     <ul className="space-y-1">
                                       {ingredientRecipesMap.get(item.id)!.map(r => (
                                         <li key={r.id}>
@@ -309,13 +306,7 @@ export function InventoryTable({ ingredients }: InventoryTableProps) {
                             : 'high'
                         }
                       >
-                        {status === 'critical'
-                          ? 'Critical'
-                          : status === 'low'
-                          ? 'Low'
-                          : status === 'medium'
-                          ? 'OK'
-                          : 'Good'}
+                        {t(`status.${status === 'medium' ? 'ok' : status}`)}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 text-right">
@@ -328,11 +319,11 @@ export function InventoryTable({ ingredients }: InventoryTableProps) {
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem>
                             <Edit2 className="h-4 w-4 mr-2" />
-                            Edit
+                            {t('common.edit')}
                           </DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive">
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
+                            {t('common.delete')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

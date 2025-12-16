@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { ChefHat, Package, Clock, MoreHorizontal, Edit2, Trash2, DollarSign, TrendingUp, ImageIcon } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +28,8 @@ const formatCurrency = (value: number) => {
 };
 
 export function RecipeCard({ recipe, onEdit, onDelete, onClick }: RecipeCardProps) {
+  const { t } = useTranslation();
+
   return (
     <Card 
       variant="interactive" 
@@ -61,11 +64,11 @@ export function RecipeCard({ recipe, onEdit, onDelete, onClick }: RecipeCardProp
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={onEdit}>
                 <Edit2 className="h-4 w-4 mr-2" />
-                Edit Recipe
+                {t('recipeCard.editRecipe')}
               </DropdownMenuItem>
               <DropdownMenuItem className="text-destructive" onClick={onDelete}>
                 <Trash2 className="h-4 w-4 mr-2" />
-                Delete
+                {t('common.delete')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -88,14 +91,12 @@ export function RecipeCard({ recipe, onEdit, onDelete, onClick }: RecipeCardProp
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Package className="h-4 w-4" />
-            <span>{recipe.ingredients.length} ingredients</span>
+            <span>{t('recipeCard.ingredients', { count: recipe.ingredients.length })}</span>
           </div>
           
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="h-4 w-4" />
-            <span>
-              Yields {recipe.yield} {recipe.yieldUnit}
-            </span>
+            <span>{t('recipeCard.yields', { amount: recipe.yield, unit: recipe.yieldUnit })}</span>
           </div>
 
           {/* Cost Display */}
@@ -117,7 +118,7 @@ export function RecipeCard({ recipe, onEdit, onDelete, onClick }: RecipeCardProp
           {recipe.foodCostPercentage !== undefined && (
             <div className="flex items-center gap-2 text-sm">
               <TrendingUp className="h-4 w-4" />
-              <span className="text-muted-foreground">Menu:</span>
+              <span className="text-muted-foreground">{t('recipeCard.menu')}</span>
               <span className="text-foreground font-medium">
                 {formatCurrency(recipe.menuPrice || 0)}
               </span>
@@ -131,7 +132,7 @@ export function RecipeCard({ recipe, onEdit, onDelete, onClick }: RecipeCardProp
           )}
 
           <div className="pt-3 border-t border-border">
-            <p className="text-xs text-muted-foreground mb-2">Ingredients:</p>
+            <p className="text-xs text-muted-foreground mb-2">{t('recipeDialog.ingredients')}:</p>
             <div className="flex flex-wrap gap-1.5">
               {recipe.ingredients.slice(0, 4).map((ing) => (
                 <Badge key={ing.ingredientId} variant="muted" className="text-xs">
@@ -140,7 +141,7 @@ export function RecipeCard({ recipe, onEdit, onDelete, onClick }: RecipeCardProp
               ))}
               {recipe.ingredients.length > 4 && (
                 <Badge variant="secondary" className="text-xs">
-                  +{recipe.ingredients.length - 4} more
+                  +{recipe.ingredients.length - 4} {t('common.more')}
                 </Badge>
               )}
             </div>
@@ -149,11 +150,11 @@ export function RecipeCard({ recipe, onEdit, onDelete, onClick }: RecipeCardProp
 
         <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
           <Badge variant={recipe.isActive ? 'success' : 'muted'}>
-            {recipe.isActive ? 'Active' : 'Inactive'}
+            {recipe.isActive ? t('status.active') : t('status.inactive')}
           </Badge>
           {recipe.posItemId && (
             <span className="text-xs text-muted-foreground">
-              POS: {recipe.posItemId}
+              {t('recipeCard.pos')} {recipe.posItemId}
             </span>
           )}
         </div>

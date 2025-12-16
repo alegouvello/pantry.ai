@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Save, X } from 'lucide-react';
 import {
   Dialog,
@@ -58,6 +59,7 @@ const formatCurrency = (value: number) => {
 };
 
 export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { data: availableIngredients } = useIngredients();
   const createRecipe = useCreateRecipe();
@@ -93,8 +95,8 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
   const handleAddIngredient = () => {
     if (!selectedIngredient || !newQuantity || !newUnit) {
       toast({
-        title: 'Missing fields',
-        description: 'Please select an ingredient and enter quantity and unit.',
+        title: t('recipeDialog.missingFields'),
+        description: t('recipeDialog.selectIngredientMsg'),
         variant: 'destructive',
       });
       return;
@@ -105,8 +107,8 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
 
     if (ingredients.some((i) => i.ingredient_id === selectedIngredient)) {
       toast({
-        title: 'Duplicate ingredient',
-        description: 'This ingredient is already in the recipe.',
+        title: t('recipeDialog.duplicateIngredient'),
+        description: t('recipeDialog.ingredientExists'),
         variant: 'destructive',
       });
       return;
@@ -146,8 +148,8 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
   const handleSave = async () => {
     if (!name.trim()) {
       toast({
-        title: 'Name required',
-        description: 'Please enter a recipe name.',
+        title: t('recipeDialog.nameRequired'),
+        description: t('recipeDialog.enterRecipeName'),
         variant: 'destructive',
       });
       return;
@@ -155,8 +157,8 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
 
     if (!category) {
       toast({
-        title: 'Category required',
-        description: 'Please select a category.',
+        title: t('recipeDialog.categoryRequired'),
+        description: t('recipeDialog.selectCategoryMsg'),
         variant: 'destructive',
       });
       return;
@@ -164,7 +166,6 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
 
     setIsSaving(true);
     try {
-      // Create the recipe
       const newRecipe = await createRecipe.mutateAsync({
         name: name.trim(),
         category,
@@ -175,7 +176,6 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
         menu_price: menuPrice || null,
       });
 
-      // Add all ingredients
       for (const ing of ingredients) {
         await addRecipeIngredient.mutateAsync({
           recipe_id: newRecipe.id,
@@ -186,14 +186,14 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
       }
 
       toast({
-        title: 'Recipe created',
-        description: `${name} has been added to your recipes.`,
+        title: t('recipeDialog.recipeCreated'),
+        description: t('recipeDialog.recipeAdded', { name }),
       });
       resetForm();
       onOpenChange(false);
     } catch (error) {
       toast({
-        title: 'Error creating recipe',
+        title: t('recipeDialog.errorCreating'),
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });
@@ -206,7 +206,6 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
     (i) => !ingredients.some((ri) => ri.ingredient_id === i.id)
   );
 
-  // Calculate total cost
   const totalCost = ingredients.reduce((sum, ing) => sum + (ing.quantity * ing.unitCost), 0);
   const costPerUnit = yieldAmount > 0 ? totalCost / yieldAmount : totalCost;
   const foodCostPercentage = menuPrice && menuPrice > 0 ? (totalCost / menuPrice) * 100 : undefined;
@@ -218,26 +217,26 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
     }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Recipe</DialogTitle>
+          <DialogTitle>{t('recipeDialog.createNew')}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Recipe Details */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2 col-span-2">
-              <Label htmlFor="name">Recipe Name *</Label>
+              <Label htmlFor="name">{t('recipeDialog.recipeName')} *</Label>
               <Input
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Enter recipe name"
+                placeholder={t('recipeDialog.enterName')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="category">Category *</Label>
+              <Label htmlFor="category">{t('recipeDialog.category')} *</Label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder={t('recipeDialog.selectCategory')} />
                 </SelectTrigger>
                 <SelectContent>
                   {CATEGORIES.map((cat) => (
@@ -249,18 +248,18 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="prepTime">Prep Time (minutes)</Label>
+              <Label htmlFor="prepTime">{t('recipeDialog.prepTime')}</Label>
               <Input
                 id="prepTime"
                 type="number"
                 min="1"
                 value={prepTime || ''}
                 onChange={(e) => setPrepTime(e.target.value ? parseInt(e.target.value) : undefined)}
-                placeholder="Optional"
+                placeholder={t('common.optional')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="yield">Yield Amount</Label>
+              <Label htmlFor="yield">{t('recipeDialog.yieldAmount')}</Label>
               <Input
                 id="yield"
                 type="number"
@@ -271,7 +270,7 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="yieldUnit">Yield Unit</Label>
+              <Label htmlFor="yieldUnit">{t('recipeDialog.yieldUnit')}</Label>
               <Input
                 id="yieldUnit"
                 value={yieldUnit}
@@ -280,16 +279,16 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="posItemId">POS Item ID (optional)</Label>
+              <Label htmlFor="posItemId">{t('recipeDialog.posItemId')}</Label>
               <Input
                 id="posItemId"
                 value={posItemId}
                 onChange={(e) => setPosItemId(e.target.value)}
-                placeholder="Link to POS system"
+                placeholder={t('recipeDialog.linkToPOS')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="menuPrice">Menu Price ($)</Label>
+              <Label htmlFor="menuPrice">{t('recipeDialog.menuPrice')}</Label>
               <div className="flex items-center gap-4">
                 <Input
                   id="menuPrice"
@@ -298,7 +297,7 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
                   step="0.01"
                   value={menuPrice || ''}
                   onChange={(e) => setMenuPrice(e.target.value ? parseFloat(e.target.value) : undefined)}
-                  placeholder="Selling price"
+                  placeholder={t('recipeDialog.sellingPrice')}
                 />
                 {foodCostPercentage !== undefined && (
                   <Badge 
@@ -314,10 +313,10 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
           {/* Current Ingredients */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label>Ingredients ({ingredients.length})</Label>
+              <Label>{t('recipeDialog.ingredients')} ({ingredients.length})</Label>
               {ingredients.length > 0 && (
                 <div className="text-sm">
-                  <span className="text-muted-foreground">Total: </span>
+                  <span className="text-muted-foreground">{t('common.total')}: </span>
                   <span className="font-semibold text-primary">{formatCurrency(totalCost)}</span>
                   {yieldAmount > 1 && (
                     <span className="text-muted-foreground ml-2">
@@ -329,7 +328,7 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
             </div>
             {ingredients.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-lg">
-                No ingredients added yet. Add ingredients below.
+                {t('recipeDialog.noIngredients')}
               </p>
             ) : (
               <div className="space-y-2">
@@ -357,7 +356,7 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
                         value={ing.unit}
                         onChange={(e) => handleUpdateUnit(ing.id, e.target.value)}
                         className="w-24"
-                        placeholder="unit"
+                        placeholder={t('recipeDialog.unit')}
                       />
                       <span className="text-sm text-muted-foreground w-20 text-right">
                         {formatCurrency(lineCost)}
@@ -379,12 +378,12 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
 
           {/* Add New Ingredient */}
           <div className="space-y-3 pt-4 border-t border-border">
-            <Label>Add Ingredient</Label>
+            <Label>{t('recipeDialog.addIngredient')}</Label>
             <div className="flex items-end gap-3">
               <div className="flex-1">
                 <Select value={selectedIngredient} onValueChange={setSelectedIngredient}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select ingredient" />
+                    <SelectValue placeholder={t('recipeDialog.selectIngredient')} />
                   </SelectTrigger>
                   <SelectContent>
                     {unusedIngredients?.map((ing) => (
@@ -402,14 +401,14 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
                   step="0.01"
                   value={newQuantity}
                   onChange={(e) => setNewQuantity(e.target.value)}
-                  placeholder="Qty"
+                  placeholder={t('recipeDialog.qty')}
                 />
               </div>
               <div className="w-24">
                 <Input
                   value={newUnit}
                   onChange={(e) => setNewUnit(e.target.value)}
-                  placeholder="Unit"
+                  placeholder={t('recipeDialog.unit')}
                 />
               </div>
               <Button variant="outline" onClick={handleAddIngredient}>
@@ -422,11 +421,11 @@ export function NewRecipeDialog({ open, onOpenChange }: NewRecipeDialogProps) {
           <div className="flex justify-end gap-3 pt-4 border-t border-border">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               <X className="h-4 w-4 mr-2" />
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button variant="accent" onClick={handleSave} disabled={isSaving}>
               <Save className="h-4 w-4 mr-2" />
-              {isSaving ? 'Creating...' : 'Create Recipe'}
+              {isSaving ? t('common.creating') : t('recipeDialog.createRecipe')}
             </Button>
           </div>
         </div>

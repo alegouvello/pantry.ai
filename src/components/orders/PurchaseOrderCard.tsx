@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { ShoppingCart, Calendar, Truck, Check, Clock, Send } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,29 +13,31 @@ interface PurchaseOrderCardProps {
 }
 
 export function PurchaseOrderCard({ order, onApprove, onSend }: PurchaseOrderCardProps) {
+  const { t } = useTranslation();
+
   const statusConfig = {
     draft: {
-      label: 'Draft',
+      labelKey: 'status.draft',
       variant: 'muted' as const,
       icon: Clock,
     },
     approved: {
-      label: 'Approved',
+      labelKey: 'status.approved',
       variant: 'accent' as const,
       icon: Check,
     },
     sent: {
-      label: 'Sent',
+      labelKey: 'status.sent',
       variant: 'warning' as const,
       icon: Send,
     },
     received: {
-      label: 'Received',
+      labelKey: 'status.received',
       variant: 'success' as const,
       icon: Check,
     },
     partial: {
-      label: 'Partial',
+      labelKey: 'status.partial',
       variant: 'medium' as const,
       icon: Truck,
     },
@@ -52,22 +55,22 @@ export function PurchaseOrderCard({ order, onApprove, onSend }: PurchaseOrderCar
           </div>
           <div>
             <h3 className="font-semibold text-foreground">{order.vendorName}</h3>
-            <p className="text-xs text-muted-foreground">PO #{order.id}</p>
+            <p className="text-xs text-muted-foreground">{t('orderCard.poNumber', { id: order.id.slice(0, 8) })}</p>
           </div>
         </div>
         <Badge variant={config.variant} className="flex items-center gap-1">
           <StatusIcon className="h-3 w-3" />
-          {config.label}
+          {t(config.labelKey)}
         </Badge>
       </div>
 
       <div className="space-y-3 mb-4">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Items</span>
-          <span className="text-foreground">{order.items.length} items</span>
+          <span className="text-muted-foreground">{t('common.items')}</span>
+          <span className="text-foreground">{t('orderCard.itemCount', { count: order.items.length })}</span>
         </div>
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Total</span>
+          <span className="text-muted-foreground">{t('common.total')}</span>
           <span className="font-semibold text-foreground">
             ${order.totalAmount.toFixed(2)}
           </span>
@@ -76,7 +79,7 @@ export function PurchaseOrderCard({ order, onApprove, onSend }: PurchaseOrderCar
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground flex items-center gap-1">
               <Calendar className="h-3.5 w-3.5" />
-              Expected
+              {t('orderCard.expected')}
             </span>
             <span className="text-foreground">
               {format(order.expectedDelivery, 'MMM d, yyyy')}
@@ -86,7 +89,7 @@ export function PurchaseOrderCard({ order, onApprove, onSend }: PurchaseOrderCar
       </div>
 
       <div className="border-t border-border pt-4">
-        <p className="text-xs text-muted-foreground mb-2">Order Items:</p>
+        <p className="text-xs text-muted-foreground mb-2">{t('orderCard.orderItems')}</p>
         <div className="space-y-1.5">
           {order.items.slice(0, 3).map((item) => (
             <div
@@ -101,7 +104,7 @@ export function PurchaseOrderCard({ order, onApprove, onSend }: PurchaseOrderCar
           ))}
           {order.items.length > 3 && (
             <p className="text-xs text-muted-foreground">
-              +{order.items.length - 3} more items
+              {t('orderCard.moreItems', { count: order.items.length - 3 })}
             </p>
           )}
         </div>
@@ -117,7 +120,7 @@ export function PurchaseOrderCard({ order, onApprove, onSend }: PurchaseOrderCar
               onClick={() => onApprove(order.id)}
             >
               <Check className="h-4 w-4 mr-1" />
-              Approve
+              {t('orderCard.approve')}
             </Button>
           )}
           {order.status === 'approved' && onSend && (
@@ -128,7 +131,7 @@ export function PurchaseOrderCard({ order, onApprove, onSend }: PurchaseOrderCar
               onClick={() => onSend(order.id)}
             >
               <Send className="h-4 w-4 mr-1" />
-              Send to Vendor
+              {t('orderCard.sendToVendor')}
             </Button>
           )}
         </div>

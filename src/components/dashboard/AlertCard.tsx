@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, CheckCircle, Clock, ArrowRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,8 @@ interface AlertCardProps {
 }
 
 export function AlertCard({ alert, onResolve }: AlertCardProps) {
+  const { t } = useTranslation();
+
   const severityConfig = {
     high: {
       icon: AlertTriangle,
@@ -70,7 +73,7 @@ export function AlertCard({ alert, onResolve }: AlertCardProps) {
                 className="gap-1 text-primary hover:text-primary"
                 onClick={() => onResolve(alert.id)}
               >
-                Take action
+                {t('alertCard.takeAction')}
                 <ArrowRight className="h-3 w-3" />
               </Button>
             )}
