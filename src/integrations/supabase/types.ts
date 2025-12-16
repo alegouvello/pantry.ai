@@ -1490,6 +1490,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_workspace: {
+        Args: { _org_name?: string }
+        Returns: {
+          org_id: string
+          progress_id: string
+        }[]
+      }
       has_any_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {

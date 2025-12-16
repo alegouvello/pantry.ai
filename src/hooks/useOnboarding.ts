@@ -45,43 +45,24 @@ export function useCreateOnboarding() {
         throw new Error('User not authenticated');
       }
       
-      // Create organization
-      const { data: org, error: orgError } = await supabase
-        .from('organizations')
-        .insert({})
-        .select()
-        .single();
+      // Use the security definer function to bypass RLS timing issues
+      const { data, error } = await supabase
+        .rpc('create_workspace', { _org_name: null });
       
-      console.log('Org creation result:', { org, orgError });
+      console.log('Workspace creation result:', { data, error });
       
-      if (orgError) throw orgError;
-
-      // Create membership
-      const { error: memberError } = await supabase
-        .from('memberships')
-        .insert({
-          user_id: userId,
-          org_id: org.id,
-          role: 'owner',
-        });
+      if (error) throw error;
       
-      if (memberError) throw memberError;
-
-      // Create onboarding progress
-      const { data: progress, error: progressError } = await supabase
-        .from('onboarding_progress')
-        .insert({
-          user_id: userId,
-          org_id: org.id,
-          current_step: 1,
-          setup_health_score: 0,
-        })
-        .select()
-        .single();
+      if (!data || data.length === 0) {
+        throw new Error('Failed to create workspace');
+      }
       
-      if (progressError) throw progressError;
+      const result = data[0];
       
-      return { org, progress };
+      return { 
+        org: { id: result.org_id }, 
+        progress: { id: result.progress_id } 
+      };
     },
     onSuccess: (_, { userId }) => {
       queryClient.invalidateQueries({ queryKey: ['onboarding-progress', userId] });
