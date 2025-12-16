@@ -6,6 +6,7 @@ import { useInventoryEvents } from '@/hooks/useInventoryEvents';
 import { usePurchaseOrdersByStatus } from '@/hooks/usePurchaseOrders';
 import { useActiveAlerts } from '@/hooks/useAlerts';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 interface Activity {
   id: string;
@@ -16,6 +17,7 @@ interface Activity {
 }
 
 export function RecentActivity() {
+  const { t } = useTranslation();
   const { data: inventoryEvents } = useInventoryEvents();
   const { data: recentOrders } = usePurchaseOrdersByStatus(['draft', 'approved', 'sent', 'received']);
   const { data: alerts } = useActiveAlerts();
@@ -25,10 +27,15 @@ export function RecentActivity() {
 
   // Add inventory events (last 3)
   inventoryEvents?.slice(0, 3).forEach(event => {
+    const eventLabel = event.event_type === 'sale' 
+      ? t('dashboard.recentActivity.depleted') 
+      : event.event_type === 'receiving' 
+        ? t('dashboard.recentActivity.received') 
+        : t('dashboard.recentActivity.adjusted');
     activities.push({
       id: `inv-${event.id}`,
       type: 'inventory',
-      message: `${event.event_type === 'sale' ? 'Depleted' : event.event_type === 'receiving' ? 'Received' : 'Adjusted'} ${Math.abs(event.quantity)} ${event.ingredients?.name || 'item'}`,
+      message: `${eventLabel} ${Math.abs(event.quantity)} ${event.ingredients?.name || 'item'}`,
       time: formatDistanceToNow(new Date(event.created_at), { addSuffix: true }),
       timestamp: new Date(event.created_at),
     });
@@ -36,12 +43,13 @@ export function RecentActivity() {
 
   // Add recent orders (last 2)
   recentOrders?.slice(0, 2).forEach(order => {
+    const vendorName = order.vendors?.name || 'vendor';
     activities.push({
       id: `ord-${order.id}`,
       type: order.status === 'received' ? 'delivery' : 'order',
       message: order.status === 'received' 
-        ? `Delivery received from ${order.vendors?.name || 'vendor'}`
-        : `PO ${order.status} - ${order.vendors?.name || 'vendor'}`,
+        ? t('dashboard.recentActivity.deliveryReceived', { vendor: vendorName })
+        : t('dashboard.recentActivity.poStatus', { status: order.status, vendor: vendorName }),
       time: formatDistanceToNow(new Date(order.updated_at), { addSuffix: true }),
       timestamp: new Date(order.updated_at),
     });
@@ -100,7 +108,7 @@ export function RecentActivity() {
           <div className="p-1.5 rounded-lg bg-primary/10">
             <Clock className="h-4 w-4 text-primary" />
           </div>
-          Recent Activity
+          {t('dashboard.recentActivity.title')}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -108,7 +116,7 @@ export function RecentActivity() {
           {sortedActivities.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Clock className="h-8 w-8 mx-auto mb-2 opacity-30" />
-              <p className="text-sm">No recent activity</p>
+              <p className="text-sm">{t('dashboard.recentActivity.noActivity')}</p>
             </div>
           ) : (
             sortedActivities.map((activity, index) => {
