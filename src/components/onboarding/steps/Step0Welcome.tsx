@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles, Clock, Check, ChefHat, Utensils, TrendingUp, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 import conceptFineDining from '@/assets/onboarding/concept-fine-dining.jpg';
 import conceptCasual from '@/assets/onboarding/concept-casual.jpg';
@@ -35,36 +36,45 @@ const floatVariants = {
   }
 };
 
-const features = [
-  {
-    icon: Utensils,
-    title: 'AI Recipe Costing',
-    description: 'Automatically calculate food costs from your menu'
-  },
-  {
-    icon: TrendingUp,
-    title: 'Smart Forecasting',
-    description: 'Predict demand based on sales patterns'
-  },
-  {
-    icon: ShoppingCart,
-    title: 'Auto Ordering',
-    description: 'Generate purchase orders before you run low'
-  }
-];
-
-const images = [
-  { src: conceptFineDining, alt: 'Fine dining', delay: 0 },
-  { src: conceptCasual, alt: 'Casual dining', delay: 0.1 },
-  { src: conceptCoffee, alt: 'Coffee shop', delay: 0.2 },
-  { src: conceptBar, alt: 'Bar', delay: 0.3 },
-];
-
 interface Step0WelcomeProps {
   onNext: () => void;
 }
 
 export function Step0Welcome({ onNext }: Step0WelcomeProps) {
+  const { t } = useTranslation();
+
+  const features = [
+    {
+      icon: Utensils,
+      title: t('step0Welcome.features.recipeCosting'),
+      description: t('step0Welcome.features.recipeCostingDesc')
+    },
+    {
+      icon: TrendingUp,
+      title: t('step0Welcome.features.forecasting'),
+      description: t('step0Welcome.features.forecastingDesc')
+    },
+    {
+      icon: ShoppingCart,
+      title: t('step0Welcome.features.autoOrdering'),
+      description: t('step0Welcome.features.autoOrderingDesc')
+    }
+  ];
+
+  const images = [
+    { src: conceptFineDining, alt: t('step0Welcome.images.fineDining'), delay: 0 },
+    { src: conceptCasual, alt: t('step0Welcome.images.casualDining'), delay: 0.1 },
+    { src: conceptCoffee, alt: t('step0Welcome.images.coffeeShop'), delay: 0.2 },
+    { src: conceptBar, alt: t('step0Welcome.images.bar'), delay: 0.3 },
+  ];
+
+  const needsItems = [
+    t('step0Welcome.needs.menu'),
+    t('step0Welcome.needs.vendors'),
+    t('step0Welcome.needs.pos'),
+    t('step0Welcome.needs.storage')
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 overflow-hidden">
       {/* Floating background elements */}
@@ -99,8 +109,8 @@ export function Step0Welcome({ onNext }: Step0WelcomeProps) {
                 <ChefHat className="w-7 h-7 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Pantry</h1>
-                <p className="text-sm text-muted-foreground">AI-Powered Inventory</p>
+                <h1 className="text-2xl font-bold text-foreground">{t('app.name')}</h1>
+                <p className="text-sm text-muted-foreground">{t('step0Welcome.tagline')}</p>
               </div>
             </motion.div>
 
@@ -110,7 +120,7 @@ export function Step0Welcome({ onNext }: Step0WelcomeProps) {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6"
             >
               <Sparkles className="w-4 h-4" />
-              Let's get you set up
+              {t('step0Welcome.badge')}
             </motion.div>
 
             {/* Headline */}
@@ -118,8 +128,8 @@ export function Step0Welcome({ onNext }: Step0WelcomeProps) {
               variants={itemVariants}
               className="text-4xl lg:text-5xl font-bold text-foreground leading-tight mb-6"
             >
-              Welcome to your<br />
-              <span className="text-primary">smarter kitchen</span>
+              {t('step0Welcome.headline1')}<br />
+              <span className="text-primary">{t('step0Welcome.headline2')}</span>
             </motion.h2>
 
             {/* Description */}
@@ -127,8 +137,7 @@ export function Step0Welcome({ onNext }: Step0WelcomeProps) {
               variants={itemVariants}
               className="text-lg text-muted-foreground leading-relaxed mb-8"
             >
-              In the next few steps, we'll set up your restaurant, import your menu, 
-              and let AI draft your recipes. You validate, we learn.
+              {t('step0Welcome.description')}
             </motion.p>
 
             {/* Features Grid */}
@@ -164,14 +173,14 @@ export function Step0Welcome({ onNext }: Step0WelcomeProps) {
                   onClick={onNext}
                   className="w-full sm:w-auto gap-3 h-14 px-8 text-lg shadow-lg shadow-primary/25"
                 >
-                  Start Setup
+                  {t('step0Welcome.startSetup')}
                   <ArrowRight className="w-5 h-5" />
                 </Button>
               </motion.div>
 
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock className="w-4 h-4" />
-                <span>Takes about 15-25 minutes</span>
+                <span>{t('step0Welcome.setupTime')}</span>
               </div>
             </motion.div>
 
@@ -180,9 +189,9 @@ export function Step0Welcome({ onNext }: Step0WelcomeProps) {
               variants={itemVariants}
               className="mt-10 pt-8 border-t border-border/50"
             >
-              <p className="text-sm font-medium text-foreground mb-4">What you'll need:</p>
+              <p className="text-sm font-medium text-foreground mb-4">{t('step0Welcome.whatYouNeed')}</p>
               <div className="grid sm:grid-cols-2 gap-3 text-sm text-muted-foreground">
-                {['Your menu (PDF, URL, or photo)', 'Vendor contacts', 'POS system info (optional)', 'Storage locations'].map((item, i) => (
+                {needsItems.map((item, i) => (
                   <motion.div 
                     key={item}
                     className="flex items-center gap-2"

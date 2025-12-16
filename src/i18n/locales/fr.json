@@ -41,6 +41,36 @@
       "f4": "Intégration POS pour la déduction en temps réel"
     }
   },
+  "step0Welcome": {
+    "tagline": "Inventaire par IA",
+    "badge": "Configurons votre espace",
+    "headline1": "Bienvenue dans votre",
+    "headline2": "cuisine intelligente",
+    "description": "Dans les prochaines étapes, nous configurerons votre restaurant, importerons votre menu et laisserons l'IA rédiger vos recettes. Vous validez, nous apprenons.",
+    "startSetup": "Commencer la configuration",
+    "setupTime": "Environ 15-25 minutes",
+    "whatYouNeed": "Ce dont vous aurez besoin :",
+    "needs": {
+      "menu": "Votre menu (PDF, URL ou photo)",
+      "vendors": "Contacts fournisseurs",
+      "pos": "Infos système POS (optionnel)",
+      "storage": "Emplacements de stockage"
+    },
+    "features": {
+      "recipeCosting": "Chiffrage IA des recettes",
+      "recipeCostingDesc": "Calculez automatiquement les coûts alimentaires depuis votre menu",
+      "forecasting": "Prévisions intelligentes",
+      "forecastingDesc": "Prédisez la demande selon les tendances de ventes",
+      "autoOrdering": "Commandes automatiques",
+      "autoOrderingDesc": "Générez des bons de commande avant la rupture"
+    },
+    "images": {
+      "fineDining": "Gastronomique",
+      "casualDining": "Décontracté",
+      "coffeeShop": "Café",
+      "bar": "Bar"
+    }
+  },
   "dashboard": {
     "welcomeTitle": "Bienvenue sur Pantry",
     "welcomeBody": "Connectez-vous pour accéder au tableau de bord de gestion d'inventaire.",

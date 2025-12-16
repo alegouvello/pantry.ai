@@ -41,6 +41,36 @@
       "f4": "POS integration for real-time depletion"
     }
   },
+  "step0Welcome": {
+    "tagline": "AI-Powered Inventory",
+    "badge": "Let's get you set up",
+    "headline1": "Welcome to your",
+    "headline2": "smarter kitchen",
+    "description": "In the next few steps, we'll set up your restaurant, import your menu, and let AI draft your recipes. You validate, we learn.",
+    "startSetup": "Start Setup",
+    "setupTime": "Takes about 15-25 minutes",
+    "whatYouNeed": "What you'll need:",
+    "needs": {
+      "menu": "Your menu (PDF, URL, or photo)",
+      "vendors": "Vendor contacts",
+      "pos": "POS system info (optional)",
+      "storage": "Storage locations"
+    },
+    "features": {
+      "recipeCosting": "AI Recipe Costing",
+      "recipeCostingDesc": "Automatically calculate food costs from your menu",
+      "forecasting": "Smart Forecasting",
+      "forecastingDesc": "Predict demand based on sales patterns",
+      "autoOrdering": "Auto Ordering",
+      "autoOrderingDesc": "Generate purchase orders before you run low"
+    },
+    "images": {
+      "fineDining": "Fine dining",
+      "casualDining": "Casual dining",
+      "coffeeShop": "Coffee shop",
+      "bar": "Bar"
+    }
+  },
   "dashboard": {
     "welcomeTitle": "Welcome to Pantry",
     "welcomeBody": "Sign in to access your restaurant's inventory management dashboard.",
