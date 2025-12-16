@@ -24,6 +24,7 @@ export type Database = {
           related_item_type: string | null
           resolved_at: string | null
           resolved_by: string | null
+          restaurant_id: string | null
           severity: Database["public"]["Enums"]["alert_severity"]
           suggested_action: string | null
           title: string
@@ -38,6 +39,7 @@ export type Database = {
           related_item_type?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
+          restaurant_id?: string | null
           severity?: Database["public"]["Enums"]["alert_severity"]
           suggested_action?: string | null
           title: string
@@ -52,6 +54,7 @@ export type Database = {
           related_item_type?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
+          restaurant_id?: string | null
           severity?: Database["public"]["Enums"]["alert_severity"]
           suggested_action?: string | null
           title?: string
@@ -67,6 +70,7 @@ export type Database = {
           recipes_high: number
           recipes_on_target: number
           recipes_warning: number
+          restaurant_id: string | null
           total_recipes: number
           week_start: string
         }
@@ -77,6 +81,7 @@ export type Database = {
           recipes_high?: number
           recipes_on_target?: number
           recipes_warning?: number
+          restaurant_id?: string | null
           total_recipes?: number
           week_start: string
         }
@@ -87,6 +92,7 @@ export type Database = {
           recipes_high?: number
           recipes_on_target?: number
           recipes_warning?: number
+          restaurant_id?: string | null
           total_recipes?: number
           week_start?: string
         }
@@ -100,6 +106,7 @@ export type Database = {
           menu_price: number | null
           recipe_id: string | null
           recipe_name: string
+          restaurant_id: string | null
           snapshot_date: string
           total_cost: number
         }
@@ -110,6 +117,7 @@ export type Database = {
           menu_price?: number | null
           recipe_id?: string | null
           recipe_name: string
+          restaurant_id?: string | null
           snapshot_date?: string
           total_cost?: number
         }
@@ -120,6 +128,7 @@ export type Database = {
           menu_price?: number | null
           recipe_id?: string | null
           recipe_name?: string
+          restaurant_id?: string | null
           snapshot_date?: string
           total_cost?: number
         }
@@ -484,6 +493,7 @@ export type Database = {
           notes: string | null
           previous_stock: number
           quantity: number
+          restaurant_id: string | null
           source: string | null
           user_id: string | null
         }
@@ -496,6 +506,7 @@ export type Database = {
           notes?: string | null
           previous_stock: number
           quantity: number
+          restaurant_id?: string | null
           source?: string | null
           user_id?: string | null
         }
@@ -508,6 +519,7 @@ export type Database = {
           notes?: string | null
           previous_stock?: number
           quantity?: number
+          restaurant_id?: string | null
           source?: string | null
           user_id?: string | null
         }
@@ -923,6 +935,7 @@ export type Database = {
           purchase_order_id: string
           quantity: number
           received_quantity: number | null
+          restaurant_id: string | null
           unit: string
           unit_cost: number
         }
@@ -933,6 +946,7 @@ export type Database = {
           purchase_order_id: string
           quantity: number
           received_quantity?: number | null
+          restaurant_id?: string | null
           unit: string
           unit_cost: number
         }
@@ -943,6 +957,7 @@ export type Database = {
           purchase_order_id?: string
           quantity?: number
           received_quantity?: number | null
+          restaurant_id?: string | null
           unit?: string
           unit_cost?: number
         }
@@ -972,6 +987,7 @@ export type Database = {
           id: string
           notes: string | null
           received_at: string | null
+          restaurant_id: string | null
           status: Database["public"]["Enums"]["po_status"]
           total_amount: number
           updated_at: string
@@ -985,6 +1001,7 @@ export type Database = {
           id?: string
           notes?: string | null
           received_at?: string | null
+          restaurant_id?: string | null
           status?: Database["public"]["Enums"]["po_status"]
           total_amount?: number
           updated_at?: string
@@ -998,6 +1015,7 @@ export type Database = {
           id?: string
           notes?: string | null
           received_at?: string | null
+          restaurant_id?: string | null
           status?: Database["public"]["Enums"]["po_status"]
           total_amount?: number
           updated_at?: string
@@ -1052,6 +1070,7 @@ export type Database = {
           ingredient_id: string
           quantity: number
           recipe_id: string
+          restaurant_id: string | null
           unit: string
         }
         Insert: {
@@ -1060,6 +1079,7 @@ export type Database = {
           ingredient_id: string
           quantity: number
           recipe_id: string
+          restaurant_id?: string | null
           unit: string
         }
         Update: {
@@ -1068,6 +1088,7 @@ export type Database = {
           ingredient_id?: string
           quantity?: number
           recipe_id?: string
+          restaurant_id?: string | null
           unit?: string
         }
         Relationships: [
@@ -1103,6 +1124,7 @@ export type Database = {
           pos_item_id: string | null
           prep_time_minutes: number | null
           recipe_type: string | null
+          restaurant_id: string | null
           status: string | null
           updated_at: string
           yield_amount: number
@@ -1123,6 +1145,7 @@ export type Database = {
           pos_item_id?: string | null
           prep_time_minutes?: number | null
           recipe_type?: string | null
+          restaurant_id?: string | null
           status?: string | null
           updated_at?: string
           yield_amount?: number
@@ -1143,6 +1166,7 @@ export type Database = {
           pos_item_id?: string | null
           prep_time_minutes?: number | null
           recipe_type?: string | null
+          restaurant_id?: string | null
           status?: string | null
           updated_at?: string
           yield_amount?: number
@@ -1426,6 +1450,7 @@ export type Database = {
           notes: string | null
           payment_terms: string | null
           phone: string | null
+          restaurant_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1440,6 +1465,7 @@ export type Database = {
           notes?: string | null
           payment_terms?: string | null
           phone?: string | null
+          restaurant_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1454,6 +1480,7 @@ export type Database = {
           notes?: string | null
           payment_terms?: string | null
           phone?: string | null
+          restaurant_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1478,6 +1505,10 @@ export type Database = {
       }
       is_org_owner: {
         Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_restaurant_member: {
+        Args: { _restaurant_id: string; _user_id: string }
         Returns: boolean
       }
     }
