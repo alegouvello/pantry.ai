@@ -46,7 +46,7 @@ export function Step1RestaurantBasics({
 }: Step1Props) {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const { setConceptType: setContextConceptType } = useOnboardingContext();
+  const { setConceptType: setContextConceptType, setRestaurant } = useOnboardingContext();
   const { data: existingRestaurant } = useRestaurant(orgId || undefined);
   const createRestaurant = useCreateRestaurant();
   const updateRestaurant = useUpdateRestaurant();
@@ -170,6 +170,18 @@ export function Step1RestaurantBasics({
       } else if (orgId) {
         await createRestaurant.mutateAsync({ org_id: orgId, ...restaurantData });
       }
+      
+      // Update the context with restaurant data for subsequent steps
+      setRestaurant({
+        name,
+        address,
+        phone,
+        website,
+        instagram,
+        concept_type: conceptType,
+        services,
+      });
+      
       updateHealthScore(10);
       onNext();
     } catch (error) {
