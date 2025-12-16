@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { AIConfidenceCard } from '../AIConfidenceCard';
@@ -53,6 +54,7 @@ interface ApprovedRecipeData {
 }
 
 export function Step3RecipeApproval(props: StepProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { conceptType, parsedDishes, prepRecipes } = useOnboardingContext();
   const saveRecipe = useSaveOnboardingRecipe();
@@ -276,15 +278,15 @@ export function Step3RecipeApproval(props: StepProps) {
 
     if (successCount > 0) {
       toast({
-        title: 'Recipes saved!',
-        description: `${successCount} recipe${successCount > 1 ? 's' : ''} saved to your database.`,
+        title: t('step3Recipe.recipesSaved'),
+        description: t('step3Recipe.recipesSavedDesc', { count: successCount }),
       });
     }
 
     if (errorCount > 0) {
       toast({
-        title: 'Some recipes failed to save',
-        description: `${errorCount} recipe${errorCount > 1 ? 's' : ''} couldn't be saved. You can add them later.`,
+        title: t('step3Recipe.someRecipesFailed'),
+        description: t('step3Recipe.someRecipesFailedDesc', { count: errorCount }),
         variant: 'destructive',
       });
     }
@@ -295,24 +297,24 @@ export function Step3RecipeApproval(props: StepProps) {
   // No dishes parsed - show empty state
   if (phase === 'approval' && recipes.length === 0) {
     return (
-      <OnboardingLayout {...layoutProps} title="No Dishes Found" subtitle="We couldn't extract any dishes from your menu">
+      <OnboardingLayout {...layoutProps} title={t('step3Recipe.noDishesTitle')} subtitle={t('step3Recipe.noDishesSubtitle')}>
         <div className="max-w-2xl mx-auto text-center space-y-6">
           <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto">
             <AlertCircle className="w-10 h-10 text-muted-foreground" />
           </div>
           <div>
-            <h3 className="text-2xl font-semibold mb-2">No dishes found</h3>
+            <h3 className="text-2xl font-semibold mb-2">{t('step3Recipe.noDishesTitle')}</h3>
             <p className="text-muted-foreground">
-              We couldn't extract any dishes from your menu. This might happen with image-based menus or complex layouts.
+              {t('step3Recipe.noDishesDesc')}
             </p>
           </div>
           <div className="flex gap-4 justify-center">
             <Button variant="outline" onClick={props.onBack}>
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Try Different Menu
+              {t('step3Recipe.tryDifferentMenu')}
             </Button>
             <Button onClick={props.onNext}>
-              Continue to Manual Entry
+              {t('step3Recipe.continueManual')}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
@@ -323,13 +325,13 @@ export function Step3RecipeApproval(props: StepProps) {
 
   if (phase === 'settings') {
     return (
-      <OnboardingLayout {...layoutProps} title="AI Recipe Generation" subtitle="Configure how detailed your recipes should be">
+      <OnboardingLayout {...layoutProps} title={t('step3Recipe.settingsTitle')} subtitle={t('step3Recipe.settingsSubtitle')}>
         <div className="max-w-2xl mx-auto space-y-8">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-primary" />
-                Recipe Detail Level
+                {t('step3Recipe.detailLevel')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -337,22 +339,22 @@ export function Step3RecipeApproval(props: StepProps) {
                 <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer">
                   <RadioGroupItem value="basic" id="basic" className="mt-1" />
                   <div>
-                    <Label htmlFor="basic" className="font-medium cursor-pointer">Basic</Label>
-                    <p className="text-sm text-muted-foreground">Main ingredients only, quick setup</p>
+                    <Label htmlFor="basic" className="font-medium cursor-pointer">{t('step3Recipe.basic')}</Label>
+                    <p className="text-sm text-muted-foreground">{t('step3Recipe.basicDesc')}</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3 p-4 border rounded-lg bg-primary/5 border-primary/20 hover:bg-primary/10 cursor-pointer">
                   <RadioGroupItem value="standard" id="standard" className="mt-1" />
                   <div>
-                    <Label htmlFor="standard" className="font-medium cursor-pointer">Standard (Recommended)</Label>
-                    <p className="text-sm text-muted-foreground">All ingredients with quantities and garnishes</p>
+                    <Label htmlFor="standard" className="font-medium cursor-pointer">{t('step3Recipe.standard')}</Label>
+                    <p className="text-sm text-muted-foreground">{t('step3Recipe.standardDesc')}</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50 cursor-pointer">
                   <RadioGroupItem value="advanced" id="advanced" className="mt-1" />
                   <div>
-                    <Label htmlFor="advanced" className="font-medium cursor-pointer">Advanced</Label>
-                    <p className="text-sm text-muted-foreground">Detailed prep steps, batch components, modifiers</p>
+                    <Label htmlFor="advanced" className="font-medium cursor-pointer">{t('step3Recipe.advanced')}</Label>
+                    <p className="text-sm text-muted-foreground">{t('step3Recipe.advancedDesc')}</p>
                   </div>
                 </div>
               </RadioGroup>
@@ -363,8 +365,8 @@ export function Step3RecipeApproval(props: StepProps) {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label className="font-medium">Assume typical portion sizes</Label>
-                  <p className="text-sm text-muted-foreground">We'll estimate quantities based on industry standards</p>
+                  <Label className="font-medium">{t('step3Recipe.assumePortions')}</Label>
+                  <p className="text-sm text-muted-foreground">{t('step3Recipe.assumePortionsDesc')}</p>
                 </div>
                 <Switch checked={assumePortions} onCheckedChange={setAssumePortions} />
               </div>
@@ -373,18 +375,18 @@ export function Step3RecipeApproval(props: StepProps) {
 
           {recipes.length > 0 && (
             <div className="bg-primary/10 rounded-lg p-4 text-sm">
-              <p className="font-medium text-primary">✓ {recipes.length} dishes ready for review</p>
-              <p className="text-muted-foreground mt-1">Your menu has been parsed. Click below to review and approve recipes.</p>
+              <p className="font-medium text-primary">✓ {t('step3Recipe.dishesReady', { count: recipes.length })}</p>
+              <p className="text-muted-foreground mt-1">{t('step3Recipe.menuParsed')}</p>
             </div>
           )}
 
           <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
-            <p>💡 We'll estimate quantities—you can confirm and adjust them as you review each recipe.</p>
+            <p>💡 {t('step3Recipe.estimateTip')}</p>
           </div>
 
           <Button onClick={handleGenerateRecipes} className="w-full" size="lg" disabled={recipes.length === 0}>
             <Sparkles className="w-4 h-4 mr-2" />
-            {recipes.length > 0 ? 'Review Recipes' : 'No Recipes to Review'}
+            {recipes.length > 0 ? t('step3Recipe.reviewRecipes') : t('step3Recipe.noRecipesToReview')}
           </Button>
         </div>
       </OnboardingLayout>
@@ -393,7 +395,7 @@ export function Step3RecipeApproval(props: StepProps) {
 
   if (isComplete) {
     return (
-      <OnboardingLayout {...layoutProps} title="Recipe Review Complete" subtitle="Great progress on your recipes!">
+      <OnboardingLayout {...layoutProps} title={t('step3Recipe.completeTitle')} subtitle={t('step3Recipe.completeSubtitle')}>
         <motion.div 
           className="max-w-2xl mx-auto text-center space-y-6"
           initial={{ opacity: 0, scale: 0.95 }}
@@ -413,9 +415,9 @@ export function Step3RecipeApproval(props: StepProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <h3 className="text-2xl font-semibold mb-2">All recipes reviewed!</h3>
+            <h3 className="text-2xl font-semibold mb-2">{t('step3Recipe.allReviewed')}</h3>
             <p className="text-muted-foreground">
-              {approvedRecipes.length} recipes approved, {needsLaterRecipes.length} need attention later
+              {t('step3Recipe.reviewStats', { approved: approvedRecipes.length, later: needsLaterRecipes.length })}
             </p>
           </motion.div>
           <motion.div 
@@ -431,17 +433,17 @@ export function Step3RecipeApproval(props: StepProps) {
               setNeedsLaterRecipes([]);
               setEditingIngredients(recipes[0]?.ingredients || []);
             }}>
-              Review Again
+              {t('step3Recipe.reviewAgain')}
             </Button>
             <Button onClick={handleContinue} disabled={isSaving}>
               {isSaving ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving Recipes...
+                  {t('step3Recipe.savingRecipes')}
                 </>
               ) : (
                 <>
-                  Continue to Storage Setup
+                  {t('step3Recipe.continueStorage')}
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </>
               )}
@@ -457,7 +459,7 @@ export function Step3RecipeApproval(props: StepProps) {
   }
 
   return (
-    <OnboardingLayout {...layoutProps} title="Recipe Approval Studio" subtitle={`Recipe ${currentRecipeIndex + 1} of ${totalRecipes}`}>
+    <OnboardingLayout {...layoutProps} title={t('step3Recipe.title')} subtitle={t('step3Recipe.subtitle', { current: currentRecipeIndex + 1, total: totalRecipes })}>
       <AnimatePresence mode="wait">
         <motion.div 
           key={currentRecipe.id}
@@ -482,7 +484,7 @@ export function Step3RecipeApproval(props: StepProps) {
                   {generatingImageFor.has(currentRecipe.id) ? (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                      <span className="text-xs">Generating image...</span>
+                      <span className="text-xs">{t('step3Recipe.generatingImage')}</span>
                     </div>
                   ) : currentRecipe.imageUrl ? (
                     <>
@@ -501,21 +503,21 @@ export function Step3RecipeApproval(props: StepProps) {
                           className="text-xs"
                         >
                           <RefreshCw className="w-3 h-3 mr-1" />
-                          Regenerate
+                          {t('step3Recipe.regenerate')}
                         </Button>
                       </div>
                     </>
                   ) : (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <ImageIcon className="w-8 h-8" />
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => generateImageForRecipe(currentRecipe.id)}
-                        className="text-xs"
-                      >
-                        <Sparkles className="w-3 h-3 mr-1" />
-                        Generate Image
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => generateImageForRecipe(currentRecipe.id)}
+                          className="text-xs"
+                        >
+                          <Sparkles className="w-3 h-3 mr-1" />
+                          {t('step3Recipe.generateImage')}
                       </Button>
                     </div>
                   )}
@@ -541,10 +543,10 @@ export function Step3RecipeApproval(props: StepProps) {
                   ))}
                 </div>
                 <AIConfidenceCard
-                  title="Recipe Confidence"
+                  title={t('step3Recipe.recipeConfidence')}
                   value={currentRecipe.name}
                   confidence={currentRecipe.confidence}
-                  reason="Based on menu description and common preparations"
+                  reason={t('step3Recipe.confidenceReason')}
                 />
               </CardContent>
             </Card>
@@ -554,11 +556,11 @@ export function Step3RecipeApproval(props: StepProps) {
           <motion.div variants={cardVariants} className="lg:col-span-2">
             <Card className="h-full">
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Ingredients ({editingIngredients.length})</CardTitle>
+                <CardTitle>{t('step3Recipe.ingredients')} ({editingIngredients.length})</CardTitle>
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Button variant="outline" size="sm" onClick={addIngredient}>
                     <Plus className="w-4 h-4 mr-1" />
-                    Add
+                    {t('step3Recipe.add')}
                   </Button>
                 </motion.div>
               </CardHeader>
@@ -566,10 +568,10 @@ export function Step3RecipeApproval(props: StepProps) {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Ingredient</TableHead>
-                      <TableHead className="w-24">Qty</TableHead>
-                      <TableHead className="w-24">Unit</TableHead>
-                      <TableHead className="w-20">Optional</TableHead>
+                      <TableHead>{t('step3Recipe.ingredient')}</TableHead>
+                      <TableHead className="w-24">{t('step3Recipe.qty')}</TableHead>
+                      <TableHead className="w-24">{t('step3Recipe.unit')}</TableHead>
+                      <TableHead className="w-20">{t('step3Recipe.optional')}</TableHead>
                       <TableHead className="w-12"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -603,7 +605,7 @@ export function Step3RecipeApproval(props: StepProps) {
                                 {ingredient.isHouseMade && (
                                   <Badge variant="outline" className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-300">
                                     <ChefHat className="w-3 h-3 mr-1" />
-                                    Prep
+                                    {t('step3Recipe.prep')}
                                   </Badge>
                                 )}
                                 {ingredient.confidence !== 'high' && !ingredient.isHouseMade && (
@@ -671,7 +673,7 @@ export function Step3RecipeApproval(props: StepProps) {
                                   <div className="flex items-center gap-2 mb-2">
                                     <ChefHat className="w-4 h-4 text-amber-600" />
                                     <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                                      {prepRecipe.name} — yields {prepRecipe.yieldAmount} {prepRecipe.yieldUnit}
+                                      {prepRecipe.name} — {t('step3Recipe.yields')} {prepRecipe.yieldAmount} {prepRecipe.yieldUnit}
                                     </span>
                                   </div>
                                   <div className="grid grid-cols-2 gap-2">
@@ -694,7 +696,7 @@ export function Step3RecipeApproval(props: StepProps) {
 
                 {editingIngredients.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
-                    <p>No ingredients yet. Click "Add" to add ingredients manually.</p>
+                    <p>{t('step3Recipe.noIngredients')}</p>
                   </div>
                 )}
 
@@ -706,17 +708,17 @@ export function Step3RecipeApproval(props: StepProps) {
                     disabled={currentRecipeIndex === 0}
                   >
                     <ArrowLeft className="w-4 h-4 mr-2" />
-                    Previous
+                    {t('step3Recipe.previous')}
                   </Button>
                   
                   <div className="flex gap-3">
                     <Button variant="outline" onClick={handleNeedsLater}>
                       <Clock className="w-4 h-4 mr-2" />
-                      Later
+                      {t('step3Recipe.later')}
                     </Button>
                     <Button onClick={handleApprove}>
                       <Check className="w-4 h-4 mr-2" />
-                      Approve
+                      {t('step3Recipe.approve')}
                     </Button>
                   </div>
                 </div>
