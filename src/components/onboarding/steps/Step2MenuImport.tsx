@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Upload, Link as LinkIcon, ShoppingBag, PenLine, FileText, Loader2, Sparkles } from 'lucide-react';
+import { Upload, Link as LinkIcon, ShoppingBag, PenLine, FileText, Loader2, Sparkles, Check, X, ChevronRight, UtensilsCrossed } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { OnboardingLayout } from '../OnboardingLayout';
-import { useOnboardingContext } from '@/contexts/OnboardingContext';
+import { useOnboardingContext, ParsedDish } from '@/contexts/OnboardingContext';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,6 +46,12 @@ export function Step2MenuImport({
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  
+  // Preview state
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewDishes, setPreviewDishes] = useState<ParsedDish[]>([]);
+  const [previewPrepRecipes, setPreviewPrepRecipes] = useState<ParsedDish[]>([]);
+  const [selectedDishes, setSelectedDishes] = useState<Set<string>>(new Set());
 
   const importMethods = [
     {
@@ -155,7 +163,7 @@ export function Step2MenuImport({
     return data.content;
   };
 
-  const handleContinue = async () => {
+  const handleImportMenu = async () => {
     if (method === 'manual') {
       setParsedDishes([]);
       setPrepRecipes([]);
@@ -220,20 +228,16 @@ export function Step2MenuImport({
       const dishes = data.dishes || [];
       const prepRecipes = data.prepRecipes || [];
       
-      setParsedDishes(dishes);
-      setPrepRecipes(prepRecipes);
+      // Show preview instead of immediately moving to next step
+      setPreviewDishes(dishes);
+      setPreviewPrepRecipes(prepRecipes);
+      setSelectedDishes(new Set(dishes.map((d: ParsedDish) => d.id)));
+      setShowPreview(true);
 
-      const prepMessage = prepRecipes.length > 0 
-        ? t('step2Menu.detectedPrep', { count: prepRecipes.length })
-        : '';
-      
       toast({
         title: t('step2Menu.parseSuccess'),
-        description: t('step2Menu.foundDishes', { count: dishes.length, prep: prepMessage }),
+        description: t('step2Menu.reviewDishes'),
       });
-
-      updateHealthScore(15);
-      onNext();
 
     } catch (error) {
       console.error('Menu parsing error:', error);
@@ -248,6 +252,177 @@ export function Step2MenuImport({
     }
   };
 
+  const toggleDishSelection = (dishId: string) => {
+    setSelectedDishes(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(dishId)) {
+        newSet.delete(dishId);
+      } else {
+        newSet.add(dishId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllDishes = () => {
+    setSelectedDishes(new Set(previewDishes.map(d => d.id)));
+  };
+
+  const deselectAllDishes = () => {
+    setSelectedDishes(new Set());
+  };
+
+  const handleConfirmDishes = () => {
+    const selectedDishList = previewDishes.filter(d => selectedDishes.has(d.id));
+    setParsedDishes(selectedDishList);
+    setPrepRecipes(previewPrepRecipes);
+    updateHealthScore(15);
+    onNext();
+  };
+
+  const handleBackToImport = () => {
+    setShowPreview(false);
+    setPreviewDishes([]);
+    setPreviewPrepRecipes([]);
+    setSelectedDishes(new Set());
+  };
+
+  // Group dishes by section
+  const groupedDishes = previewDishes.reduce((acc, dish) => {
+    const section = dish.section || 'Other';
+    if (!acc[section]) {
+      acc[section] = [];
+    }
+    acc[section].push(dish);
+    return acc;
+  }, {} as Record<string, ParsedDish[]>);
+
+  // Preview View
+  if (showPreview) {
+    return (
+      <OnboardingLayout
+        currentStep={currentStep}
+        completedSteps={completedSteps}
+        setupHealthScore={setupHealthScore}
+        title={t('step2Menu.reviewTitle', 'Review Imported Menu')}
+        subtitle={t('step2Menu.reviewSubtitle', 'Select the dishes you want to include in your recipe library')}
+        onNext={handleConfirmDishes}
+        onBack={handleBackToImport}
+        onSave={onSave}
+        nextLabel={t('step2Menu.confirmDishes', { count: selectedDishes.size })}
+        nextDisabled={selectedDishes.size === 0}
+        conceptType={conceptType}
+      >
+        <div className="space-y-6">
+          {/* Summary Bar */}
+          <div className="flex items-center justify-between bg-muted/50 rounded-lg p-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <UtensilsCrossed className="w-5 h-5 text-primary" />
+                <span className="font-medium">
+                  {selectedDishes.size} / {previewDishes.length} {t('step2Menu.dishesSelected', 'dishes selected')}
+                </span>
+              </div>
+              {previewPrepRecipes.length > 0 && (
+                <Badge variant="secondary">
+                  +{previewPrepRecipes.length} {t('step2Menu.prepRecipes', 'prep recipes')}
+                </Badge>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={selectAllDishes}>
+                {t('step2Menu.selectAll', 'Select All')}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={deselectAllDishes}>
+                {t('step2Menu.deselectAll', 'Deselect All')}
+              </Button>
+            </div>
+          </div>
+
+          {/* Dishes List */}
+          <ScrollArea className="h-[400px] pr-4">
+            <div className="space-y-6">
+              {Object.entries(groupedDishes).map(([section, dishes]) => (
+                <div key={section}>
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    {section} ({dishes.filter(d => selectedDishes.has(d.id)).length}/{dishes.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {dishes.map((dish) => (
+                      <button
+                        key={dish.id}
+                        onClick={() => toggleDishSelection(dish.id)}
+                        className={cn(
+                          "w-full flex items-center gap-3 p-3 rounded-lg border transition-all text-left",
+                          selectedDishes.has(dish.id)
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-muted-foreground/30 opacity-60"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0",
+                          selectedDishes.has(dish.id)
+                            ? "border-primary bg-primary"
+                            : "border-muted-foreground/40"
+                        )}>
+                          {selectedDishes.has(dish.id) && (
+                            <Check className="w-3 h-3 text-primary-foreground" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-foreground truncate">{dish.name}</p>
+                          {dish.description && (
+                            <p className="text-sm text-muted-foreground truncate">{dish.description}</p>
+                          )}
+                        </div>
+                        {dish.price && (
+                          <span className="text-sm font-medium text-muted-foreground flex-shrink-0">
+                            ${dish.price.toFixed(2)}
+                          </span>
+                        )}
+                        {dish.tags && dish.tags.length > 0 && (
+                          <div className="flex gap-1 flex-shrink-0">
+                            {dish.tags.slice(0, 2).map((tag) => (
+                              <Badge key={tag} variant="outline" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              {/* Prep Recipes Section */}
+              {previewPrepRecipes.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    {t('step2Menu.prepRecipesTitle', 'Prep Recipes (Auto-detected)')}
+                  </h3>
+                  <Card className="p-4 bg-muted/30">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {t('step2Menu.prepRecipesNote', 'These house-made items will be created as sub-recipes:')}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {previewPrepRecipes.map((prep) => (
+                        <Badge key={prep.id} variant="secondary">
+                          {prep.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </Card>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </div>
+      </OnboardingLayout>
+    );
+  }
+
+  // Import Method Selection View
   return (
     <OnboardingLayout
       currentStep={currentStep}
@@ -255,10 +430,10 @@ export function Step2MenuImport({
       setupHealthScore={setupHealthScore}
       title={t('step2Menu.title')}
       subtitle={t('step2Menu.subtitle')}
-      onNext={handleContinue}
+      onNext={handleImportMenu}
       onBack={onBack}
       onSave={onSave}
-      nextLabel={isProcessing ? t('step2Menu.processing') : t('step1Basics.continue')}
+      nextLabel={isProcessing ? t('step2Menu.processing') : t('step2Menu.importMenu', 'Import Menu')}
       nextDisabled={!method || isProcessing}
       conceptType={conceptType}
     >
