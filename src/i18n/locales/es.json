@@ -521,10 +521,22 @@
     "inviteMember": "Invitar",
     "notificationPreferences": "Preferencias de notificación",
     "accountSettings": "Configuración de cuenta",
+    "email": "Correo",
+    "password": "Contraseña",
     "changePassword": "Cambiar contraseña",
     "deleteAccount": "Eliminar cuenta",
     "settingsSaved": "Configuración guardada",
-    "failedSave": "No se pudo guardar: {{message}}"
+    "failedSave": "No se pudo guardar: {{message}}",
+    "notifications": {
+      "lowStock": "Alertas de stock bajo",
+      "lowStockDesc": "Notificaciones cuando los artículos caen bajo el punto de pedido",
+      "expiring": "Artículos por vencer",
+      "expiringDesc": "Alertas para artículos próximos a vencer",
+      "orderUpdates": "Actualizaciones de pedidos",
+      "orderUpdatesDesc": "Notificaciones de cambios de estado de OC",
+      "dailySummary": "Resumen diario",
+      "dailySummaryDesc": "Resumen matutino del estado del inventario"
+    }
   },
   "notFound": {
     "title": "¡Ups! Página no encontrada",
