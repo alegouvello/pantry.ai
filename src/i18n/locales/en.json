@@ -835,6 +835,11 @@
   "step2Menu": {
     "title": "Bring your menu",
     "subtitle": "We'll extract your dishes and generate recipe drafts",
+    "autoFind": "Auto-find Menu",
+    "autoFindDesc": "AI searches the web for your menu",
+    "autoFindTitle": "Smart Menu Discovery",
+    "autoFindExplain": "We'll search the web for {{name}}'s menu and extract all dishes automatically.",
+    "searchingWeb": "Searching the web for your menu...",
     "uploadMenu": "Upload Menu",
     "uploadDesc": "PDF, JPG, or PNG of your menu",
     "pasteUrl": "Paste URL",

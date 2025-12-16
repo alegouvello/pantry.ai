@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Upload, Link as LinkIcon, ShoppingBag, PenLine, FileText, Loader2 } from 'lucide-react';
+import { Upload, Link as LinkIcon, ShoppingBag, PenLine, FileText, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,7 +24,7 @@ interface Step2Props {
   updateHealthScore: (delta: number) => void;
 }
 
-type ImportMethod = 'upload' | 'url' | 'pos' | 'manual';
+type ImportMethod = 'upload' | 'url' | 'pos' | 'manual' | 'auto';
 
 export function Step2MenuImport({
   currentStep,
@@ -37,7 +37,7 @@ export function Step2MenuImport({
 }: Step2Props) {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const { conceptType, setParsedDishes, setPrepRecipes } = useOnboardingContext();
+  const { conceptType, restaurant, setParsedDishes, setPrepRecipes } = useOnboardingContext();
   const [method, setMethod] = useState<ImportMethod | null>(null);
   const [menuUrl, setMenuUrl] = useState('');
   const [isMonitored, setIsMonitored] = useState(false);
@@ -47,11 +47,18 @@ export function Step2MenuImport({
 
   const importMethods = [
     {
+      id: 'auto' as ImportMethod,
+      title: t('step2Menu.autoFind'),
+      description: t('step2Menu.autoFindDesc'),
+      icon: Sparkles,
+      recommended: true,
+      disabled: !restaurant?.name,
+    },
+    {
       id: 'upload' as ImportMethod,
       title: t('step2Menu.uploadMenu'),
       description: t('step2Menu.uploadDesc'),
       icon: Upload,
-      recommended: true,
     },
     {
       id: 'url' as ImportMethod,
@@ -128,6 +135,26 @@ export function Step2MenuImport({
     return data.content;
   };
 
+  const findMenuOnline = async (): Promise<string> => {
+    const { data, error } = await supabase.functions.invoke('find-menu', {
+      body: { 
+        restaurantName: restaurant?.name,
+        website: restaurant?.website,
+        city: restaurant?.address?.city,
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to find menu online');
+    }
+
+    if (!data?.success) {
+      throw new Error(data?.error || 'Failed to find menu online');
+    }
+
+    return data.content;
+  };
+
   const handleContinue = async () => {
     if (method === 'manual') {
       setParsedDishes([]);
@@ -159,7 +186,11 @@ export function Step2MenuImport({
     try {
       let menuContent = '';
 
-      if (method === 'upload' && uploadedFile) {
+      if (method === 'auto') {
+        setProcessingStatus(t('step2Menu.searchingWeb'));
+        menuContent = await findMenuOnline();
+        setProcessingStatus(t('step2Menu.analyzingAI'));
+      } else if (method === 'upload' && uploadedFile) {
         setProcessingStatus(t('step2Menu.extracting'));
         menuContent = await extractTextFromFile(uploadedFile);
         setProcessingStatus(t('step2Menu.analyzingAI'));
@@ -233,21 +264,21 @@ export function Step2MenuImport({
     >
       <div className="space-y-8">
         {/* Method Selection */}
-        <div className="grid gap-3 sm:gap-4 grid-cols-2">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-3">
           {importMethods.map((m) => (
             <button
               key={m.id}
-              onClick={() => setMethod(m.id)}
-              disabled={isProcessing}
+              onClick={() => !m.disabled && setMethod(m.id)}
+              disabled={isProcessing || m.disabled}
               className={cn(
                 "relative p-4 sm:p-6 rounded-xl border-2 text-left transition-all hover:border-primary/50",
                 method === m.id 
                   ? "border-primary bg-primary/5" 
                   : "border-border",
-                isProcessing && "opacity-50 cursor-not-allowed"
+                (isProcessing || m.disabled) && "opacity-50 cursor-not-allowed"
               )}
             >
-              {m.recommended && (
+              {m.recommended && !m.disabled && (
                 <span className="absolute top-2 right-2 sm:top-3 sm:right-3 text-[10px] sm:text-xs bg-primary text-primary-foreground px-1.5 sm:px-2 py-0.5 rounded-full">
                   {t('step2Menu.best')}
                 </span>
@@ -359,6 +390,17 @@ export function Step2MenuImport({
             <h3 className="font-semibold text-foreground mb-2">{t('step2Menu.manualEntryTitle')}</h3>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
               {t('step2Menu.manualEntryDesc')}
+            </p>
+          </Card>
+        )}
+
+        {/* Auto Find */}
+        {method === 'auto' && !isProcessing && (
+          <Card variant="elevated" className="p-6 text-center">
+            <Sparkles className="w-12 h-12 text-primary mx-auto mb-4" />
+            <h3 className="font-semibold text-foreground mb-2">{t('step2Menu.autoFindTitle')}</h3>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              {t('step2Menu.autoFindExplain', { name: restaurant?.name || 'your restaurant' })}
             </p>
           </Card>
         )}

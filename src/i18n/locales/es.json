@@ -835,6 +835,11 @@
   "step2Menu": {
     "title": "Trae tu menú",
     "subtitle": "Extraeremos tus platos y generaremos borradores de recetas",
+    "autoFind": "Búsqueda automática",
+    "autoFindDesc": "La IA busca tu menú en la web",
+    "autoFindTitle": "Descubrimiento inteligente del menú",
+    "autoFindExplain": "Buscaremos el menú de {{name}} en la web y extraeremos todos los platos automáticamente.",
+    "searchingWeb": "Buscando tu menú en la web...",
     "uploadMenu": "Subir menú",
     "uploadDesc": "PDF, JPG o PNG de tu menú",
     "pasteUrl": "Pegar URL",
