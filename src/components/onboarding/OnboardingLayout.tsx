@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Save, ChefHat } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { OnboardingProgressBar } from './OnboardingProgressBar';
 import { SetupHealthScore } from './SetupHealthScore';
+import { LanguageSelectorCompact } from '@/components/settings/LanguageSelectorCompact';
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -178,8 +179,9 @@ export function OnboardingLayout({
               </div>
             )}
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <SetupHealthScore score={setupHealthScore} className="hidden sm:flex" />
+              <LanguageSelectorCompact />
               {onSave && (
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Button variant="outline" size="sm" onClick={onSave} className="backdrop-blur-sm">
