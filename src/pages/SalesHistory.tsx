@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -68,6 +69,7 @@ const COLORS = [
 ];
 
 export default function SalesHistory() {
+  const { t } = useTranslation();
   const [dateRange, setDateRange] = useState<7 | 14 | 30>(30);
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
   const [dishFilter, setDishFilter] = useState<string>('all');
@@ -318,7 +320,7 @@ export default function SalesHistory() {
                 transition={{ delay: 0.2, duration: 0.5 }}
                 className="text-2xl md:text-3xl font-bold text-foreground mb-2"
               >
-                Sales Comparison
+                {t('salesHistory.comparison')}
               </motion.h1>
               <motion.p 
                 initial={{ opacity: 0, x: -20 }}
@@ -326,7 +328,7 @@ export default function SalesHistory() {
                 transition={{ delay: 0.3, duration: 0.5 }}
                 className="text-muted-foreground max-w-md"
               >
-                Compare performance between different time periods
+                {t('salesHistory.comparisonSubtitle')}
               </motion.p>
             </div>
           </div>
@@ -360,7 +362,7 @@ export default function SalesHistory() {
               transition={{ delay: 0.2, duration: 0.5 }}
               className="text-2xl md:text-3xl font-bold text-foreground mb-2"
             >
-              Sales History
+              {t('salesHistory.title')}
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, x: -20 }}
@@ -368,7 +370,7 @@ export default function SalesHistory() {
               transition={{ delay: 0.3, duration: 0.5 }}
               className="text-muted-foreground max-w-md"
             >
-              Analyze sales trends, top dishes, and revenue patterns
+              {t('salesHistory.subtitle')}
             </motion.p>
           </div>
         </div>
@@ -380,7 +382,7 @@ export default function SalesHistory() {
             className="backdrop-blur-sm"
           >
             <GitCompare className="h-4 w-4 mr-1" />
-            Compare
+            {t('salesHistory.compare')}
           </Button>
           {[7, 14, 30].map((days) => (
             <Button
@@ -407,16 +409,16 @@ export default function SalesHistory() {
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                 <Filter className="h-4 w-4" />
-                Filters
+                {t('salesHistory.filters.title')}
               </div>
               
               {/* Dish Filter */}
               <Select value={dishFilter} onValueChange={setDishFilter}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="All Dishes" />
+                  <SelectValue placeholder={t('salesHistory.filters.allDishes')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Dishes</SelectItem>
+                  <SelectItem value="all">{t('salesHistory.filters.allDishes')}</SelectItem>
                   {allDishes.map((dish) => (
                     <SelectItem key={dish} value={dish}>
                       {dish}
@@ -428,27 +430,27 @@ export default function SalesHistory() {
               {/* Time of Day Filter */}
               <Select value={timeOfDayFilter} onValueChange={(v) => setTimeOfDayFilter(v as TimeOfDay)}>
                 <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Any Time" />
+                  <SelectValue placeholder={t('salesHistory.filters.anyTime')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Any Time</SelectItem>
-                  <SelectItem value="morning">Morning (5am-12pm)</SelectItem>
-                  <SelectItem value="afternoon">Afternoon (12pm-5pm)</SelectItem>
-                  <SelectItem value="evening">Evening (5pm-9pm)</SelectItem>
-                  <SelectItem value="night">Night (9pm-5am)</SelectItem>
+                  <SelectItem value="all">{t('salesHistory.filters.anyTime')}</SelectItem>
+                  <SelectItem value="morning">{t('salesHistory.filters.morning')}</SelectItem>
+                  <SelectItem value="afternoon">{t('salesHistory.filters.afternoon')}</SelectItem>
+                  <SelectItem value="evening">{t('salesHistory.filters.evening')}</SelectItem>
+                  <SelectItem value="night">{t('salesHistory.filters.night')}</SelectItem>
                 </SelectContent>
               </Select>
 
               {/* Order Size Filter */}
               <Select value={orderSizeFilter} onValueChange={(v) => setOrderSizeFilter(v as OrderSize)}>
                 <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Any Size" />
+                  <SelectValue placeholder={t('salesHistory.filters.anySize')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Any Size</SelectItem>
-                  <SelectItem value="small">Small (1-2 items)</SelectItem>
-                  <SelectItem value="medium">Medium (3-5 items)</SelectItem>
-                  <SelectItem value="large">Large (6+ items)</SelectItem>
+                  <SelectItem value="all">{t('salesHistory.filters.anySize')}</SelectItem>
+                  <SelectItem value="small">{t('salesHistory.filters.small')}</SelectItem>
+                  <SelectItem value="medium">{t('salesHistory.filters.medium')}</SelectItem>
+                  <SelectItem value="large">{t('salesHistory.filters.large')}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -461,14 +463,14 @@ export default function SalesHistory() {
                   className="text-muted-foreground hover:text-foreground"
                 >
                   <X className="h-4 w-4 mr-1" />
-                  Clear
+                  {t('salesHistory.filters.clear')}
                 </Button>
               )}
 
               {/* Filter Summary */}
               {hasActiveFilters && (
                 <div className="ml-auto text-sm text-muted-foreground">
-                  Showing {filteredSalesEvents.length} of {salesEvents?.length || 0} orders
+                  {t('salesHistory.filters.showing', { filtered: filteredSalesEvents.length, total: salesEvents?.length || 0 })}
                 </div>
               )}
             </div>
@@ -485,7 +487,7 @@ export default function SalesHistory() {
                 <DollarSign className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Est. Revenue</p>
+                <p className="text-sm text-muted-foreground">{t('salesHistory.estRevenue')}</p>
                 {isLoading ? (
                   <Skeleton className="h-7 w-24" />
                 ) : (
@@ -503,7 +505,7 @@ export default function SalesHistory() {
                 <ShoppingBag className="h-5 w-5 text-accent" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Orders</p>
+                <p className="text-sm text-muted-foreground">{t('salesHistory.totalOrders')}</p>
                 {isLoading ? (
                   <Skeleton className="h-7 w-16" />
                 ) : (
@@ -521,7 +523,7 @@ export default function SalesHistory() {
                 <ChefHat className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Avg Order Value</p>
+                <p className="text-sm text-muted-foreground">{t('salesHistory.avgOrderValue')}</p>
                 {isLoading ? (
                   <Skeleton className="h-7 w-20" />
                 ) : (
@@ -545,14 +547,14 @@ export default function SalesHistory() {
                 )}
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Sales Trend</p>
+                <p className="text-sm text-muted-foreground">{t('salesHistory.salesTrend')}</p>
                 {isLoading ? (
                   <Skeleton className="h-7 w-16" />
                 ) : (
                   <div className="flex items-center gap-2">
                     <p className="text-2xl font-bold">{Math.abs(salesTrend).toFixed(1)}%</p>
                     <Badge variant={salesTrend >= 0 ? 'default' : 'destructive'}>
-                      {salesTrend >= 0 ? 'Up' : 'Down'}
+                      {salesTrend >= 0 ? t('salesHistory.up') : t('salesHistory.down')}
                     </Badge>
                   </div>
                 )}
@@ -569,9 +571,9 @@ export default function SalesHistory() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-muted-foreground" />
-              Daily Sales Trend
+              {t('salesHistory.dailySalesTrend')}
             </CardTitle>
-            <CardDescription>Items sold per day over the selected period</CardDescription>
+            <CardDescription>{t('salesHistory.dailySalesTrendDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -604,13 +606,13 @@ export default function SalesHistory() {
                     strokeWidth={2}
                     dot={{ fill: 'hsl(var(--primary))', r: 4 }}
                     activeDot={{ r: 6 }}
-                    name="Items Sold"
+                    name={t('salesHistory.itemsSold')}
                   />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex h-[300px] items-center justify-center text-muted-foreground">
-                No sales data available
+                {t('salesHistory.noSalesData')}
               </div>
             )}
           </CardContent>
@@ -621,9 +623,9 @@ export default function SalesHistory() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ChefHat className="h-5 w-5 text-muted-foreground" />
-              Top Selling Dishes
+              {t('salesHistory.topSellingDishes')}
             </CardTitle>
-            <CardDescription>Best performers by quantity sold</CardDescription>
+            <CardDescription>{t('salesHistory.topSellingDishesDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -651,13 +653,13 @@ export default function SalesHistory() {
                     dataKey="count"
                     fill="hsl(var(--primary))"
                     radius={[0, 4, 4, 0]}
-                    name="Quantity Sold"
+                    name={t('salesHistory.quantitySold')}
                   />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex h-[300px] items-center justify-center text-muted-foreground">
-                No dish data available
+                {t('salesHistory.noDishData')}
               </div>
             )}
           </CardContent>
@@ -671,9 +673,9 @@ export default function SalesHistory() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-muted-foreground" />
-              Daily Revenue
+              {t('salesHistory.dailyRevenue')}
             </CardTitle>
-            <CardDescription>Revenue per day based on menu prices</CardDescription>
+            <CardDescription>{t('salesHistory.dailyRevenueDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -696,19 +698,19 @@ export default function SalesHistory() {
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px',
                     }}
-                    formatter={(value: number) => [`$${value.toLocaleString()}`, 'Revenue']}
+                    formatter={(value: number) => [`$${value.toLocaleString()}`, t('salesHistory.revenue')]}
                   />
                   <Bar
                     dataKey="revenue"
                     fill="hsl(var(--accent))"
                     radius={[4, 4, 0, 0]}
-                    name="Revenue"
+                    name={t('salesHistory.revenue')}
                   />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex h-[300px] items-center justify-center text-muted-foreground">
-                No revenue data available
+                {t('salesHistory.noRevenueData')}
               </div>
             )}
           </CardContent>
@@ -719,9 +721,9 @@ export default function SalesHistory() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShoppingBag className="h-5 w-5 text-muted-foreground" />
-              Sales Distribution
+              {t('salesHistory.salesDistribution')}
             </CardTitle>
-            <CardDescription>Share of sales by dish</CardDescription>
+            <CardDescription>{t('salesHistory.salesDistributionDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -759,7 +761,7 @@ export default function SalesHistory() {
               </ResponsiveContainer>
             ) : (
               <div className="flex h-[300px] items-center justify-center text-muted-foreground">
-                No distribution data available
+                {t('salesHistory.noDistributionData')}
               </div>
             )}
           </CardContent>
@@ -769,8 +771,8 @@ export default function SalesHistory() {
       {/* Sales Details Table with Expandable Rows */}
       <Card>
         <CardHeader>
-          <CardTitle>Sales Details</CardTitle>
-          <CardDescription>Click on a date to view individual orders</CardDescription>
+          <CardTitle>{t('salesHistory.salesDetails')}</CardTitle>
+          <CardDescription>{t('salesHistory.salesDetailsDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -784,10 +786,10 @@ export default function SalesHistory() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="pb-3 pl-8 text-left text-sm font-medium text-muted-foreground">Date</th>
-                    <th className="pb-3 text-right text-sm font-medium text-muted-foreground">Orders</th>
-                    <th className="pb-3 text-right text-sm font-medium text-muted-foreground">Items Sold</th>
-                    <th className="pb-3 text-right text-sm font-medium text-muted-foreground">Est. Revenue</th>
+                    <th className="pb-3 pl-8 text-left text-sm font-medium text-muted-foreground">{t('salesHistory.table.date')}</th>
+                    <th className="pb-3 text-right text-sm font-medium text-muted-foreground">{t('salesHistory.table.orders')}</th>
+                    <th className="pb-3 text-right text-sm font-medium text-muted-foreground">{t('salesHistory.table.itemsSold')}</th>
+                    <th className="pb-3 text-right text-sm font-medium text-muted-foreground">{t('salesHistory.table.estRevenue')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -855,7 +857,7 @@ export default function SalesHistory() {
                                                   <ShoppingBag className="h-4 w-4 text-primary" />
                                                 </div>
                                                 <div>
-                                                  <p className="text-sm font-medium">Order #{orderIndex + 1}</p>
+                                                  <p className="text-sm font-medium">{t('salesHistory.orderNumber', { num: orderIndex + 1 })}</p>
                                                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                                     <Clock className="h-3 w-3" />
                                                     {format(new Date(order.occurred_at), 'h:mm a')}
@@ -865,7 +867,7 @@ export default function SalesHistory() {
                                               <div className="text-right">
                                                 <p className="text-sm font-medium text-primary">${orderTotal.toLocaleString()}</p>
                                                 <p className="text-xs text-muted-foreground">
-                                                  {orderItems.reduce((sum, item) => sum + (item.quantity || 1), 0)} items
+                                                  {t('salesHistory.itemsCount', { count: orderItems.reduce((sum, item) => sum + (item.quantity || 1), 0) })}
                                                 </p>
                                               </div>
                                             </div>
@@ -897,7 +899,7 @@ export default function SalesHistory() {
                                               </div>
                                             ) : (
                                               <p className="text-sm text-muted-foreground text-center py-2">
-                                                No item details available
+                                                {t('salesHistory.noItemDetails')}
                                               </p>
                                             )}
                                           </div>
@@ -918,7 +920,7 @@ export default function SalesHistory() {
             </div>
           ) : (
             <div className="py-8 text-center text-muted-foreground">
-              No sales data available for the selected period
+              {t('salesHistory.noSalesDataPeriod')}
             </div>
           )}
         </CardContent>
