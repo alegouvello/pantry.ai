@@ -551,5 +551,51 @@
     "notes": "Notes (Optionnel)",
     "notesPlaceholder": "Contexte supplémentaire...",
     "saveChanges": "Enregistrer"
+  },
+  "businessHours": {
+    "title": "Heures d'ouverture",
+    "description": "Définissez vos horaires. Les jours fermés sont exclus des prévisions.",
+    "autoLookup": "Recherche auto",
+    "open": "Ouvert",
+    "closed": "Fermé",
+    "from": "De",
+    "to": "À",
+    "copyToAll": "Copier partout",
+    "excludedFromForecast": "Exclu des prévisions",
+    "forecastNote": "Impact sur les prévisions :",
+    "forecastNoteText": "Les jours marqués \"Fermé\" seront ignorés dans les prévisions de ventes et besoins en ingrédients. Les fermetures spéciales peuvent être ajoutées dans la page Prévisions.",
+    "saveHours": "Enregistrer les horaires",
+    "saved": "Horaires enregistrés",
+    "lookupRequired": "Le nom du restaurant est requis",
+    "lookupSuccess": "Horaires trouvés via {{source}}. Vérifiez et enregistrez.",
+    "lookupNotFound": "Horaires introuvables en ligne. Entrez-les manuellement.",
+    "lookupFailed": "Échec de la recherche. Entrez les horaires manuellement.",
+    "copiedToAll": "Horaires de {{day}} copiés partout",
+    "days": {
+      "monday": "Lundi",
+      "tuesday": "Mardi",
+      "wednesday": "Mercredi",
+      "thursday": "Jeudi",
+      "friday": "Vendredi",
+      "saturday": "Samedi",
+      "sunday": "Dimanche"
+    }
+  },
+  "closures": {
+    "title": "Fermetures programmées",
+    "description": "Jours fériés et fermetures spéciales. Ces jours seront exclus des prévisions.",
+    "addClosure": "Ajouter fermeture",
+    "quickAdd": "Ajout rapide de jours fériés",
+    "upcoming": "Fermetures à venir",
+    "past": "Fermetures passées",
+    "noUpcoming": "Aucune fermeture programmée",
+    "addTitle": "Ajouter une fermeture",
+    "reasonName": "Raison / Nom",
+    "reasonPlaceholder": "ex: Noël, Événement privé",
+    "date": "Date",
+    "notesOptional": "Notes (optionnel)",
+    "notesPlaceholder": "Détails supplémentaires",
+    "closureAdded": "Fermeture ajoutée",
+    "closureRemoved": "Fermeture supprimée"
   }
 }

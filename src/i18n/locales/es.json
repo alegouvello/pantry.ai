@@ -551,5 +551,51 @@
     "notes": "Notas (Opcional)",
     "notesPlaceholder": "Contexto adicional...",
     "saveChanges": "Guardar cambios"
+  },
+  "businessHours": {
+    "title": "Horario comercial",
+    "description": "Configura tus horarios. Los días cerrados se excluyen del pronóstico.",
+    "autoLookup": "Buscar auto",
+    "open": "Abierto",
+    "closed": "Cerrado",
+    "from": "Desde",
+    "to": "Hasta",
+    "copyToAll": "Copiar a todos",
+    "excludedFromForecast": "Excluido del pronóstico",
+    "forecastNote": "Cómo afecta al pronóstico:",
+    "forecastNoteText": "Los días marcados como \"Cerrado\" se omitirán en las predicciones de ventas y requisitos de ingredientes. Los cierres especiales pueden agregarse en la página de Pronóstico.",
+    "saveHours": "Guardar horarios",
+    "saved": "Horarios guardados",
+    "lookupRequired": "Se requiere el nombre del restaurante",
+    "lookupSuccess": "Horarios encontrados en {{source}}. Revisa y guarda.",
+    "lookupNotFound": "No se encontraron horarios. Ingresa manualmente.",
+    "lookupFailed": "Error al buscar. Ingresa los horarios manualmente.",
+    "copiedToAll": "Horarios de {{day}} copiados a todos los días",
+    "days": {
+      "monday": "Lunes",
+      "tuesday": "Martes",
+      "wednesday": "Miércoles",
+      "thursday": "Jueves",
+      "friday": "Viernes",
+      "saturday": "Sábado",
+      "sunday": "Domingo"
+    }
+  },
+  "closures": {
+    "title": "Cierres programados",
+    "description": "Días festivos y cierres especiales. Estos días se excluirán del pronóstico.",
+    "addClosure": "Agregar cierre",
+    "quickAdd": "Agregar días festivos rápido",
+    "upcoming": "Próximos cierres",
+    "past": "Cierres pasados",
+    "noUpcoming": "No hay cierres programados",
+    "addTitle": "Agregar cierre programado",
+    "reasonName": "Razón / Nombre",
+    "reasonPlaceholder": "ej: Navidad, Evento privado",
+    "date": "Fecha",
+    "notesOptional": "Notas (opcional)",
+    "notesPlaceholder": "Detalles adicionales",
+    "closureAdded": "Cierre agregado",
+    "closureRemoved": "Cierre eliminado"
   }
 }
