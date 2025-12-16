@@ -555,13 +555,13 @@
     "returnHome": "Retour à l'accueil"
   },
   "profitability": {
-    "title": "Rentabilité",
-    "subtitle": "Analysez les coûts alimentaires, marges et performances des recettes.",
+    "title": "Rentabilité des recettes",
+    "subtitle": "Analysez les coûts alimentaires et les marges bénéficiaires de votre menu.",
     "overview": "Aperçu",
     "byRecipe": "Par recette",
     "byCategory": "Par catégorie",
     "trends": "Tendances",
-    "avgFoodCost": "Coût alimentaire moyen",
+    "avgFoodCost": "Coût alim. moy.",
     "targetFoodCost": "Coût alimentaire cible",
     "margin": "Marge",
     "revenue": "Chiffre d'affaires",
@@ -575,7 +575,27 @@
     "highMargin": "Marge élevée",
     "lowMargin": "Marge faible",
     "profitable": "Rentable",
-    "needsAttention": "À surveiller"
+    "needsAttention": "À surveiller",
+    "good": "Bon",
+    "fair": "Correct",
+    "high": "Élevé",
+    "combinedProfit": "Profit combiné",
+    "combinedProfitTooltip": "Somme des marges bénéficiaires (prix menu moins coût des ingrédients) pour toutes les recettes. Représente le profit total si vous vendiez un de chaque article.",
+    "optimalRecipes": "Recettes optimales (≤30%)",
+    "of": "sur",
+    "highCost": "Coût élevé (>35%)",
+    "needsReview": "À réviser",
+    "recipeAnalysis": "Analyse des recettes",
+    "noRecipesWithPrices": "Aucune recette avec prix de menu trouvée. Ajoutez des prix pour voir la rentabilité.",
+    "goToRecipes": "Aller aux recettes",
+    "table": {
+      "recipe": "Recette",
+      "category": "Catégorie",
+      "cost": "Coût",
+      "menuPrice": "Prix menu",
+      "foodCostPct": "Coût alim. %",
+      "profit": "Profit"
+    }
   },
   "salesHistory": {
     "title": "Historique des ventes",

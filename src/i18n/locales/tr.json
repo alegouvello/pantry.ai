@@ -555,13 +555,13 @@
     "returnHome": "Ana sayfaya dön"
   },
   "profitability": {
-    "title": "Kârlılık",
-    "subtitle": "Gıda maliyetlerini, marjları ve tarif performansını analiz edin.",
+    "title": "Tarif Kârlılığı",
+    "subtitle": "Menünüzdeki gıda maliyetlerini ve kar marjlarını analiz edin.",
     "overview": "Genel bakış",
     "byRecipe": "Tariflere göre",
     "byCategory": "Kategorilere göre",
     "trends": "Trendler",
-    "avgFoodCost": "Ortalama gıda maliyeti",
+    "avgFoodCost": "Ort. gıda maliyeti",
     "targetFoodCost": "Hedef gıda maliyeti",
     "margin": "Marj",
     "revenue": "Gelir",
@@ -575,7 +575,27 @@
     "highMargin": "Yüksek marj",
     "lowMargin": "Düşük marj",
     "profitable": "Kârlı",
-    "needsAttention": "Dikkat gerekli"
+    "needsAttention": "Dikkat gerekli",
+    "good": "İyi",
+    "fair": "Orta",
+    "high": "Yüksek",
+    "combinedProfit": "Toplam kâr",
+    "combinedProfitTooltip": "Tüm tariflerdeki kar marjlarının toplamı (menü fiyatı eksi malzeme maliyeti). Her üründen birer tane satarsanız toplam karı temsil eder.",
+    "optimalRecipes": "Optimal tarifler (≤%30)",
+    "of": "/",
+    "highCost": "Yüksek maliyet (>%35)",
+    "needsReview": "İnceleme gerekli",
+    "recipeAnalysis": "Tarif analizi",
+    "noRecipesWithPrices": "Menü fiyatlı tarif bulunamadı. Kârlılığı görmek için fiyat ekleyin.",
+    "goToRecipes": "Tariflere git",
+    "table": {
+      "recipe": "Tarif",
+      "category": "Kategori",
+      "cost": "Maliyet",
+      "menuPrice": "Menü fiyatı",
+      "foodCostPct": "Gıda maliyeti %",
+      "profit": "Kâr"
+    }
   },
   "salesHistory": {
     "title": "Satış geçmişi",

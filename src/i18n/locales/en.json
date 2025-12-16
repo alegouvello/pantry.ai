@@ -555,13 +555,13 @@
     "returnHome": "Return to Home"
   },
   "profitability": {
-    "title": "Profitability",
-    "subtitle": "Analyze food costs, margins, and recipe performance.",
+    "title": "Recipe Profitability",
+    "subtitle": "Analyze food costs and profit margins across your menu.",
     "overview": "Overview",
     "byRecipe": "By Recipe",
     "byCategory": "By Category",
     "trends": "Trends",
-    "avgFoodCost": "Average Food Cost",
+    "avgFoodCost": "Avg Food Cost",
     "targetFoodCost": "Target Food Cost",
     "margin": "Margin",
     "revenue": "Revenue",
@@ -575,7 +575,27 @@
     "highMargin": "High Margin",
     "lowMargin": "Low Margin",
     "profitable": "Profitable",
-    "needsAttention": "Needs Attention"
+    "needsAttention": "Needs Attention",
+    "good": "Good",
+    "fair": "Fair",
+    "high": "High",
+    "combinedProfit": "Combined Profit",
+    "combinedProfitTooltip": "Sum of profit margins (menu price minus ingredient cost) across all recipes. Represents total profit if you sold one of each item.",
+    "optimalRecipes": "Optimal Recipes (≤30%)",
+    "of": "of",
+    "highCost": "High Cost (>35%)",
+    "needsReview": "Needs Review",
+    "recipeAnalysis": "Recipe Analysis",
+    "noRecipesWithPrices": "No recipes with menu prices found. Add menu prices to see profitability.",
+    "goToRecipes": "Go to Recipes",
+    "table": {
+      "recipe": "Recipe",
+      "category": "Category",
+      "cost": "Cost",
+      "menuPrice": "Menu Price",
+      "foodCostPct": "Food Cost %",
+      "profit": "Profit"
+    }
   },
   "salesHistory": {
     "title": "Sales History",
