@@ -521,10 +521,22 @@
     "inviteMember": "Invite Member",
     "notificationPreferences": "Notification Preferences",
     "accountSettings": "Account Settings",
+    "email": "Email",
+    "password": "Password",
     "changePassword": "Change Password",
     "deleteAccount": "Delete Account",
     "settingsSaved": "Settings saved successfully",
-    "failedSave": "Failed to save settings: {{message}}"
+    "failedSave": "Failed to save settings: {{message}}",
+    "notifications": {
+      "lowStock": "Low Stock Alerts",
+      "lowStockDesc": "Get notified when items drop below reorder point",
+      "expiring": "Expiring Items",
+      "expiringDesc": "Alerts for items approaching expiration",
+      "orderUpdates": "Order Updates",
+      "orderUpdatesDesc": "Notifications for PO status changes",
+      "dailySummary": "Daily Summary",
+      "dailySummaryDesc": "Morning digest of inventory status"
+    }
   },
   "notFound": {
     "title": "Oops! Page not found",

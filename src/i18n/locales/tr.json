@@ -521,10 +521,22 @@
     "inviteMember": "Davet et",
     "notificationPreferences": "Bildirim tercihleri",
     "accountSettings": "Hesap ayarları",
+    "email": "E-posta",
+    "password": "Şifre",
     "changePassword": "Şifre değiştir",
     "deleteAccount": "Hesabı sil",
     "settingsSaved": "Ayarlar kaydedildi",
-    "failedSave": "Kaydedilemedi: {{message}}"
+    "failedSave": "Kaydedilemedi: {{message}}",
+    "notifications": {
+      "lowStock": "Düşük stok uyarıları",
+      "lowStockDesc": "Ürünler yeniden sipariş noktasının altına düştüğünde bildirim al",
+      "expiring": "Son kullanma tarihi yaklaşanlar",
+      "expiringDesc": "Son kullanma tarihi yaklaşan ürünler için uyarılar",
+      "orderUpdates": "Sipariş güncellemeleri",
+      "orderUpdatesDesc": "Satın alma siparişi durum değişiklikleri bildirimleri",
+      "dailySummary": "Günlük özet",
+      "dailySummaryDesc": "Envanter durumunun sabah özeti"
+    }
   },
   "notFound": {
     "title": "Sayfa bulunamadı",

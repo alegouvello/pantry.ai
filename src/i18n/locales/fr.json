@@ -521,10 +521,22 @@
     "inviteMember": "Inviter",
     "notificationPreferences": "Préférences de notification",
     "accountSettings": "Paramètres du compte",
+    "email": "E-mail",
+    "password": "Mot de passe",
     "changePassword": "Changer le mot de passe",
     "deleteAccount": "Supprimer le compte",
     "settingsSaved": "Paramètres enregistrés",
-    "failedSave": "Échec : {{message}}"
+    "failedSave": "Échec : {{message}}",
+    "notifications": {
+      "lowStock": "Alertes stock bas",
+      "lowStockDesc": "Notification quand les articles passent sous le seuil",
+      "expiring": "Articles expirants",
+      "expiringDesc": "Alertes pour les articles proche de l'expiration",
+      "orderUpdates": "Mises à jour commandes",
+      "orderUpdatesDesc": "Notifications de changement de statut des BC",
+      "dailySummary": "Résumé quotidien",
+      "dailySummaryDesc": "Digest matinal de l'état des stocks"
+    }
   },
   "notFound": {
     "title": "Oups ! Page introuvable",

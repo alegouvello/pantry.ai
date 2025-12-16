@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { User, Building, Users, Bell, MapPin, Cloud, Loader2, Settings as SettingsIcon } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
@@ -41,6 +42,7 @@ const itemVariants = {
 };
 
 export default function Settings() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   
   const { data: restaurant, isLoading: restaurantLoading } = useQuery({
@@ -112,10 +114,10 @@ export default function Settings() {
       queryClient.invalidateQueries({ queryKey: ['restaurant-settings'] });
       queryClient.invalidateQueries({ queryKey: ['user-restaurant'] });
       queryClient.invalidateQueries({ queryKey: ['weather-forecast'] });
-      toast.success('Settings saved successfully');
+      toast.success(t('settings.settingsSaved'));
     },
     onError: (error) => {
-      toast.error('Failed to save settings: ' + error.message);
+      toast.error(t('settings.failedSave', { message: error.message }));
     },
   });
 
@@ -133,17 +135,17 @@ export default function Settings() {
       >
         <img 
           src={heroImage} 
-          alt="Settings" 
+          alt={t('settings.title')} 
           className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-transparent" />
         <div className="absolute inset-0 flex items-center px-8 md:px-12">
           <div className="space-y-3">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-              Settings
+              {t('settings.title')}
             </h1>
             <p className="text-muted-foreground max-w-md">
-              Manage your account and venue preferences.
+              {t('settings.subtitle')}
             </p>
           </div>
         </div>
@@ -154,26 +156,26 @@ export default function Settings() {
           <TabsList>
             <TabsTrigger value="venue" className="gap-2">
               <Building className="h-4 w-4" />
-              Venue
+              {t('settings.tabs.venue')}
             </TabsTrigger>
             <TabsTrigger value="team" className="gap-2">
               <Users className="h-4 w-4" />
-              Team
+              {t('settings.tabs.team')}
             </TabsTrigger>
             <TabsTrigger value="notifications" className="gap-2">
               <Bell className="h-4 w-4" />
-              Notifications
+              {t('settings.tabs.notifications')}
             </TabsTrigger>
             <TabsTrigger value="account" className="gap-2">
               <User className="h-4 w-4" />
-              Account
+              {t('settings.tabs.account')}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="venue" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base font-medium">Venue Profile</CardTitle>
+                <CardTitle className="text-base font-medium">{t('settings.venueProfile')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {restaurantLoading ? (
@@ -184,23 +186,23 @@ export default function Settings() {
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="venueName">Venue Name</Label>
+                        <Label htmlFor="venueName">{t('settings.venueName')}</Label>
                         <Input id="venueName" value={venueName} onChange={(e) => setVenueName(e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="venueType">Venue Type</Label>
+                        <Label htmlFor="venueType">{t('settings.venueType')}</Label>
                         <Input id="venueType" value={venueType} onChange={(e) => setVenueType(e.target.value)} placeholder="e.g., Restaurant, Cafe, Bar" />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="timezone">Timezone</Label>
+                        <Label htmlFor="timezone">{t('settings.timezone')}</Label>
                         <Input id="timezone" value={timezone} onChange={(e) => setTimezone(e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="currency">Currency</Label>
+                        <Label htmlFor="currency">{t('settings.currency')}</Label>
                         <Input id="currency" value={currency} onChange={(e) => setCurrency(e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="seats">Number of Seats</Label>
+                        <Label htmlFor="seats">{t('settings.seats')}</Label>
                         <Input 
                           id="seats" 
                           type="number" 
@@ -213,7 +215,7 @@ export default function Settings() {
                     </div>
                     <Button variant="accent" onClick={() => updateRestaurant.mutate()} disabled={updateRestaurant.isPending}>
                       {updateRestaurant.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      Save Changes
+                      {t('settings.saveChanges')}
                     </Button>
                   </>
                 )}
@@ -224,9 +226,9 @@ export default function Settings() {
               <CardHeader>
                 <CardTitle className="text-base font-medium flex items-center gap-2">
                   <MapPin className="h-4 w-4" />
-                  Location & Weather
+                  {t('settings.locationWeather')}
                 </CardTitle>
-                <CardDescription>Set your venue location for weather-based forecasting</CardDescription>
+                <CardDescription>{t('settings.locationWeatherDesc')}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {restaurantLoading ? (
@@ -237,23 +239,23 @@ export default function Settings() {
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="street">Street Address</Label>
+                        <Label htmlFor="street">{t('settings.street')}</Label>
                         <Input id="street" value={street} onChange={(e) => setStreet(e.target.value)} placeholder="123 Main Street" />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="city">City</Label>
+                        <Label htmlFor="city">{t('settings.city')}</Label>
                         <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="New York" />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="state">State / Province</Label>
+                        <Label htmlFor="state">{t('settings.state')}</Label>
                         <Input id="state" value={state} onChange={(e) => setState(e.target.value)} placeholder="NY" />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="zip">ZIP / Postal Code</Label>
+                        <Label htmlFor="zip">{t('settings.zip')}</Label>
                         <Input id="zip" value={zip} onChange={(e) => setZip(e.target.value)} placeholder="10001" />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="country">Country</Label>
+                        <Label htmlFor="country">{t('settings.country')}</Label>
                         <Input id="country" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="USA" />
                       </div>
                     </div>
@@ -262,12 +264,12 @@ export default function Settings() {
                       <div className="rounded-lg border bg-muted/30 p-4">
                         <div className="flex items-center gap-2 mb-3">
                           <Cloud className="h-4 w-4 text-blue-500" />
-                          <span className="text-sm font-medium">Weather Preview for {city}</span>
+                          <span className="text-sm font-medium">{t('settings.weatherPreviewFor', { city })}</span>
                         </div>
                         {weatherLoading ? (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Loader2 className="h-4 w-4 animate-spin" />
-                            Loading weather data...
+                            {t('settings.loadingWeather')}
                           </div>
                         ) : weatherPreview?.forecast?.length ? (
                           <div className="flex gap-4">
@@ -282,14 +284,14 @@ export default function Settings() {
                             ))}
                           </div>
                         ) : (
-                          <p className="text-sm text-muted-foreground">Unable to load weather.</p>
+                          <p className="text-sm text-muted-foreground">{t('settings.unableLoadWeather')}</p>
                         )}
                       </div>
                     )}
 
                     <Button variant="accent" onClick={() => updateRestaurant.mutate()} disabled={updateRestaurant.isPending}>
                       {updateRestaurant.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      Save Location
+                      {t('settings.saveLocation')}
                     </Button>
                   </>
                 )}
@@ -305,16 +307,16 @@ export default function Settings() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base font-medium">Storage Locations</CardTitle>
+                <CardTitle className="text-base font-medium">{t('settings.storageLocations')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {['Walk-in Cooler', 'Dry Storage', 'Freezer', 'Bar'].map((location) => (
                   <div key={location} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                     <span className="text-foreground">{location}</span>
-                    <Button variant="ghost" size="sm">Edit</Button>
+                    <Button variant="ghost" size="sm">{t('settings.edit')}</Button>
                   </div>
                 ))}
-                <Button variant="outline" className="w-full">Add Location</Button>
+                <Button variant="outline" className="w-full">{t('settings.addLocation')}</Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -322,8 +324,8 @@ export default function Settings() {
           <TabsContent value="team">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-base font-medium">Team Members</CardTitle>
-                <Button variant="accent" size="sm">Invite Member</Button>
+                <CardTitle className="text-base font-medium">{t('settings.teamMembers')}</CardTitle>
+                <Button variant="accent" size="sm">{t('settings.inviteMember')}</Button>
               </CardHeader>
               <CardContent className="space-y-3">
                 {[
@@ -343,7 +345,7 @@ export default function Settings() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-muted-foreground">{member.role}</span>
-                      <Button variant="ghost" size="sm">Edit</Button>
+                      <Button variant="ghost" size="sm">{t('settings.edit')}</Button>
                     </div>
                   </div>
                 ))}
@@ -354,19 +356,19 @@ export default function Settings() {
           <TabsContent value="notifications">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base font-medium">Notification Preferences</CardTitle>
+                <CardTitle className="text-base font-medium">{t('settings.notificationPreferences')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {[
-                  { title: 'Low Stock Alerts', description: 'Get notified when items drop below reorder point' },
-                  { title: 'Expiring Items', description: 'Alerts for items approaching expiration' },
-                  { title: 'Order Updates', description: 'Notifications for PO status changes' },
-                  { title: 'Daily Summary', description: 'Morning digest of inventory status' },
+                  { titleKey: 'settings.notifications.lowStock', descKey: 'settings.notifications.lowStockDesc' },
+                  { titleKey: 'settings.notifications.expiring', descKey: 'settings.notifications.expiringDesc' },
+                  { titleKey: 'settings.notifications.orderUpdates', descKey: 'settings.notifications.orderUpdatesDesc' },
+                  { titleKey: 'settings.notifications.dailySummary', descKey: 'settings.notifications.dailySummaryDesc' },
                 ].map((item) => (
-                  <div key={item.title} className="flex items-center justify-between">
+                  <div key={item.titleKey} className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-foreground">{item.title}</p>
-                      <p className="text-sm text-muted-foreground">{item.description}</p>
+                      <p className="font-medium text-foreground">{t(item.titleKey)}</p>
+                      <p className="text-sm text-muted-foreground">{t(item.descKey)}</p>
                     </div>
                     <Switch defaultChecked />
                   </div>
@@ -378,19 +380,19 @@ export default function Settings() {
           <TabsContent value="account">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base font-medium">Account Settings</CardTitle>
+                <CardTitle className="text-base font-medium">{t('settings.accountSettings')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label>Email</Label>
+                  <Label>{t('settings.email')}</Label>
                   <Input type="email" placeholder="you@example.com" disabled />
                 </div>
                 <div className="space-y-2">
-                  <Label>Password</Label>
-                  <Button variant="outline">Change Password</Button>
+                  <Label>{t('settings.password')}</Label>
+                  <Button variant="outline">{t('settings.changePassword')}</Button>
                 </div>
                 <div className="pt-4 border-t">
-                  <Button variant="destructive">Delete Account</Button>
+                  <Button variant="destructive">{t('settings.deleteAccount')}</Button>
                 </div>
               </CardContent>
             </Card>
