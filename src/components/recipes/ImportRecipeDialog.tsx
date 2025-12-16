@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Upload, FileText, AlertCircle, CheckCircle2, Download } from 'lucide-react';
 import {
   Dialog,
@@ -43,6 +44,7 @@ interface ImportResult {
 }
 
 export function ImportRecipeDialog({ open, onOpenChange }: ImportRecipeDialogProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: availableIngredients } = useIngredients();
@@ -160,8 +162,8 @@ export function ImportRecipeDialog({ open, onOpenChange }: ImportRecipeDialogPro
 
     if (!file.name.endsWith('.csv')) {
       toast({
-        title: 'Invalid file type',
-        description: 'Please upload a CSV file.',
+        title: t('importRecipe.invalidFileType'),
+        description: t('importRecipe.pleaseUploadCSV'),
         variant: 'destructive',
       });
       return;
@@ -181,8 +183,8 @@ export function ImportRecipeDialog({ open, onOpenChange }: ImportRecipeDialogPro
     const validRecipes = parsedRecipes.filter(r => r.errors.length === 0);
     if (validRecipes.length === 0) {
       toast({
-        title: 'No valid recipes',
-        description: 'Please fix the errors before importing.',
+        title: t('importRecipe.noValidRecipes'),
+        description: t('importRecipe.fixErrors'),
         variant: 'destructive',
       });
       return;
@@ -234,8 +236,8 @@ export function ImportRecipeDialog({ open, onOpenChange }: ImportRecipeDialogPro
 
     const successCount = results.filter(r => r.success).length;
     toast({
-      title: 'Import complete',
-      description: `Successfully imported ${successCount} of ${validRecipes.length} recipes.`,
+      title: t('importRecipe.importComplete'),
+      description: t('importRecipe.importedCount', { success: successCount, total: validRecipes.length }),
     });
   };
 
@@ -249,9 +251,9 @@ export function ImportRecipeDialog({ open, onOpenChange }: ImportRecipeDialogPro
     }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Import Recipes from CSV</DialogTitle>
+          <DialogTitle>{t('importRecipe.title')}</DialogTitle>
           <DialogDescription>
-            Upload a CSV file to bulk import recipes with their ingredients.
+            {t('importRecipe.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -260,25 +262,25 @@ export function ImportRecipeDialog({ open, onOpenChange }: ImportRecipeDialogPro
             <Alert>
               <FileText className="h-4 w-4" />
               <AlertDescription>
-                <strong>CSV Format:</strong> name, category, yield_amount, yield_unit, prep_time_minutes, pos_item_id, ingredients
+                <strong>{t('importRecipe.csvFormat')}</strong> name, category, yield_amount, yield_unit, prep_time_minutes, pos_item_id, ingredients
                 <br />
                 <span className="text-muted-foreground">
-                  Ingredients format: "Name:Quantity:Unit;Name:Quantity:Unit"
+                  {t('importRecipe.ingredientsFormat')}
                 </span>
               </AlertDescription>
             </Alert>
 
             <div className="flex flex-col items-center gap-4 py-8 border-2 border-dashed rounded-lg">
               <Upload className="h-12 w-12 text-muted-foreground" />
-              <p className="text-muted-foreground">Select a CSV file to import</p>
+              <p className="text-muted-foreground">{t('importRecipe.selectCSV')}</p>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={downloadTemplate}>
                   <Download className="h-4 w-4 mr-2" />
-                  Download Template
+                  {t('importRecipe.downloadTemplate')}
                 </Button>
                 <Button variant="accent" onClick={() => fileInputRef.current?.click()}>
                   <Upload className="h-4 w-4 mr-2" />
-                  Select File
+                  {t('importRecipe.selectFile')}
                 </Button>
               </div>
               <input
@@ -295,9 +297,9 @@ export function ImportRecipeDialog({ open, onOpenChange }: ImportRecipeDialogPro
         {step === 'preview' && (
           <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
             <div className="flex items-center gap-4">
-              <Badge variant="success">{validCount} valid</Badge>
+              <Badge variant="success">{t('importRecipe.valid', { count: validCount })}</Badge>
               {errorCount > 0 && (
-                <Badge variant="destructive">{errorCount} with errors</Badge>
+                <Badge variant="destructive">{t('importRecipe.withErrors', { count: errorCount })}</Badge>
               )}
             </div>
 
@@ -314,9 +316,9 @@ export function ImportRecipeDialog({ open, onOpenChange }: ImportRecipeDialogPro
                   >
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="font-medium">{recipe.name || 'Unnamed Recipe'}</p>
+                        <p className="font-medium">{recipe.name || t('importRecipe.unnamedRecipe')}</p>
                         <p className="text-sm text-muted-foreground">
-                          {recipe.category} • {recipe.ingredients.length} ingredients
+                          {recipe.category} • {t('importRecipe.ingredientCount', { count: recipe.ingredients.length })}
                         </p>
                       </div>
                       {recipe.errors.length > 0 ? (
@@ -339,14 +341,14 @@ export function ImportRecipeDialog({ open, onOpenChange }: ImportRecipeDialogPro
 
             <div className="flex justify-end gap-3 pt-4 border-t">
               <Button variant="outline" onClick={resetState}>
-                Cancel
+                {t('importRecipe.cancel')}
               </Button>
               <Button
                 variant="accent"
                 onClick={handleImport}
                 disabled={validCount === 0 || isImporting}
               >
-                {isImporting ? 'Importing...' : `Import ${validCount} Recipes`}
+                {isImporting ? t('importRecipe.importing') : t('importRecipe.importRecipes', { count: validCount })}
               </Button>
             </div>
           </div>
@@ -383,7 +385,7 @@ export function ImportRecipeDialog({ open, onOpenChange }: ImportRecipeDialogPro
 
             <div className="flex justify-end pt-4 border-t">
               <Button variant="accent" onClick={() => onOpenChange(false)}>
-                Done
+                {t('importRecipe.done')}
               </Button>
             </div>
           </div>
