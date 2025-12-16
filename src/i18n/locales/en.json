@@ -383,6 +383,23 @@
       "createFirst": "Create First Recipe"
     }
   },
+  "menuMatrix": {
+    "stars": "Stars",
+    "starsDesc": "High profit, high popularity - your menu champions",
+    "plowhorses": "Plow Horses",
+    "plowhorsesDesc": "Low profit, high popularity - consider price increase",
+    "puzzles": "Puzzles",
+    "puzzlesDesc": "High profit, low popularity - needs better marketing",
+    "dogs": "Dogs",
+    "dogsDesc": "Low profit, low popularity - consider removing",
+    "avgProfit": "Average Profit per Item",
+    "noPrices": "No recipes with menu prices found. Add menu prices to your recipes to see the engineering matrix.",
+    "noItems": "No items in this category",
+    "menuPrice": "Menu Price",
+    "foodCost": "Food Cost",
+    "profit": "Profit",
+    "foodCostPct": "Food Cost %"
+  },
   "orders": {
     "title": "Purchase Orders",
     "subtitle": "Manage vendor orders and track deliveries.",

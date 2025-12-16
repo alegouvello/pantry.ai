@@ -383,6 +383,23 @@
       "createFirst": "Crear primera receta"
     }
   },
+  "menuMatrix": {
+    "stars": "Estrellas",
+    "starsDesc": "Alto beneficio, alta popularidad - tus campeones del menú",
+    "plowhorses": "Caballos de tiro",
+    "plowhorsesDesc": "Bajo beneficio, alta popularidad - considera aumentar precio",
+    "puzzles": "Enigmas",
+    "puzzlesDesc": "Alto beneficio, baja popularidad - necesita mejor marketing",
+    "dogs": "Perros",
+    "dogsDesc": "Bajo beneficio, baja popularidad - considera eliminar",
+    "avgProfit": "Beneficio promedio por artículo",
+    "noPrices": "No hay recetas con precios de menú. Agrega precios para ver la matriz.",
+    "noItems": "Sin artículos en esta categoría",
+    "menuPrice": "Precio menú",
+    "foodCost": "Costo alimento",
+    "profit": "Beneficio",
+    "foodCostPct": "% Costo alimento"
+  },
   "orders": {
     "title": "Órdenes de compra",
     "subtitle": "Gestiona proveedores y entregas.",
