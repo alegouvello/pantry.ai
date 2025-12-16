@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, DragEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -95,6 +96,7 @@ const mapIdToStorageLocation = (id: string): string => {
 };
 
 export function Step4StorageSetup(props: StepProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { conceptType } = useOnboardingContext();
   const { notify: syncNotify } = useSyncNotification();
@@ -294,8 +296,8 @@ export function Step4StorageSetup(props: StepProps) {
           storage_location: storageLocationValue as any,
         });
         toast({
-          title: 'Ingredient moved',
-          description: 'Storage location updated.',
+          title: t('step4Storage.ingredientMoved'),
+          description: t('step4Storage.storageUpdated'),
         });
       } catch (error) {
         console.error('Failed to update ingredient storage:', error);
@@ -402,8 +404,8 @@ export function Step4StorageSetup(props: StepProps) {
   const handleAutoAssign = async () => {
     if (!ingredients.length) {
       toast({
-        title: 'No ingredients found',
-        description: 'Please approve recipes in Step 3 first.',
+        title: t('step4Storage.noIngredientsFound'),
+        description: t('step4Storage.approveRecipesFirst'),
         variant: 'destructive',
       });
       return;
@@ -438,14 +440,14 @@ export function Step4StorageSetup(props: StepProps) {
         )
       );
       toast({
-        title: 'Auto-assign complete',
-        description: `${updates.length} ingredients assigned to storage locations.`,
+        title: t('step4Storage.autoAssignComplete'),
+        description: t('step4Storage.ingredientsAssigned', { count: updates.length }),
       });
     } catch (error) {
       console.error('Failed to auto-assign:', error);
       toast({
-        title: 'Error',
-        description: 'Some ingredients could not be updated.',
+        title: t('step4Storage.autoAssignError'),
+        description: t('step4Storage.someNotUpdated'),
         variant: 'destructive',
       });
     } finally {
@@ -497,10 +499,10 @@ export function Step4StorageSetup(props: StepProps) {
 
   if (phase === 'storage') {
     return (
-      <OnboardingLayout {...layoutProps} title="Set Up Storage Locations" subtitle="Define where ingredients are stored">
+      <OnboardingLayout {...layoutProps} title={t('step4Storage.title')} subtitle={t('step4Storage.subtitle')}>
         <div className="max-w-2xl mx-auto space-y-6">
           <p className="text-muted-foreground">
-            We've suggested common storage locations. Add, edit, or remove as needed.
+            {t('step4Storage.suggestedLocations')}
           </p>
 
           <div className="grid gap-3">
@@ -530,14 +532,14 @@ export function Step4StorageSetup(props: StepProps) {
 
           <div className="flex gap-2">
             <Input
-              placeholder="Add custom location..."
+              placeholder={t('step4Storage.addCustomLocation')}
               value={newLocationName}
               onChange={(e) => setNewLocationName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && addStorageLocation()}
             />
             <Button onClick={addStorageLocation}>
               <Plus className="w-4 h-4 mr-2" />
-              Add
+              {t('step4Storage.add')}
             </Button>
           </div>
 
@@ -545,8 +547,8 @@ export function Step4StorageSetup(props: StepProps) {
             onClick={async () => {
               if (!props.restaurantId) {
                 toast({
-                  title: 'Restaurant not found',
-                  description: 'Please complete step 1 first.',
+                  title: t('step4Storage.restaurantNotFound'),
+                  description: t('step4Storage.completeStep1First'),
                   variant: 'destructive',
                 });
                 return;
@@ -571,8 +573,8 @@ export function Step4StorageSetup(props: StepProps) {
                 console.error('Failed to save storage locations:', error);
                 isLocalUpdateRef.current = false;
                 toast({
-                  title: 'Error saving',
-                  description: 'Failed to save storage locations.',
+                  title: t('step4Storage.errorSaving'),
+                  description: t('step4Storage.failedSaveLocations'),
                   variant: 'destructive',
                 });
               } finally {
@@ -584,7 +586,7 @@ export function Step4StorageSetup(props: StepProps) {
             disabled={isSaving}
           >
             {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-            {isSaving ? 'Saving...' : 'Continue to Inventory Count'}
+            {isSaving ? t('step4Storage.saving') : t('step4Storage.continueToCount')}
           </Button>
         </div>
       </OnboardingLayout>
@@ -593,7 +595,7 @@ export function Step4StorageSetup(props: StepProps) {
 
   if (phase === 'method') {
     return (
-      <OnboardingLayout {...layoutProps} title="Baseline Inventory" subtitle="Choose how to enter your current inventory">
+      <OnboardingLayout {...layoutProps} title={t('step4Storage.methodTitle')} subtitle={t('step4Storage.methodSubtitle')}>
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="grid gap-4">
             <Card
@@ -607,11 +609,11 @@ export function Step4StorageSetup(props: StepProps) {
                   <ListChecks className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">Guided Count Mode</h3>
+                  <h3 className="font-semibold mb-1">{t('step4Storage.guidedCount')}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Walk through each storage area and count items. Best for accuracy.
+                    {t('step4Storage.guidedCountDesc')}
                   </p>
-                  <Badge className="mt-2">Recommended</Badge>
+                  <Badge className="mt-2">{t('step4Storage.recommended')}</Badge>
                 </div>
               </CardContent>
             </Card>
@@ -627,9 +629,9 @@ export function Step4StorageSetup(props: StepProps) {
                   <Upload className="w-6 h-6 text-muted-foreground" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">Upload Inventory Sheet</h3>
+                  <h3 className="font-semibold mb-1">{t('step4Storage.uploadInventory')}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Import from CSV or spreadsheet if you have existing data.
+                    {t('step4Storage.uploadInventoryDesc')}
                   </p>
                 </div>
               </CardContent>
@@ -646,11 +648,11 @@ export function Step4StorageSetup(props: StepProps) {
                   <FileSpreadsheet className="w-6 h-6 text-muted-foreground" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">Start Empty</h3>
+                  <h3 className="font-semibold mb-1">{t('step4Storage.startEmpty')}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Begin with zero inventory. Add counts later.
+                    {t('step4Storage.startEmptyDesc')}
                   </p>
-                  <Badge variant="secondary" className="mt-2">Not recommended</Badge>
+                  <Badge variant="secondary" className="mt-2">{t('step4Storage.notRecommended')}</Badge>
                 </div>
               </CardContent>
             </Card>
@@ -668,7 +670,7 @@ export function Step4StorageSetup(props: StepProps) {
             size="lg"
             disabled={!selectedMethod}
           >
-            {selectedMethod === 'guided' ? 'Start Counting' : selectedMethod === 'empty' ? 'Skip & Continue' : 'Continue'}
+            {selectedMethod === 'guided' ? t('step4Storage.startCounting') : selectedMethod === 'empty' ? t('step4Storage.skipContinue') : t('step4Storage.continue')}
           </Button>
         </div>
       </OnboardingLayout>
@@ -677,22 +679,22 @@ export function Step4StorageSetup(props: StepProps) {
 
   if (phase === 'count') {
     return (
-      <OnboardingLayout {...layoutProps} title="Guided Inventory Count" subtitle={`${countedItems} of ${totalItems} items counted`}>
+      <OnboardingLayout {...layoutProps} title={t('step4Storage.countTitle')} subtitle={t('step4Storage.countSubtitle', { counted: countedItems, total: totalItems })}>
         <div className="space-y-6">
         <div className="bg-muted/50 rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <p className="text-sm text-muted-foreground">
-              💡 Drag ingredients between storage tabs to reassign them, or use auto-assign.
+              {t('step4Storage.dragTip')}
             </p>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-muted-foreground" />
                 <Select value={recipeFilter || 'all'} onValueChange={(v) => setRecipeFilter(v === 'all' ? null : v)}>
                   <SelectTrigger className="w-[200px] h-9 bg-background">
-                    <SelectValue placeholder="Filter by recipe" />
+                    <SelectValue placeholder={t('step4Storage.filterByRecipe')} />
                   </SelectTrigger>
                   <SelectContent className="bg-background z-50">
-                    <SelectItem value="all">All ingredients</SelectItem>
+                    <SelectItem value="all">{t('step4Storage.allIngredients')}</SelectItem>
                     {allRecipes.map(recipe => (
                       <SelectItem key={recipe.id} value={recipe.id}>
                         {recipe.name}
@@ -725,42 +727,42 @@ export function Step4StorageSetup(props: StepProps) {
                     ) : (
                       <Wand2 className="w-4 h-4 mr-2" />
                     )}
-                    Auto-Assign
+                    {t('step4Storage.autoAssign')}
                   </Button>
                 </HoverCardTrigger>
                 <HoverCardContent className="w-80" align="end">
                   <div className="space-y-3">
-                    <h4 className="font-semibold text-sm">Auto-Assign Categories</h4>
+                    <h4 className="font-semibold text-sm">{t('step4Storage.autoAssignCategories')}</h4>
                     <p className="text-xs text-muted-foreground">
-                      Ingredients are assigned based on their category:
+                      {t('step4Storage.ingredientsAssignedByCategory')}
                     </p>
                     <div className="space-y-2 text-xs">
                       <div className="flex items-start gap-2">
                         <Warehouse className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
                         <div>
-                          <span className="font-medium">Walk-in Cooler</span>
-                          <p className="text-muted-foreground">Dairy, Produce, Vegetables, Fruits, Herbs, Salads, Fresh items</p>
+                          <span className="font-medium">{t('step4Storage.walkInCooler')}</span>
+                          <p className="text-muted-foreground">{t('step4Storage.walkInCoolerItems')}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-2">
                         <Snowflake className="w-4 h-4 text-cyan-500 mt-0.5 shrink-0" />
                         <div>
-                          <span className="font-medium">Freezer</span>
-                          <p className="text-muted-foreground">Frozen items, Ice cream, Seafood, Fish</p>
+                          <span className="font-medium">{t('step4Storage.freezer')}</span>
+                          <p className="text-muted-foreground">{t('step4Storage.freezerItems')}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-2">
                         <Wine className="w-4 h-4 text-purple-500 mt-0.5 shrink-0" />
                         <div>
-                          <span className="font-medium">Bar</span>
-                          <p className="text-muted-foreground">Beverages, Drinks, Alcohol, Wine, Spirits, Beer</p>
+                          <span className="font-medium">{t('step4Storage.bar')}</span>
+                          <p className="text-muted-foreground">{t('step4Storage.barItems')}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-2">
                         <Package className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
                         <div>
-                          <span className="font-medium">Dry Storage</span>
-                          <p className="text-muted-foreground">Pantry, Canned goods, Oils, Spices, and everything else</p>
+                          <span className="font-medium">{t('step4Storage.dryStorage')}</span>
+                          <p className="text-muted-foreground">{t('step4Storage.dryStorageItems')}</p>
                         </div>
                       </div>
                     </div>
@@ -770,10 +772,10 @@ export function Step4StorageSetup(props: StepProps) {
             </div>
           </div>
           {recipeFilter && (
-            <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-2 text-sm">
               <Badge variant="secondary" className="bg-primary/10 text-primary">
                 <UtensilsCrossed className="w-3 h-3 mr-1" />
-                Showing ingredients for: {allRecipes.find(r => r.id === recipeFilter)?.name}
+                {t('step4Storage.showingFor')} {allRecipes.find(r => r.id === recipeFilter)?.name}
               </Badge>
             </div>
           )}
@@ -786,14 +788,14 @@ export function Step4StorageSetup(props: StepProps) {
               <div className="flex items-center gap-2 mb-3">
                 <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
                 <h3 className="font-semibold text-red-900 dark:text-red-100">
-                  Critical Ingredients ({criticalIngredients.length})
+                  {t('step4Storage.criticalIngredients')} ({criticalIngredients.length})
                 </h3>
                 <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs">
-                  Used in 6+ recipes
+                  {t('step4Storage.usedInRecipes')}
                 </Badge>
               </div>
               <p className="text-sm text-red-700/80 dark:text-red-300/80 mb-4">
-                These ingredients are used across many dishes — running low affects multiple menu items.
+                {t('step4Storage.criticalDesc')}
               </p>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {criticalIngredients.slice(0, 6).map(ingredient => {
@@ -979,8 +981,8 @@ export function Step4StorageSetup(props: StepProps) {
                               <span className="text-sm text-muted-foreground w-16">{ingredient.unit}</span>
                             </div>
 
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground">Not stocked</span>
+                          <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">{t('step4Storage.notStocked')}</span>
                               <Switch
                                 checked={isNotStocked}
                                 onCheckedChange={() => toggleNotStocked(ingredient.id)}
@@ -1000,13 +1002,13 @@ export function Step4StorageSetup(props: StepProps) {
 
         <div className="flex justify-between pt-4">
           <Button variant="outline" onClick={() => setPhase('method')}>
-            Back to Method
+            {t('step4Storage.backToMethod')}
           </Button>
           <Button 
             onClick={() => setPhase('summary')}
             disabled={countedItems === 0}
           >
-            Review & Save
+            {t('step4Storage.reviewSave')}
           </Button>
         </div>
       </div>
@@ -1025,18 +1027,18 @@ export function Step4StorageSetup(props: StepProps) {
   })).filter(group => group.items.length > 0);
 
   return (
-    <OnboardingLayout {...layoutProps} title="Review Inventory Count" subtitle="Confirm your counts before saving">
+    <OnboardingLayout {...layoutProps} title={t('step4Storage.summaryTitle')} subtitle={t('step4Storage.summarySubtitle')}>
       <div className="space-y-6">
         <div className="bg-muted/50 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium">{countedItems} items counted</p>
+              <p className="font-medium">{t('step4Storage.itemsCounted', { count: countedItems })}</p>
               <p className="text-sm text-muted-foreground">
-                {Object.keys(inventoryCounts).length} with quantities, {notStocked.length} marked as not stocked
+                {t('step4Storage.withQuantities', { quantities: Object.keys(inventoryCounts).length, notStocked: notStocked.length })}
               </p>
             </div>
             <Badge variant="secondary" className="text-lg px-4 py-2">
-              Ready to save
+              {t('step4Storage.readyToSave')}
             </Badge>
           </div>
         </div>
@@ -1050,7 +1052,7 @@ export function Step4StorageSetup(props: StepProps) {
                   <div className="flex items-center gap-2 mb-3">
                     <Icon className={`w-5 h-5 ${location.color}`} />
                     <h3 className="font-semibold">{location.name}</h3>
-                    <Badge variant="outline">{items.length} items</Badge>
+                    <Badge variant="outline">{items.length} {t('step4Storage.items')}</Badge>
                   </div>
                   <div className="space-y-2">
                     {items.map(ingredient => {
@@ -1066,7 +1068,7 @@ export function Step4StorageSetup(props: StepProps) {
                             <span className="text-sm text-muted-foreground ml-2">({ingredient.category})</span>
                           </div>
                           {isMarkedNotStocked ? (
-                            <Badge variant="secondary" className="text-muted-foreground">Not stocked</Badge>
+                            <Badge variant="secondary" className="text-muted-foreground">{t('step4Storage.notStocked')}</Badge>
                           ) : (
                             <span className="font-mono font-medium">
                               {count} {ingredient.unit}
@@ -1085,14 +1087,14 @@ export function Step4StorageSetup(props: StepProps) {
         {countedItems === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p>No items counted yet</p>
-            <p className="text-sm">Go back to count your inventory</p>
+            <p>{t('step4Storage.noItemsCounted')}</p>
+            <p className="text-sm">{t('step4Storage.goBackToCount')}</p>
           </div>
         )}
 
         <div className="flex justify-between pt-4">
           <Button variant="outline" onClick={() => setPhase('count')}>
-            Back to Count
+            {t('step4Storage.backToCount')}
           </Button>
           <Button 
             onClick={async () => {
@@ -1155,8 +1157,8 @@ export function Step4StorageSetup(props: StepProps) {
                 if (updates.length > 0) {
                   await Promise.all(updates);
                   toast({
-                    title: 'Inventory saved',
-                    description: `${countedItems} items saved successfully.`,
+                    title: t('step4Storage.inventorySaved'),
+                    description: t('step4Storage.itemsSavedSuccess', { count: countedItems }),
                   });
                 }
                 
@@ -1165,8 +1167,8 @@ export function Step4StorageSetup(props: StepProps) {
               } catch (error) {
                 console.error('Failed to save inventory counts:', error);
                 toast({
-                  title: 'Error saving',
-                  description: 'Failed to save inventory counts. Please try again.',
+                  title: t('step4Storage.errorSavingInventory'),
+                  description: t('step4Storage.failedSaveInventory'),
                   variant: 'destructive',
                 });
               } finally {
@@ -1176,7 +1178,7 @@ export function Step4StorageSetup(props: StepProps) {
             disabled={isSaving || countedItems === 0}
           >
             {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-            {isSaving ? 'Saving...' : 'Confirm & Save'}
+            {isSaving ? t('step4Storage.saving') : t('step4Storage.confirmSave')}
           </Button>
         </div>
       </div>
