@@ -497,7 +497,9 @@
     "configure": "Configurar",
     "connect": "Conectar",
     "unmappedItems": "Ítems sin mapear",
-    "mapToRecipe": "Mapear a receta"
+    "mapToRecipe": "Mapear a receta",
+    "posItemId": "ID POS: {{id}}",
+    "itemsCount": "{{count}} ítems"
   },
   "settings": {
     "title": "Configuración",

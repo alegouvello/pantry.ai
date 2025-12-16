@@ -497,7 +497,9 @@
     "configure": "Configure",
     "connect": "Connect",
     "unmappedItems": "Unmapped Items",
-    "mapToRecipe": "Map to Recipe"
+    "mapToRecipe": "Map to Recipe",
+    "posItemId": "POS Item ID: {{id}}",
+    "itemsCount": "{{count}} items"
   },
   "settings": {
     "title": "Settings",
