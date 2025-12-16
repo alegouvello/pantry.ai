@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { StaggeredGrid, StaggeredItem } from '@/components/ui/staggered-grid';
 import heroIntegrations from '@/assets/pages/hero-integrations.jpg';
+import { useTranslation } from 'react-i18next';
 
 const integrations = [
   {
@@ -42,6 +43,8 @@ const integrations = [
 ];
 
 export default function Integrations() {
+  const { t } = useTranslation();
+  
   return (
     <div className="space-y-6">
       {/* Hero Section */}
@@ -53,7 +56,7 @@ export default function Integrations() {
       >
         <img 
           src={heroIntegrations} 
-          alt="POS integrations hub" 
+          alt={t('integrations.title')} 
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/70 to-transparent" />
@@ -65,7 +68,7 @@ export default function Integrations() {
               transition={{ delay: 0.2, duration: 0.5 }}
               className="text-2xl md:text-3xl font-bold text-foreground mb-2"
             >
-              Integrations
+              {t('integrations.title')}
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, x: -20 }}
@@ -73,7 +76,7 @@ export default function Integrations() {
               transition={{ delay: 0.3, duration: 0.5 }}
               className="text-muted-foreground max-w-md"
             >
-              Connect your POS and external systems for seamless data sync
+              {t('integrations.subtitle')}
             </motion.p>
           </div>
         </div>
@@ -88,9 +91,9 @@ export default function Integrations() {
                 <Check className="h-5 w-5 text-success" />
               </div>
               <div>
-                <p className="font-medium text-foreground">2 Connected</p>
+                <p className="font-medium text-foreground">{t('integrations.connectedCount', { count: 2 })}</p>
                 <p className="text-xs text-muted-foreground">
-                  Actively syncing data
+                  {t('integrations.activelySyncing')}
                 </p>
               </div>
             </div>
@@ -104,8 +107,8 @@ export default function Integrations() {
                 <Plug className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
-                <p className="font-medium text-foreground">2 Available</p>
-                <p className="text-xs text-muted-foreground">Ready to connect</p>
+                <p className="font-medium text-foreground">{t('integrations.availableCount', { count: 2 })}</p>
+                <p className="text-xs text-muted-foreground">{t('integrations.readyToConnect')}</p>
               </div>
             </div>
           </Card>
@@ -136,8 +139,8 @@ export default function Integrations() {
                         }
                       >
                         {integration.status === 'connected'
-                          ? 'Connected'
-                          : 'Available'}
+                          ? t('integrations.connected')
+                          : t('integrations.available')}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground mt-0.5">
@@ -145,7 +148,7 @@ export default function Integrations() {
                     </p>
                     {integration.lastSync && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Last synced: {integration.lastSync}
+                        {t('integrations.lastSynced', { time: integration.lastSync })}
                       </p>
                     )}
                   </div>
@@ -156,16 +159,16 @@ export default function Integrations() {
                     <>
                       <Button variant="outline" size="sm">
                         <RefreshCw className="h-4 w-4 mr-1" />
-                        Sync
+                        {t('integrations.sync')}
                       </Button>
                       <Button variant="ghost" size="sm">
-                        Configure
+                        {t('integrations.configure')}
                       </Button>
                     </>
                   ) : (
                     <Button variant="accent" size="sm">
                       <Plug className="h-4 w-4 mr-1" />
-                      Connect
+                      {t('integrations.connect')}
                     </Button>
                   )}
                 </div>
@@ -180,42 +183,42 @@ export default function Integrations() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-warning" />
-            Unmapped Items
+            {t('integrations.unmappedItems')}
           </CardTitle>
-          <Badge variant="warning">3 items</Badge>
+          <Badge variant="warning">{t('integrations.itemsCount', { count: 3 })}</Badge>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="p-3 rounded-lg bg-muted/30 flex items-center justify-between">
             <div>
               <p className="font-medium text-foreground">Grilled Salmon</p>
               <p className="text-xs text-muted-foreground">
-                POS Item ID: pos-045
+                {t('integrations.posItemId', { id: 'pos-045' })}
               </p>
             </div>
             <Button variant="outline" size="sm">
-              Map to Recipe
+              {t('integrations.mapToRecipe')}
             </Button>
           </div>
           <div className="p-3 rounded-lg bg-muted/30 flex items-center justify-between">
             <div>
               <p className="font-medium text-foreground">Caesar Salad (Large)</p>
               <p className="text-xs text-muted-foreground">
-                POS Item ID: pos-067
+                {t('integrations.posItemId', { id: 'pos-067' })}
               </p>
             </div>
             <Button variant="outline" size="sm">
-              Map to Recipe
+              {t('integrations.mapToRecipe')}
             </Button>
           </div>
           <div className="p-3 rounded-lg bg-muted/30 flex items-center justify-between">
             <div>
               <p className="font-medium text-foreground">House Wine (Glass)</p>
               <p className="text-xs text-muted-foreground">
-                POS Item ID: pos-089
+                {t('integrations.posItemId', { id: 'pos-089' })}
               </p>
             </div>
             <Button variant="outline" size="sm">
-              Map to Recipe
+              {t('integrations.mapToRecipe')}
             </Button>
           </div>
         </CardContent>

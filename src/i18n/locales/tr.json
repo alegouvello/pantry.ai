@@ -497,7 +497,9 @@
     "configure": "Yapılandır",
     "connect": "Bağla",
     "unmappedItems": "Eşlenmemiş öğeler",
-    "mapToRecipe": "Tarife eşle"
+    "mapToRecipe": "Tarife eşle",
+    "posItemId": "POS ID: {{id}}",
+    "itemsCount": "{{count}} öğe"
   },
   "settings": {
     "title": "Ayarlar",
