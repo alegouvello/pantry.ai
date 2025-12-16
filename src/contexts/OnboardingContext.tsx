@@ -26,11 +26,14 @@ export interface ParsedDish {
   ingredients: ParsedIngredient[];
 }
 
+// Partial restaurant type for onboarding context (not all fields available during setup)
+type PartialRestaurant = Partial<Restaurant> & { name?: string };
+
 interface OnboardingContextType {
   progress: OnboardingProgress | null;
   setProgress: (progress: OnboardingProgress | null) => void;
-  restaurant: Restaurant | null;
-  setRestaurant: (restaurant: Restaurant | null) => void;
+  restaurant: PartialRestaurant | null;
+  setRestaurant: (restaurant: PartialRestaurant | null) => void;
   currentStep: number;
   setCurrentStep: (step: number) => void;
   setupHealthScore: number;
@@ -47,7 +50,7 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(undef
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [progress, setProgress] = useState<OnboardingProgress | null>(null);
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [restaurant, setRestaurant] = useState<PartialRestaurant | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [setupHealthScore, setSetupHealthScore] = useState(0);
   const [conceptType, setConceptType] = useState<ConceptType | null>(null);
