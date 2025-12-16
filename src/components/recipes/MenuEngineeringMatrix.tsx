@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Star, TrendingUp, HelpCircle, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,43 +25,44 @@ interface ProcessedRecipe {
 type Quadrant = 'star' | 'plowhorse' | 'puzzle' | 'dog';
 
 const quadrantConfig: Record<Quadrant, { 
-  label: string; 
+  labelKey: string; 
   icon: React.ComponentType<{ className?: string }>; 
   color: string;
   bgColor: string;
-  description: string;
+  descriptionKey: string;
 }> = {
   star: {
-    label: 'Stars',
+    labelKey: 'menuMatrix.stars',
     icon: Star,
     color: 'text-amber-500',
     bgColor: 'bg-amber-500/10 border-amber-500/20',
-    description: 'High profit, high popularity - your menu champions',
+    descriptionKey: 'menuMatrix.starsDesc',
   },
   plowhorse: {
-    label: 'Plow Horses',
+    labelKey: 'menuMatrix.plowhorses',
     icon: TrendingUp,
     color: 'text-blue-500',
     bgColor: 'bg-blue-500/10 border-blue-500/20',
-    description: 'Low profit, high popularity - consider price increase',
+    descriptionKey: 'menuMatrix.plowhorsesDesc',
   },
   puzzle: {
-    label: 'Puzzles',
+    labelKey: 'menuMatrix.puzzles',
     icon: HelpCircle,
     color: 'text-purple-500',
     bgColor: 'bg-purple-500/10 border-purple-500/20',
-    description: 'High profit, low popularity - needs better marketing',
+    descriptionKey: 'menuMatrix.puzzlesDesc',
   },
   dog: {
-    label: 'Dogs',
+    labelKey: 'menuMatrix.dogs',
     icon: AlertTriangle,
     color: 'text-muted-foreground',
     bgColor: 'bg-muted/50 border-muted',
-    description: 'Low profit, low popularity - consider removing',
+    descriptionKey: 'menuMatrix.dogsDesc',
   },
 };
 
 export function MenuEngineeringMatrix({ recipes, onRecipeClick }: MenuEngineeringMatrixProps) {
+  const { t } = useTranslation();
   const { processedRecipes, avgProfit, categorizedRecipes } = useMemo(() => {
     // Process recipes with costs
     const processed: ProcessedRecipe[] = recipes
@@ -131,7 +133,7 @@ export function MenuEngineeringMatrix({ recipes, onRecipeClick }: MenuEngineerin
       <Card className="p-8 text-center">
         <HelpCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
         <p className="text-muted-foreground">
-          No recipes with menu prices found. Add menu prices to your recipes to see the engineering matrix.
+          {t('menuMatrix.noPrices')}
         </p>
       </Card>
     );
@@ -152,7 +154,7 @@ export function MenuEngineeringMatrix({ recipes, onRecipeClick }: MenuEngineerin
                     <Icon className={cn('h-8 w-8', config.color)} />
                     <div>
                       <p className="text-2xl font-bold">{count}</p>
-                      <p className="text-sm text-muted-foreground">{config.label}</p>
+                      <p className="text-sm text-muted-foreground">{t(config.labelKey)}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -164,7 +166,7 @@ export function MenuEngineeringMatrix({ recipes, onRecipeClick }: MenuEngineerin
         {/* Average Profit Line */}
         <Card className="p-4">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Average Profit per Item</span>
+            <span className="text-muted-foreground">{t('menuMatrix.avgProfit')}</span>
             <span className="font-semibold text-primary">{formatCurrency(avgProfit)}</span>
           </div>
         </Card>
@@ -186,17 +188,17 @@ export function MenuEngineeringMatrix({ recipes, onRecipeClick }: MenuEngineerin
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2 text-lg">
                       <Icon className={cn('h-5 w-5', config.color)} />
-                      <span>{config.label}</span>
+                      <span>{t(config.labelKey)}</span>
                       <Badge variant="secondary" className="ml-auto">
                         {items.length}
                       </Badge>
                     </CardTitle>
-                    <p className="text-xs text-muted-foreground">{config.description}</p>
+                    <p className="text-xs text-muted-foreground">{t(config.descriptionKey)}</p>
                   </CardHeader>
                   <CardContent className="space-y-2">
                     {items.length === 0 ? (
                       <p className="text-sm text-muted-foreground italic py-4 text-center">
-                        No items in this category
+                        {t('menuMatrix.noItems')}
                       </p>
                     ) : (
                       items.map((item) => (
@@ -227,10 +229,10 @@ export function MenuEngineeringMatrix({ recipes, onRecipeClick }: MenuEngineerin
                           </TooltipTrigger>
                           <TooltipContent side="top" className="max-w-xs">
                             <div className="space-y-1 text-xs">
-                              <p><strong>Menu Price:</strong> {formatCurrency(item.menuPrice)}</p>
-                              <p><strong>Food Cost:</strong> {formatCurrency(item.totalCost)}</p>
-                              <p><strong>Profit:</strong> {formatCurrency(item.profit)}</p>
-                              <p><strong>Food Cost %:</strong> {item.foodCostPct.toFixed(1)}%</p>
+                              <p><strong>{t('menuMatrix.menuPrice')}:</strong> {formatCurrency(item.menuPrice)}</p>
+                              <p><strong>{t('menuMatrix.foodCost')}:</strong> {formatCurrency(item.totalCost)}</p>
+                              <p><strong>{t('menuMatrix.profit')}:</strong> {formatCurrency(item.profit)}</p>
+                              <p><strong>{t('menuMatrix.foodCostPct')}:</strong> {item.foodCostPct.toFixed(1)}%</p>
                             </div>
                           </TooltipContent>
                         </Tooltip>

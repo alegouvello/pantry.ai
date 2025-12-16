@@ -383,6 +383,23 @@
       "createFirst": "İlk tarifi oluştur"
     }
   },
+  "menuMatrix": {
+    "stars": "Yıldızlar",
+    "starsDesc": "Yüksek kar, yüksek popülerlik - menünüzün şampiyonları",
+    "plowhorses": "Çalışkan Atlar",
+    "plowhorsesDesc": "Düşük kar, yüksek popülerlik - fiyat artışı düşünün",
+    "puzzles": "Bulmacalar",
+    "puzzlesDesc": "Yüksek kar, düşük popülerlik - daha iyi pazarlama gerekli",
+    "dogs": "Köpekler",
+    "dogsDesc": "Düşük kar, düşük popülerlik - kaldırmayı düşünün",
+    "avgProfit": "Ürün başına ortalama kar",
+    "noPrices": "Menü fiyatı olan tarif bulunamadı. Matrisi görmek için fiyat ekleyin.",
+    "noItems": "Bu kategoride ürün yok",
+    "menuPrice": "Menü fiyatı",
+    "foodCost": "Gıda maliyeti",
+    "profit": "Kar",
+    "foodCostPct": "Gıda maliyeti %"
+  },
   "orders": {
     "title": "Satın alma siparişleri",
     "subtitle": "Tedarikçi siparişlerini yönetin ve teslimatları takip edin.",

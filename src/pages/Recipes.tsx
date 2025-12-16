@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Plus, Upload, Search, LogIn, ChefHat, LayoutGrid, Grid3X3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +38,7 @@ const itemVariants = {
 };
 
 export default function Recipes() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'matrix'>('grid');
   const [editingRecipe, setEditingRecipe] = useState<RecipeWithIngredients | null>(null);
@@ -55,15 +57,15 @@ export default function Recipes() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
         <div className="text-center space-y-2">
           <ChefHat className="h-16 w-16 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-foreground">Sign in required</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('auth.signInRequired')}</h1>
           <p className="text-muted-foreground">
-            Please sign in to view and manage recipes.
+            {t('auth.pleaseSignIn', { area: t('nav.recipes').toLowerCase() })}
           </p>
         </div>
         <Link to="/auth">
           <Button variant="accent" size="lg">
             <LogIn className="h-5 w-5 mr-2" />
-            Sign In
+            {t('auth.signIn')}
           </Button>
         </Link>
       </div>
@@ -90,12 +92,12 @@ export default function Recipes() {
     try {
       await deleteRecipe.mutateAsync(id);
       toast({
-        title: 'Recipe deleted',
-        description: 'The recipe has been removed.',
+        title: t('recipes.recipeDeleted'),
+        description: t('recipes.recipeDeletedDesc'),
       });
     } catch (error) {
       toast({
-        title: 'Error deleting recipe',
+        title: t('recipes.errorDeletingRecipe'),
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });
@@ -153,26 +155,26 @@ export default function Recipes() {
       >
         <img 
           src={heroImage} 
-          alt="Recipes" 
+          alt={t('recipes.title')} 
           className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-transparent" />
         <div className="absolute inset-0 flex items-center px-8 md:px-12">
           <div className="space-y-3">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-              Recipes
+              {t('recipes.title')}
             </h1>
             <p className="text-muted-foreground max-w-md">
-              Define your dishes and track ingredient costs.
+              {t('recipes.subtitle')}
             </p>
             <div className="flex gap-3 pt-2">
               <Button variant="accent" size="sm" onClick={() => setNewRecipeOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                New Recipe
+                {t('recipes.newRecipe')}
               </Button>
               <Button variant="outline" size="sm" className="bg-background/50 backdrop-blur-sm" onClick={() => setImportOpen(true)}>
                 <Upload className="h-4 w-4 mr-2" />
-                Import
+                {t('common.import')}
               </Button>
             </div>
           </div>
@@ -184,7 +186,7 @@ export default function Recipes() {
         <div className="relative max-w-md w-full sm:w-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search recipes..."
+            placeholder={t('recipes.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -194,11 +196,11 @@ export default function Recipes() {
           <TabsList>
             <TabsTrigger value="grid" className="gap-2">
               <LayoutGrid className="h-4 w-4" />
-              <span className="hidden sm:inline">Grid</span>
+              <span className="hidden sm:inline">{t('recipes.grid')}</span>
             </TabsTrigger>
             <TabsTrigger value="matrix" className="gap-2">
               <Grid3X3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Matrix</span>
+              <span className="hidden sm:inline">{t('recipes.matrix')}</span>
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -218,18 +220,18 @@ export default function Recipes() {
           </div>
         ) : error ? (
           <Card className="p-8 text-center">
-            <p className="text-destructive">Error loading recipes: {error.message}</p>
+            <p className="text-destructive">{t('common.errorLoading', { area: t('nav.recipes').toLowerCase(), message: error.message })}</p>
           </Card>
         ) : filteredRecipes.length === 0 ? (
           <Card className="p-12 text-center">
             <ChefHat className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
             <p className="text-muted-foreground mb-4">
-              {searchQuery ? 'No recipes found matching your search.' : 'No recipes yet. Create your first recipe to get started!'}
+              {searchQuery ? t('recipes.noRecipes.search') : t('recipes.noRecipes.none')}
             </p>
             {!searchQuery && (
               <Button variant="accent" onClick={() => setNewRecipeOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Create First Recipe
+                {t('recipes.noRecipes.createFirst')}
               </Button>
             )}
           </Card>

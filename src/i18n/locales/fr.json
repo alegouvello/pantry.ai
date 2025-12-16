@@ -383,6 +383,23 @@
       "createFirst": "Créer la première recette"
     }
   },
+  "menuMatrix": {
+    "stars": "Étoiles",
+    "starsDesc": "Profit élevé, popularité élevée - vos champions du menu",
+    "plowhorses": "Bêtes de somme",
+    "plowhorsesDesc": "Profit faible, popularité élevée - envisagez une hausse de prix",
+    "puzzles": "Puzzles",
+    "puzzlesDesc": "Profit élevé, popularité faible - besoin de meilleur marketing",
+    "dogs": "Chiens",
+    "dogsDesc": "Profit faible, popularité faible - envisagez de retirer",
+    "avgProfit": "Profit moyen par article",
+    "noPrices": "Aucune recette avec prix de menu trouvée. Ajoutez des prix pour voir la matrice.",
+    "noItems": "Aucun article dans cette catégorie",
+    "menuPrice": "Prix menu",
+    "foodCost": "Coût alimentaire",
+    "profit": "Profit",
+    "foodCostPct": "% Coût alimentaire"
+  },
   "orders": {
     "title": "Bons de commande",
     "subtitle": "Gérez les commandes fournisseurs et suivez les livraisons.",
