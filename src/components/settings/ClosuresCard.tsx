@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format, parseISO, isFuture, isToday } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,7 @@ interface ClosuresCardProps {
 }
 
 export function ClosuresCard({ restaurantId }: ClosuresCardProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newClosure, setNewClosure] = useState({
@@ -75,7 +77,7 @@ export function ClosuresCard({ restaurantId }: ClosuresCardProps) {
       queryClient.invalidateQueries({ queryKey: ['forecast-events'] });
       setShowAddDialog(false);
       setNewClosure({ name: '', date: '', notes: '' });
-      toast.success('Closure added');
+      toast.success(t('closures.closureAdded'));
     },
     onError: (error) => {
       toast.error('Failed to add closure: ' + error.message);
@@ -91,7 +93,7 @@ export function ClosuresCard({ restaurantId }: ClosuresCardProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['closures'] });
       queryClient.invalidateQueries({ queryKey: ['forecast-events'] });
-      toast.success('Closure removed');
+      toast.success(t('closures.closureRemoved'));
     },
     onError: (error) => {
       toast.error('Failed to remove: ' + error.message);
@@ -135,10 +137,10 @@ export function ClosuresCard({ restaurantId }: ClosuresCardProps) {
             <div>
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <CalendarOff className="h-4 w-4" />
-                Scheduled Closures
+                {t('closures.title')}
               </CardTitle>
               <CardDescription>
-                Holidays and special closures. These days will be excluded from forecasts.
+                {t('closures.description')}
               </CardDescription>
             </div>
             <Button
@@ -148,14 +150,14 @@ export function ClosuresCard({ restaurantId }: ClosuresCardProps) {
               className="gap-2"
             >
               <Plus className="h-4 w-4" />
-              Add Closure
+              {t('closures.addClosure')}
             </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Quick Add Holidays */}
           <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Quick Add Common Holidays</Label>
+            <Label className="text-xs text-muted-foreground">{t('closures.quickAdd')}</Label>
             <div className="flex flex-wrap gap-2">
               {[
                 { name: 'New Year\'s Day', month: 1, day: 1 },
@@ -180,10 +182,10 @@ export function ClosuresCard({ restaurantId }: ClosuresCardProps) {
 
           {/* Upcoming Closures */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Upcoming Closures</Label>
+            <Label className="text-sm font-medium">{t('closures.upcoming')}</Label>
             {upcomingClosures.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center bg-muted/30 rounded-lg">
-                No upcoming closures scheduled
+                {t('closures.noUpcoming')}
               </p>
             ) : (
               <div className="space-y-2">
@@ -204,7 +206,7 @@ export function ClosuresCard({ restaurantId }: ClosuresCardProps) {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="destructive">Closed</Badge>
+                      <Badge variant="destructive">{t('businessHours.closed')}</Badge>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -223,7 +225,7 @@ export function ClosuresCard({ restaurantId }: ClosuresCardProps) {
           {/* Past Closures */}
           {pastClosures.length > 0 && (
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-muted-foreground">Past Closures</Label>
+              <Label className="text-sm font-medium text-muted-foreground">{t('closures.past')}</Label>
               <div className="space-y-2 opacity-60">
                 {pastClosures.slice(0, 3).map((closure) => (
                   <div
@@ -257,20 +259,20 @@ export function ClosuresCard({ restaurantId }: ClosuresCardProps) {
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Scheduled Closure</DialogTitle>
+            <DialogTitle>{t('closures.addTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="closure-name">Reason / Name</Label>
+              <Label htmlFor="closure-name">{t('closures.reasonName')}</Label>
               <Input
                 id="closure-name"
                 value={newClosure.name}
                 onChange={(e) => setNewClosure(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="e.g., Christmas Day, Private Event"
+                placeholder={t('closures.reasonPlaceholder')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="closure-date">Date</Label>
+              <Label htmlFor="closure-date">{t('closures.date')}</Label>
               <Input
                 id="closure-date"
                 type="date"
@@ -279,18 +281,18 @@ export function ClosuresCard({ restaurantId }: ClosuresCardProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="closure-notes">Notes (optional)</Label>
+              <Label htmlFor="closure-notes">{t('closures.notesOptional')}</Label>
               <Input
                 id="closure-notes"
                 value={newClosure.notes}
                 onChange={(e) => setNewClosure(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Any additional details"
+                placeholder={t('closures.notesPlaceholder')}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="accent"
@@ -298,7 +300,7 @@ export function ClosuresCard({ restaurantId }: ClosuresCardProps) {
               disabled={!newClosure.name || !newClosure.date || addClosure.isPending}
             >
               {addClosure.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Add Closure
+              {t('closures.addClosure')}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -551,5 +551,51 @@
     "notes": "Notes (Optional)",
     "notesPlaceholder": "Any additional context...",
     "saveChanges": "Save Changes"
+  },
+  "businessHours": {
+    "title": "Business Hours",
+    "description": "Set your operating hours. Closed days are excluded from forecasts.",
+    "autoLookup": "Auto-Lookup",
+    "open": "Open",
+    "closed": "Closed",
+    "from": "From",
+    "to": "To",
+    "copyToAll": "Copy to all",
+    "excludedFromForecast": "Excluded from forecast",
+    "forecastNote": "How this affects forecasting:",
+    "forecastNoteText": "Days marked as \"Closed\" will be skipped in sales predictions and ingredient requirements. Special closures (holidays) can be added in the Forecast page.",
+    "saveHours": "Save Business Hours",
+    "saved": "Business hours saved",
+    "lookupRequired": "Restaurant name is required for lookup",
+    "lookupSuccess": "Found business hours from {{source}}. Review and save.",
+    "lookupNotFound": "Could not find hours online. Please enter manually.",
+    "lookupFailed": "Failed to lookup hours. Please enter manually.",
+    "copiedToAll": "Copied {{day}} hours to all days",
+    "days": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    }
+  },
+  "closures": {
+    "title": "Scheduled Closures",
+    "description": "Holidays and special closures. These days will be excluded from forecasts.",
+    "addClosure": "Add Closure",
+    "quickAdd": "Quick Add Common Holidays",
+    "upcoming": "Upcoming Closures",
+    "past": "Past Closures",
+    "noUpcoming": "No upcoming closures scheduled",
+    "addTitle": "Add Scheduled Closure",
+    "reasonName": "Reason / Name",
+    "reasonPlaceholder": "e.g., Christmas Day, Private Event",
+    "date": "Date",
+    "notesOptional": "Notes (optional)",
+    "notesPlaceholder": "Any additional details",
+    "closureAdded": "Closure added",
+    "closureRemoved": "Closure removed"
   }
 }

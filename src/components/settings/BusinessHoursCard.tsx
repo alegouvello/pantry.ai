@@ -9,6 +9,7 @@ import { Clock, Loader2, Search, AlertCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface DayHours {
   open: string;
@@ -21,15 +22,6 @@ interface BusinessHours {
 }
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-const DAY_LABELS: Record<string, string> = {
-  monday: 'Monday',
-  tuesday: 'Tuesday',
-  wednesday: 'Wednesday',
-  thursday: 'Thursday',
-  friday: 'Friday',
-  saturday: 'Saturday',
-  sunday: 'Sunday',
-};
 
 const DEFAULT_HOURS: BusinessHours = {
   monday: { open: '11:00', close: '22:00', closed: false },
@@ -48,6 +40,7 @@ interface BusinessHoursCardProps {
 }
 
 export function BusinessHoursCard({ restaurantId, restaurantName, location }: BusinessHoursCardProps) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [hours, setHours] = useState<BusinessHours>(DEFAULT_HOURS);
   const [isLookingUp, setIsLookingUp] = useState(false);
@@ -79,7 +72,6 @@ export function BusinessHoursCard({ restaurantId, restaurantName, location }: Bu
   const updateHours = useMutation({
     mutationFn: async (newHours: BusinessHours) => {
       if (!restaurantId) throw new Error('No restaurant ID');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await supabase
         .from('restaurants')
         .update({ hours: newHours as any })
@@ -89,7 +81,7 @@ export function BusinessHoursCard({ restaurantId, restaurantName, location }: Bu
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['restaurant-hours'] });
       queryClient.invalidateQueries({ queryKey: ['restaurant-settings'] });
-      toast.success('Business hours saved');
+      toast.success(t('businessHours.saved'));
     },
     onError: (error) => {
       toast.error('Failed to save: ' + error.message);
@@ -108,7 +100,7 @@ export function BusinessHoursCard({ restaurantId, restaurantName, location }: Bu
 
   const handleLookupHours = async () => {
     if (!restaurantName) {
-      toast.error('Restaurant name is required for lookup');
+      toast.error(t('businessHours.lookupRequired'));
       return;
     }
     
@@ -122,13 +114,13 @@ export function BusinessHoursCard({ restaurantId, restaurantName, location }: Bu
 
       if (data?.success && data?.hours) {
         setHours(data.hours);
-        toast.success(`Found business hours from ${data.source || 'online listing'}. Review and save.`);
+        toast.success(t('businessHours.lookupSuccess', { source: data.source || 'online listing' }));
       } else {
-        toast.info(data?.error || 'Could not find hours online. Please enter manually.');
+        toast.info(data?.error || t('businessHours.lookupNotFound'));
       }
     } catch (error) {
       console.error('Lookup error:', error);
-      toast.error('Failed to lookup hours. Please enter manually.');
+      toast.error(t('businessHours.lookupFailed'));
     } finally {
       setIsLookingUp(false);
     }
@@ -143,7 +135,7 @@ export function BusinessHoursCard({ restaurantId, restaurantName, location }: Bu
       }
     });
     setHours(newHours);
-    toast.success(`Copied ${DAY_LABELS[sourceDay]} hours to all days`);
+    toast.success(t('businessHours.copiedToAll', { day: t(`businessHours.days.${sourceDay}`) }));
   };
 
   if (isLoading) {
@@ -163,10 +155,10 @@ export function BusinessHoursCard({ restaurantId, restaurantName, location }: Bu
           <div>
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              Business Hours
+              {t('businessHours.title')}
             </CardTitle>
             <CardDescription>
-              Set your operating hours. Closed days are excluded from forecasts.
+              {t('businessHours.description')}
             </CardDescription>
           </div>
           <Button
@@ -181,7 +173,7 @@ export function BusinessHoursCard({ restaurantId, restaurantName, location }: Bu
             ) : (
               <Search className="h-4 w-4" />
             )}
-            Auto-Lookup
+            {t('businessHours.autoLookup')}
           </Button>
         </div>
       </CardHeader>
@@ -196,7 +188,7 @@ export function BusinessHoursCard({ restaurantId, restaurantName, location }: Bu
               }`}
             >
               <div className="w-24 flex items-center gap-2">
-                <span className="font-medium text-sm">{DAY_LABELS[day]}</span>
+                <span className="font-medium text-sm">{t(`businessHours.days.${day}`)}</span>
               </div>
               
               <div className="flex items-center gap-2">
@@ -205,14 +197,14 @@ export function BusinessHoursCard({ restaurantId, restaurantName, location }: Bu
                   onCheckedChange={(checked) => handleDayChange(day, 'closed', !checked)}
                 />
                 <span className="text-xs text-muted-foreground w-12">
-                  {hours[day]?.closed ? 'Closed' : 'Open'}
+                  {hours[day]?.closed ? t('businessHours.closed') : t('businessHours.open')}
                 </span>
               </div>
 
               {!hours[day]?.closed && (
                 <>
                   <div className="flex items-center gap-2">
-                    <Label className="text-xs text-muted-foreground">From</Label>
+                    <Label className="text-xs text-muted-foreground">{t('businessHours.from')}</Label>
                     <Input
                       type="time"
                       value={hours[day]?.open || '11:00'}
@@ -221,7 +213,7 @@ export function BusinessHoursCard({ restaurantId, restaurantName, location }: Bu
                     />
                   </div>
                   <div className="flex items-center gap-2">
-                    <Label className="text-xs text-muted-foreground">To</Label>
+                    <Label className="text-xs text-muted-foreground">{t('businessHours.to')}</Label>
                     <Input
                       type="time"
                       value={hours[day]?.close || '22:00'}
@@ -235,14 +227,14 @@ export function BusinessHoursCard({ restaurantId, restaurantName, location }: Bu
                     onClick={() => copyToAllDays(day)}
                     className="text-xs h-7"
                   >
-                    Copy to all
+                    {t('businessHours.copyToAll')}
                   </Button>
                 </>
               )}
 
               {hours[day]?.closed && (
                 <Badge variant="secondary" className="ml-auto">
-                  Excluded from forecast
+                  {t('businessHours.excludedFromForecast')}
                 </Badge>
               )}
             </div>
@@ -253,7 +245,7 @@ export function BusinessHoursCard({ restaurantId, restaurantName, location }: Bu
         <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/10">
           <AlertCircle className="h-4 w-4 text-primary mt-0.5" />
           <p className="text-xs text-muted-foreground">
-            <strong className="text-foreground">How this affects forecasting:</strong> Days marked as "Closed" will be skipped in sales predictions and ingredient requirements. Special closures (holidays) can be added in the Forecast page.
+            <strong className="text-foreground">{t('businessHours.forecastNote')}</strong> {t('businessHours.forecastNoteText')}
           </p>
         </div>
 
@@ -264,7 +256,7 @@ export function BusinessHoursCard({ restaurantId, restaurantName, location }: Bu
           className="w-full sm:w-auto"
         >
           {updateHours.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          Save Business Hours
+          {t('businessHours.saveHours')}
         </Button>
       </CardContent>
     </Card>

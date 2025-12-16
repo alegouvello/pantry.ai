@@ -551,5 +551,51 @@
     "notes": "Notlar (İsteğe Bağlı)",
     "notesPlaceholder": "Ek bilgiler...",
     "saveChanges": "Değişiklikleri Kaydet"
+  },
+  "businessHours": {
+    "title": "Çalışma Saatleri",
+    "description": "Çalışma saatlerinizi ayarlayın. Kapalı günler tahminlerden hariç tutulur.",
+    "autoLookup": "Otomatik Ara",
+    "open": "Açık",
+    "closed": "Kapalı",
+    "from": "Başlangıç",
+    "to": "Bitiş",
+    "copyToAll": "Tümüne kopyala",
+    "excludedFromForecast": "Tahminlerden hariç",
+    "forecastNote": "Tahminleri nasıl etkiler:",
+    "forecastNoteText": "\"Kapalı\" olarak işaretlenen günler satış tahminlerinde ve malzeme gereksinimlerinde atlanacaktır. Özel kapanışlar Tahmin sayfasından eklenebilir.",
+    "saveHours": "Saatleri Kaydet",
+    "saved": "Çalışma saatleri kaydedildi",
+    "lookupRequired": "Arama için restoran adı gerekli",
+    "lookupSuccess": "{{source}} üzerinden saatler bulundu. Kontrol edip kaydedin.",
+    "lookupNotFound": "Online saatler bulunamadı. Manuel girin.",
+    "lookupFailed": "Arama başarısız. Saatleri manuel girin.",
+    "copiedToAll": "{{day}} saatleri tüm günlere kopyalandı",
+    "days": {
+      "monday": "Pazartesi",
+      "tuesday": "Salı",
+      "wednesday": "Çarşamba",
+      "thursday": "Perşembe",
+      "friday": "Cuma",
+      "saturday": "Cumartesi",
+      "sunday": "Pazar"
+    }
+  },
+  "closures": {
+    "title": "Programlı Kapanışlar",
+    "description": "Tatil ve özel kapanışlar. Bu günler tahminlerden hariç tutulacaktır.",
+    "addClosure": "Kapanış Ekle",
+    "quickAdd": "Hızlı Tatil Ekle",
+    "upcoming": "Yaklaşan Kapanışlar",
+    "past": "Geçmiş Kapanışlar",
+    "noUpcoming": "Programlı kapanış yok",
+    "addTitle": "Programlı Kapanış Ekle",
+    "reasonName": "Sebep / Ad",
+    "reasonPlaceholder": "örn: Yılbaşı, Özel Etkinlik",
+    "date": "Tarih",
+    "notesOptional": "Notlar (isteğe bağlı)",
+    "notesPlaceholder": "Ek detaylar",
+    "closureAdded": "Kapanış eklendi",
+    "closureRemoved": "Kapanış kaldırıldı"
   }
 }
