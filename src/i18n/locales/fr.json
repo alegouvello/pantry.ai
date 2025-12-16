@@ -353,11 +353,19 @@
     "subtitle": "Gérez vos ingrédients et niveaux de stock.",
     "addItem": "Ajouter",
     "checkStock": "Vérifier le stock",
+    "checking": "Vérification...",
     "aiParLevels": "Niveaux par IA",
+    "analyzing": "Analyse...",
     "quickReorder": "Réassort rapide ({{count}})",
+    "creating": "Création...",
     "noIngredients": "Aucun ingrédient. Ajoutez le premier pour commencer !",
     "addFirstIngredient": "Ajouter le premier ingrédient",
-    "noIngredientsToAnalyze": "Aucun ingrédient à analyser"
+    "noIngredientsToAnalyze": "Aucun ingrédient à analyser",
+    "errorLoading": "Erreur de chargement : {{message}}",
+    "parLevelsUpdated": "Niveaux par mis à jour pour {{count}} ingrédients",
+    "parLevelsUpdateFailed": "Échec de mise à jour pour {{count}} ingrédients",
+    "signInRequired": "Connexion requise",
+    "signInToView": "Veuillez vous connecter pour gérer l'inventaire."
   },
   "recipes": {
     "title": "Recettes",
