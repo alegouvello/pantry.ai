@@ -524,5 +524,32 @@
       "sourcing": "Sourcing",
       "technique": "Technique"
     }
+  },
+  "forecastCalendar": {
+    "title": "Event Calendar",
+    "today": "Today",
+    "noEvents": "No events",
+    "more": "+{{count}} more",
+    "weatherImpacts": "Weather impacts included",
+    "weatherImpact": "weather impact"
+  },
+  "forecastEvent": {
+    "addEvent": "Add Event",
+    "editEvent": "Edit Event",
+    "addForecastEvent": "Add Forecast Event",
+    "quickAddHoliday": "Quick Add Holiday",
+    "date": "Date",
+    "pickDate": "Pick a date",
+    "eventName": "Event Name",
+    "eventNamePlaceholder": "e.g., Super Bowl Sunday",
+    "eventType": "Event Type",
+    "salesImpact": "Expected Sales Impact",
+    "closedSlow": "-75% (Closed/Slow)",
+    "veryBusy": "+100% (Very Busy)",
+    "recurring": "Recurring Annually",
+    "recurringDesc": "Apply this event every year",
+    "notes": "Notes (Optional)",
+    "notesPlaceholder": "Any additional context...",
+    "saveChanges": "Save Changes"
   }
 }

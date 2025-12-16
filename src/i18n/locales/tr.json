@@ -524,5 +524,32 @@
       "sourcing": "Tedarik",
       "technique": "Teknik"
     }
+  },
+  "forecastCalendar": {
+    "title": "Etkinlik Takvimi",
+    "today": "Bugün",
+    "noEvents": "Etkinlik yok",
+    "more": "+{{count}} daha",
+    "weatherImpacts": "Hava durumu etkileri dahil",
+    "weatherImpact": "hava etkisi"
+  },
+  "forecastEvent": {
+    "addEvent": "Etkinlik Ekle",
+    "editEvent": "Etkinliği Düzenle",
+    "addForecastEvent": "Tahmin Etkinliği Ekle",
+    "quickAddHoliday": "Hızlı Tatil Ekle",
+    "date": "Tarih",
+    "pickDate": "Tarih seçin",
+    "eventName": "Etkinlik Adı",
+    "eventNamePlaceholder": "örn: Super Bowl",
+    "eventType": "Etkinlik Türü",
+    "salesImpact": "Beklenen Satış Etkisi",
+    "closedSlow": "-75% (Kapalı/Yavaş)",
+    "veryBusy": "+100% (Çok Yoğun)",
+    "recurring": "Yıllık Tekrar",
+    "recurringDesc": "Bu etkinliği her yıl uygula",
+    "notes": "Notlar (İsteğe Bağlı)",
+    "notesPlaceholder": "Ek bilgiler...",
+    "saveChanges": "Değişiklikleri Kaydet"
   }
 }
