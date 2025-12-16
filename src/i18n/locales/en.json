@@ -890,6 +890,8 @@
     "prepRecipesNote": "These house-made items will be created as sub-recipes:",
     "confirmDishes": "Confirm {{count}} Dishes",
     "addDescription": "Add description...",
+    "addTags": "Tags (comma separated)",
+    "dishName": "Dish name",
     "editDish": "Edit dish",
     "importMenu": "Import Menu"
   },

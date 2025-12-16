@@ -273,7 +273,7 @@ export function Step2MenuImport({
     setSelectedDishes(new Set());
   };
 
-  const updateDish = (dishId: string, field: 'name' | 'description', value: string) => {
+  const updateDish = (dishId: string, field: 'name' | 'description' | 'price' | 'tags', value: string | number | string[]) => {
     setPreviewDishes(prev => prev.map(dish => 
       dish.id === dishId ? { ...dish, [field]: value } : dish
     ));
@@ -385,6 +385,7 @@ export function Step2MenuImport({
                                 value={dish.name}
                                 onChange={(e) => updateDish(dish.id, 'name', e.target.value)}
                                 className="h-8 font-medium"
+                                placeholder={t('step2Menu.dishName', 'Dish name')}
                                 autoFocus
                               />
                               <Input
@@ -393,6 +394,26 @@ export function Step2MenuImport({
                                 placeholder={t('step2Menu.addDescription', 'Add description...')}
                                 className="h-8 text-sm"
                               />
+                              <div className="flex gap-2">
+                                <div className="relative w-24">
+                                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={dish.price || ''}
+                                    onChange={(e) => updateDish(dish.id, 'price', e.target.value ? parseFloat(e.target.value) : 0)}
+                                    placeholder="0.00"
+                                    className="h-8 text-sm pl-5"
+                                  />
+                                </div>
+                                <Input
+                                  value={dish.tags?.join(', ') || ''}
+                                  onChange={(e) => updateDish(dish.id, 'tags', e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
+                                  placeholder={t('step2Menu.addTags', 'Tags (comma separated)')}
+                                  className="h-8 text-sm flex-1"
+                                />
+                              </div>
                               <Button
                                 size="sm"
                                 variant="ghost"
