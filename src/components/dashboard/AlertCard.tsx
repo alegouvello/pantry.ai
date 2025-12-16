@@ -59,7 +59,7 @@ export function AlertCard({ alert, onResolve }: AlertCardProps) {
               </p>
             </div>
             <Badge variant={config.badgeVariant} className="shrink-0">
-              {alert.severity}
+              {t(`severity.${alert.severity}`)}
             </Badge>
           </div>
           <div className="flex items-center justify-between pt-2">

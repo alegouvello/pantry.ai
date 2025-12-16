@@ -122,7 +122,29 @@
       "adjusted": "Düzeltildi",
       "deliveryReceived": "{{vendor}}'dan teslimat alındı",
       "poStatus": "SŞ {{status}} - {{vendor}}"
+    },
+    "recipeSummary": {
+      "title": "Tarif özeti",
+      "dishes": "yemek",
+      "menuItems": "Menü öğeleri",
+      "prepRecipes": "Hazırlık tarifleri",
+      "avgFoodCost": "Ort. maliyet",
+      "targetMargin": "Hedef: Optimal marjlar için <%30",
+      "needsReview": "İnceleme gerekiyor",
+      "cost": "maliyet",
+      "noPrice": "Fiyat yok"
+    },
+    "lowStock": {
+      "title": "Düşük stok",
+      "items": "ürün",
+      "allStocked": "Stok tam!",
+      "wellStocked": "Envanteriniz iyi durumda."
     }
+  },
+  "severity": {
+    "high": "Yüksek",
+    "medium": "Orta",
+    "low": "Düşük"
   },
   "common": {
     "checking": "Kontrol ediliyor...",

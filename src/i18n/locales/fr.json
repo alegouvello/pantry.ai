@@ -122,7 +122,29 @@
       "adjusted": "Ajusté",
       "deliveryReceived": "Livraison reçue de {{vendor}}",
       "poStatus": "BC {{status}} - {{vendor}}"
+    },
+    "recipeSummary": {
+      "title": "Aperçu des recettes",
+      "dishes": "plats",
+      "menuItems": "Articles du menu",
+      "prepRecipes": "Recettes de préparation",
+      "avgFoodCost": "Coût moyen",
+      "targetMargin": "Cible : <30% pour marges optimales",
+      "needsReview": "À réviser",
+      "cost": "coût",
+      "noPrice": "Sans prix"
+    },
+    "lowStock": {
+      "title": "Stock faible",
+      "items": "articles",
+      "allStocked": "Tout est en stock !",
+      "wellStocked": "Votre inventaire est bien approvisionné."
     }
+  },
+  "severity": {
+    "high": "Élevé",
+    "medium": "Moyen",
+    "low": "Faible"
   },
   "common": {
     "checking": "Vérification...",
