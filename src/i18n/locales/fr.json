@@ -231,5 +231,46 @@
   "notFound": {
     "title": "Oups ! Page introuvable",
     "returnHome": "Retour à l'accueil"
+  },
+  "profitability": {
+    "title": "Rentabilité",
+    "subtitle": "Analysez les coûts alimentaires, marges et performances des recettes.",
+    "overview": "Aperçu",
+    "byRecipe": "Par recette",
+    "byCategory": "Par catégorie",
+    "trends": "Tendances",
+    "avgFoodCost": "Coût alimentaire moyen",
+    "targetFoodCost": "Coût alimentaire cible",
+    "margin": "Marge",
+    "revenue": "Chiffre d'affaires",
+    "costBreakdown": "Répartition des coûts",
+    "menuEngineering": "Ingénierie de menu",
+    "stars": "Étoiles",
+    "puzzles": "Énigmes",
+    "plowhorses": "Chevaux de labour",
+    "dogs": "Poids morts",
+    "optimizeSuggestions": "Suggestions d'optimisation",
+    "highMargin": "Marge élevée",
+    "lowMargin": "Marge faible",
+    "profitable": "Rentable",
+    "needsAttention": "À surveiller"
+  },
+  "salesHistory": {
+    "title": "Historique des ventes",
+    "subtitle": "Consultez les ventes passées et identifiez les tendances.",
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "thisWeek": "Cette semaine",
+    "thisMonth": "Ce mois",
+    "custom": "Période personnalisée",
+    "totalSales": "Ventes totales",
+    "transactions": "Transactions",
+    "avgTicket": "Ticket moyen",
+    "topItems": "Articles les plus vendus",
+    "salesByHour": "Ventes par heure",
+    "salesByDay": "Ventes par jour",
+    "comparison": "Comparaison de périodes",
+    "exportData": "Exporter les données",
+    "noSalesData": "Aucune donnée de vente pour cette période."
   }
 }

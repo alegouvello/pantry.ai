@@ -231,5 +231,46 @@
   "notFound": {
     "title": "Sayfa bulunamadı",
     "returnHome": "Ana sayfaya dön"
+  },
+  "profitability": {
+    "title": "Kârlılık",
+    "subtitle": "Gıda maliyetlerini, marjları ve tarif performansını analiz edin.",
+    "overview": "Genel bakış",
+    "byRecipe": "Tariflere göre",
+    "byCategory": "Kategorilere göre",
+    "trends": "Trendler",
+    "avgFoodCost": "Ortalama gıda maliyeti",
+    "targetFoodCost": "Hedef gıda maliyeti",
+    "margin": "Marj",
+    "revenue": "Gelir",
+    "costBreakdown": "Maliyet dağılımı",
+    "menuEngineering": "Menü mühendisliği",
+    "stars": "Yıldızlar",
+    "puzzles": "Bulmacalar",
+    "plowhorses": "İş atları",
+    "dogs": "Köpekler",
+    "optimizeSuggestions": "Optimizasyon önerileri",
+    "highMargin": "Yüksek marj",
+    "lowMargin": "Düşük marj",
+    "profitable": "Kârlı",
+    "needsAttention": "Dikkat gerekli"
+  },
+  "salesHistory": {
+    "title": "Satış geçmişi",
+    "subtitle": "Geçmiş satışları inceleyin ve trendleri belirleyin.",
+    "today": "Bugün",
+    "yesterday": "Dün",
+    "thisWeek": "Bu hafta",
+    "thisMonth": "Bu ay",
+    "custom": "Özel aralık",
+    "totalSales": "Toplam satış",
+    "transactions": "İşlemler",
+    "avgTicket": "Ortalama fiş",
+    "topItems": "En çok satanlar",
+    "salesByHour": "Saatlik satışlar",
+    "salesByDay": "Günlük satışlar",
+    "comparison": "Dönem karşılaştırması",
+    "exportData": "Verileri dışa aktar",
+    "noSalesData": "Bu dönem için satış verisi yok."
   }
 }
