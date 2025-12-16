@@ -443,6 +443,8 @@
     "eventsFactored": "{{count}} etkinlik dahil",
     "weatherFor": "{{city}} için hava",
     "cappedTo": "Günlük {{covers}} kuverle sınırlandı",
+    "seats": "koltuk",
+    "seatCapacity": "koltuk kapasitesi",
     "predictedSales": "Tahmini satış ({{days}} gün)",
     "noRecipesFound": "Tarif bulunamadı",
     "addRecipesToSee": "Tahmin için tarif ekleyin",
@@ -456,7 +458,17 @@
     "orderNow": "Şimdi sipariş",
     "monitor": "İzle",
     "ok": "Tamam",
-    "usedIn": "Kullanıldığı yer:"
+    "usedIn": "Kullanıldığı yer:",
+    "andMore": "ve {{count}} daha",
+    "foundItems": "Sipariş için {{count}} ürün bulundu",
+    "noUrgentOrders": "Tahmine göre acil sipariş gerekmiyor",
+    "basedOnHistory": "Geçmiş desenlere dayalı",
+    "basedOnDefaults": "Varsayılan değerlere dayalı",
+    "estRevenue": "Tahmini gelir: ${{amount}}",
+    "validationQueue": "Doğrulama kuyruğu",
+    "comingSoon": "Yakında",
+    "validationWillAppear": "Doğrulama öğeleri burada görünecek",
+    "validationDescription": "Tahmini ve gerçek kullanım arasında uyumsuzluklar tespit edildiğinde, tarifleri güncelleme önerileri göreceksiniz."
   },
   "alerts": {
     "title": "Komuta merkezi",

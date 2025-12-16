@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { TrendingUp, Calendar, Package, AlertTriangle, Info, Sparkles, Cloud, Users, Truck } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -57,6 +58,7 @@ const itemVariants = {
 };
 
 export default function Forecast() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [daysAhead, setDaysAhead] = useState(3);
   
@@ -101,10 +103,10 @@ export default function Forecast() {
         <div className="absolute inset-0 flex items-center px-8 md:px-12">
           <div className="space-y-3">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-              Forecast
+              {t('forecast.title')}
             </h1>
             <p className="text-muted-foreground max-w-md">
-              Predicted demand and ingredient needs based on patterns.
+              {t('forecast.subtitle')}
             </p>
             <div className="flex gap-3 pt-2">
               <Button 
@@ -112,15 +114,15 @@ export default function Forecast() {
                 size="sm"
                 onClick={() => {
                   if (ingredients.filter(i => i.risk === 'high').length > 0) {
-                    toast.success(`Found ${ingredients.filter(i => i.risk === 'high').length} items to order`);
+                    toast.success(t('forecast.foundItems', { count: ingredients.filter(i => i.risk === 'high').length }));
                     navigate('/orders');
                   } else {
-                    toast.info('No urgent orders needed based on current forecast');
+                    toast.info(t('forecast.noUrgentOrders'));
                   }
                 }}
               >
                 <TrendingUp className="h-4 w-4 mr-2" />
-                Generate Orders
+                {t('forecast.generateOrders')}
               </Button>
               <ForecastEventDialog restaurantId={restaurantId} />
             </div>
@@ -135,21 +137,21 @@ export default function Forecast() {
           size="sm"
           onClick={() => setDaysAhead(3)}
         >
-          Next 3 Days
+          {t('forecast.nextDays', { days: 3 })}
         </Button>
         <Button 
           variant={daysAhead === 7 ? "secondary" : "ghost"} 
           size="sm"
           onClick={() => setDaysAhead(7)}
         >
-          Next 7 Days
+          {t('forecast.nextDays', { days: 7 })}
         </Button>
         <Button 
           variant={daysAhead === 14 ? "secondary" : "ghost"} 
           size="sm"
           onClick={() => setDaysAhead(14)}
         >
-          Next 14 Days
+          {t('forecast.nextDays', { days: 14 })}
         </Button>
       </motion.div>
 
@@ -163,30 +165,30 @@ export default function Forecast() {
             <Info className="h-4 w-4" />
             {hasHistoricalData ? (
               <span>
-                Forecast based on <strong>{salesPatterns.length}</strong> historical patterns
+                {t('forecast.basedOnPatterns', { count: salesPatterns.length })}
               </span>
             ) : (
               <span>
-                Using default estimates. Connect POS for accurate forecasting.
+                {t('forecast.defaultEstimates')}
               </span>
             )}
           </div>
           {hasEventImpact && (
             <div className="flex items-center gap-1 text-primary">
               <Sparkles className="h-4 w-4" />
-              <span><strong>{events?.length || 0}</strong> events factored in</span>
+              <span>{t('forecast.eventsFactored', { count: events?.length || 0 })}</span>
             </div>
           )}
           {weatherData?.city && (
             <div className="flex items-center gap-1 text-blue-600">
               <Cloud className="h-4 w-4" />
-              <span>Weather for <strong>{weatherData.city}</strong></span>
+              <span>{t('forecast.weatherFor', { city: weatherData.city })}</span>
             </div>
           )}
           {capacityConstrained && maxDailyCovers && (
             <div className="flex items-center gap-1 text-amber-600">
               <Users className="h-4 w-4" />
-              <span>Capped to <strong>{maxDailyCovers}</strong> covers/day ({restaurant?.name ? `${(restaurant as any).seats || 0} seats` : 'seat capacity'})</span>
+              <span>{t('forecast.cappedTo', { covers: maxDailyCovers })} ({restaurant?.name ? `${(restaurant as any).seats || 0} ${t('forecast.seats')}` : t('forecast.seatCapacity')})</span>
             </div>
           )}
         </motion.div>
@@ -209,7 +211,7 @@ export default function Forecast() {
           <CardHeader>
             <CardTitle className="text-base font-medium flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" />
-              Predicted Sales (Next {daysAhead} Days)
+              {t('forecast.predictedSales', { days: daysAhead })}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -220,8 +222,8 @@ export default function Forecast() {
             ) : dishes.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No recipes found</p>
-                <p className="text-sm">Add recipes to see forecasted sales</p>
+                <p>{t('forecast.noRecipesFound')}</p>
+                <p className="text-sm">{t('forecast.addRecipesToSee')}</p>
               </div>
             ) : (
               dishes.slice(0, 10).map((dish, index) => (
@@ -237,10 +239,10 @@ export default function Forecast() {
                             <p className="font-medium text-foreground">{dish.recipeName}</p>
                             <div className="flex items-center gap-2">
                               <Badge variant="outline" className="text-xs">{dish.category}</Badge>
-                              <span className="text-xs text-muted-foreground">{dish.confidence}% confidence</span>
+                              <span className="text-xs text-muted-foreground">{t('forecast.confidence', { pct: dish.confidence })}</span>
                               {dish.eventImpact && (
                                 <Badge variant={dish.eventImpact > 0 ? 'high' : 'low'} className="text-xs">
-                                  {dish.eventImpact > 0 ? '+' : ''}{dish.eventImpact}% event
+                                  {dish.eventImpact > 0 ? '+' : ''}{t('forecast.event', { pct: dish.eventImpact })}
                                 </Badge>
                               )}
                               {dish.weatherImpact && (
@@ -254,15 +256,15 @@ export default function Forecast() {
                         </div>
                         <div className="text-right">
                           <p className="text-2xl font-bold text-foreground">{dish.predictedQuantity}</p>
-                          <p className="text-xs text-muted-foreground">portions</p>
+                          <p className="text-xs text-muted-foreground">{t('forecast.portions')}</p>
                         </div>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="left">
-                      <p>Based on {hasHistoricalData ? 'historical patterns' : 'category defaults'}</p>
+                      <p>{hasHistoricalData ? t('forecast.basedOnHistory') : t('forecast.basedOnDefaults')}</p>
                       {dish.menuPrice && (
                         <p className="text-muted-foreground">
-                          Est. revenue: ${(dish.menuPrice * dish.predictedQuantity).toFixed(0)}
+                          {t('forecast.estRevenue', { amount: (dish.menuPrice * dish.predictedQuantity).toFixed(0) })}
                         </p>
                       )}
                     </TooltipContent>
@@ -278,7 +280,7 @@ export default function Forecast() {
           <CardHeader>
             <CardTitle className="text-base font-medium flex items-center gap-2">
               <Package className="h-4 w-4 text-accent" />
-              Ingredient Requirements
+              {t('forecast.ingredientRequirements')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -289,8 +291,8 @@ export default function Forecast() {
             ) : ingredients.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No ingredient requirements</p>
-                <p className="text-sm">Forecast will show ingredient needs</p>
+                <p>{t('forecast.noIngredientReq')}</p>
+                <p className="text-sm">{t('forecast.forecastWillShow')}</p>
               </div>
             ) : (
               ingredients.slice(0, 10).map((item) => {
@@ -309,7 +311,7 @@ export default function Forecast() {
                               {item.pendingQuantity && item.pendingQuantity > 0 && (
                                 <Badge variant="outline" className="text-xs gap-1 text-blue-600 border-blue-600/30 bg-blue-50 dark:bg-blue-950/30">
                                   <Truck className="h-3 w-3" />
-                                  +{formatQuantity(item.pendingQuantity, item.unit)} on order
+                                  {t('forecast.onOrder', { qty: formatQuantity(item.pendingQuantity, item.unit) })}
                                 </Badge>
                               )}
                             </div>
@@ -323,8 +325,8 @@ export default function Forecast() {
                                   item.risk === 'medium' ? 'medium' : 'high'
                                 }
                               >
-                                {item.risk === 'high' ? 'Order Now' :
-                                 item.risk === 'medium' ? 'Monitor' : 'OK'}
+                                {item.risk === 'high' ? t('forecast.orderNow') :
+                                 item.risk === 'medium' ? t('forecast.monitor') : t('forecast.ok')}
                               </Badge>
                             </div>
                           </div>
@@ -338,13 +340,13 @@ export default function Forecast() {
                         </div>
                       </TooltipTrigger>
                       <TooltipContent side="left" className="max-w-xs">
-                        <p className="font-medium mb-1">Used in:</p>
+                        <p className="font-medium mb-1">{t('forecast.usedIn')}</p>
                         <ul className="text-sm text-muted-foreground">
                           {item.recipes.slice(0, 5).map((r, i) => (
                             <li key={i}>{r.name}: {formatQuantity(r.quantity, item.unit)}</li>
                           ))}
                           {item.recipes.length > 5 && (
-                            <li>...and {item.recipes.length - 5} more</li>
+                            <li>...{t('forecast.andMore', { count: item.recipes.length - 5 })}</li>
                           )}
                         </ul>
                       </TooltipContent>
@@ -361,16 +363,15 @@ export default function Forecast() {
       <motion.div variants={itemVariants}>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base font-medium">Validation Queue</CardTitle>
-            <Badge variant="secondary">Coming Soon</Badge>
+            <CardTitle className="text-base font-medium">{t('forecast.validationQueue')}</CardTitle>
+            <Badge variant="secondary">{t('forecast.comingSoon')}</Badge>
           </CardHeader>
           <CardContent>
             <div className="text-center py-8 text-muted-foreground">
               <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>Validation items will appear here</p>
+              <p>{t('forecast.validationWillAppear')}</p>
               <p className="text-sm">
-                When mismatches are detected between predicted and actual usage, 
-                you'll see suggestions to update recipes.
+                {t('forecast.validationDescription')}
               </p>
             </div>
           </CardContent>
