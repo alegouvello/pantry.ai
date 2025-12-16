@@ -41,6 +41,36 @@
       "f4": "Gerçek zamanlı düşüm için POS entegrasyonu"
     }
   },
+  "step0Welcome": {
+    "tagline": "YZ Destekli Envanter",
+    "badge": "Sizi ayarlayalım",
+    "headline1": "Hoş geldiniz",
+    "headline2": "akıllı mutfağınıza",
+    "description": "Sonraki adımlarda restoranınızı kuracak, menünüzü içe aktaracak ve YZ'nin tariflerinizi yazmasına izin vereceğiz. Siz onaylarsınız, biz öğreniriz.",
+    "startSetup": "Kuruluma Başla",
+    "setupTime": "Yaklaşık 15-25 dakika sürer",
+    "whatYouNeed": "İhtiyacınız olanlar:",
+    "needs": {
+      "menu": "Menünüz (PDF, URL veya fotoğraf)",
+      "vendors": "Tedarikçi bilgileri",
+      "pos": "POS sistem bilgisi (isteğe bağlı)",
+      "storage": "Depolama alanları"
+    },
+    "features": {
+      "recipeCosting": "YZ Tarif Maliyetlendirme",
+      "recipeCostingDesc": "Menünüzden gıda maliyetlerini otomatik hesaplayın",
+      "forecasting": "Akıllı Tahmin",
+      "forecastingDesc": "Satış trendlerine göre talebi tahmin edin",
+      "autoOrdering": "Otomatik Sipariş",
+      "autoOrderingDesc": "Stok düşmeden satın alma siparişi oluşturun"
+    },
+    "images": {
+      "fineDining": "Fine dining",
+      "casualDining": "Günlük restoran",
+      "coffeeShop": "Kahve dükkanı",
+      "bar": "Bar"
+    }
+  },
   "dashboard": {
     "welcomeTitle": "Pantry'ye hoş geldiniz",
     "welcomeBody": "Restoran envanter panosuna erişmek için giriş yapın.",
