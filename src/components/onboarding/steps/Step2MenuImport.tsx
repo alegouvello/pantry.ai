@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { useOnboardingContext, ParsedDish } from '@/contexts/OnboardingContext';
 import { useToast } from '@/hooks/use-toast';
@@ -53,6 +54,7 @@ export function Step2MenuImport({
   const [previewPrepRecipes, setPreviewPrepRecipes] = useState<ParsedDish[]>([]);
   const [selectedDishes, setSelectedDishes] = useState<Set<string>>(new Set());
   const [editingDishId, setEditingDishId] = useState<string | null>(null);
+  const [newSectionInput, setNewSectionInput] = useState<string>('');
 
   const importMethods = [
     {
@@ -273,10 +275,24 @@ export function Step2MenuImport({
     setSelectedDishes(new Set());
   };
 
-  const updateDish = (dishId: string, field: 'name' | 'description' | 'price' | 'tags', value: string | number | string[]) => {
+  const updateDish = (dishId: string, field: 'name' | 'description' | 'price' | 'tags' | 'section', value: string | number | string[]) => {
     setPreviewDishes(prev => prev.map(dish => 
       dish.id === dishId ? { ...dish, [field]: value } : dish
     ));
+  };
+
+  // Get unique sections from dishes
+  const availableSections = [...new Set(previewDishes.map(d => d.section || 'Other').filter(Boolean))];
+
+  const handleSectionChange = (dishId: string, value: string) => {
+    if (value === '__new__') {
+      const newSection = prompt(t('step2Menu.enterSectionName', 'Enter section name:'));
+      if (newSection && newSection.trim()) {
+        updateDish(dishId, 'section', newSection.trim());
+      }
+    } else {
+      updateDish(dishId, 'section', value);
+    }
   };
 
   const addNewDish = () => {
@@ -427,7 +443,25 @@ export function Step2MenuImport({
                                 className="h-8 text-sm"
                               />
                               <div className="flex gap-2">
-                                <div className="relative w-24">
+                                <Select
+                                  value={dish.section || 'Other'}
+                                  onValueChange={(value) => handleSectionChange(dish.id, value)}
+                                >
+                                  <SelectTrigger className="h-8 w-32">
+                                    <SelectValue placeholder={t('step2Menu.selectSection', 'Section')} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {availableSections.map((section) => (
+                                      <SelectItem key={section} value={section}>
+                                        {section}
+                                      </SelectItem>
+                                    ))}
+                                    <SelectItem value="__new__" className="text-primary">
+                                      + {t('step2Menu.newSection', 'New Section')}
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <div className="relative flex-1">
                                   <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
                                   <Input
                                     type="number"
@@ -439,13 +473,13 @@ export function Step2MenuImport({
                                     className="h-8 text-sm pl-5"
                                   />
                                 </div>
-                                <Input
-                                  value={dish.tags?.join(', ') || ''}
-                                  onChange={(e) => updateDish(dish.id, 'tags', e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
-                                  placeholder={t('step2Menu.addTags', 'Tags (comma separated)')}
-                                  className="h-8 text-sm flex-1"
-                                />
                               </div>
+                              <Input
+                                value={dish.tags?.join(', ') || ''}
+                                onChange={(e) => updateDish(dish.id, 'tags', e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
+                                placeholder={t('step2Menu.addTags', 'Tags (comma separated)')}
+                                className="h-8 text-sm"
+                              />
                               <div className="flex gap-2">
                                 <Button
                                   size="sm"

@@ -894,6 +894,9 @@
     "addTags": "Tags (comma separated)",
     "dishName": "Dish name",
     "editDish": "Edit dish",
+    "selectSection": "Section",
+    "newSection": "New Section",
+    "enterSectionName": "Enter section name:",
     "importMenu": "Import Menu"
   },
   "step3Recipe": {
