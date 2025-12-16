@@ -7,8 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslation } from 'react-i18next';
 
 export default function Auth() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(!searchParams.get('signup'));
   const [email, setEmail] = useState('');
@@ -62,7 +64,7 @@ export default function Auth() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">{t('auth.loading')}</p>
         </div>
       </div>
     );
@@ -78,20 +80,20 @@ export default function Auth() {
         const { error } = await signIn(email, password);
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
-            setError('Invalid email or password. Please try again.');
+            setError(t('auth.errors.invalidCredentials'));
           } else {
             setError(error.message);
           }
         } else {
           toast({
-            title: 'Welcome back!',
-            description: 'You have successfully signed in.',
+            title: t('auth.welcomeBack'),
+            description: t('auth.signInSuccess'),
           });
           // Navigate handled by useEffect after user state updates
         }
       } else {
         if (password.length < 6) {
-          setError('Password must be at least 6 characters long.');
+          setError(t('auth.errors.passwordTooShort'));
           setLoading(false);
           return;
         }
@@ -99,20 +101,20 @@ export default function Auth() {
         const { error } = await signUp(email, password, fullName);
         if (error) {
           if (error.message.includes('already registered')) {
-            setError('This email is already registered. Please sign in instead.');
+            setError(t('auth.errors.emailAlreadyRegistered'));
           } else {
             setError(error.message);
           }
         } else {
           toast({
-            title: 'Account created!',
-            description: 'Welcome to Pantry. Let\'s set up your workspace.',
+            title: t('auth.accountCreated'),
+            description: t('auth.accountCreatedDesc'),
           });
           // Navigate handled by useEffect after user state updates
         }
       }
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+      setError(t('auth.errors.unexpected'));
     } finally {
       setLoading(false);
     }
@@ -128,8 +130,8 @@ export default function Auth() {
               <Package className="h-7 w-7 text-primary-foreground" />
             </div>
             <div className="text-left">
-              <h1 className="text-2xl font-bold text-foreground">Pantry</h1>
-              <p className="text-xs text-muted-foreground">Inventory Pro</p>
+              <h1 className="text-2xl font-bold text-foreground">{t('app.name')}</h1>
+              <p className="text-xs text-muted-foreground">{t('app.tagline')}</p>
             </div>
           </Link>
         </div>
@@ -138,12 +140,12 @@ export default function Auth() {
         <Card variant="elevated" className="p-2">
           <CardHeader className="text-center">
             <CardTitle className="text-xl">
-              {isLogin ? 'Welcome back' : 'Create your account'}
+              {isLogin ? t('auth.welcomeBack') : t('auth.createYourAccount')}
             </CardTitle>
             <CardDescription>
               {isLogin
-                ? 'Sign in to access your inventory dashboard'
-                : 'Get started with Pantry for your restaurant'}
+                ? t('auth.signInDescription')
+                : t('auth.signUpDescription')}
             </CardDescription>
           </CardHeader>
           
@@ -151,13 +153,13 @@ export default function Auth() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
+                  <Label htmlFor="fullName">{t('auth.fullName')}</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="fullName"
                       type="text"
-                      placeholder="John Doe"
+                      placeholder={t('auth.fullNamePlaceholder')}
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       className="pl-9 bg-muted/50"
@@ -168,13 +170,13 @@ export default function Auth() {
               )}
               
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('auth.email')}</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
-                    placeholder="you@restaurant.com"
+                    placeholder={t('auth.emailPlaceholder')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-9 bg-muted/50"
@@ -184,7 +186,7 @@ export default function Auth() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('auth.password')}</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -214,10 +216,10 @@ export default function Auth() {
                 disabled={loading}
               >
                 {loading ? (
-                  'Please wait...'
+                  t('auth.pleaseWait')
                 ) : (
                   <>
-                    {isLogin ? 'Sign In' : 'Create Account'}
+                    {isLogin ? t('auth.signIn') : t('auth.createAccount')}
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </>
                 )}
@@ -232,7 +234,7 @@ export default function Auth() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-card px-2 text-muted-foreground">
-                  {isLogin ? 'New to Pantry?' : 'Already have an account?'}
+                  {isLogin ? t('auth.newToPantry') : t('auth.alreadyHaveAccount')}
                 </span>
               </div>
             </div>
@@ -245,13 +247,13 @@ export default function Auth() {
                 setError(null);
               }}
             >
-              {isLogin ? 'Create an account' : 'Sign in instead'}
+              {isLogin ? t('auth.createAnAccount') : t('auth.signInInstead')}
             </Button>
           </CardFooter>
         </Card>
 
         <p className="text-center text-xs text-muted-foreground">
-          By continuing, you agree to our Terms of Service and Privacy Policy.
+          {t('auth.termsAgreement')}
         </p>
       </div>
     </div>
