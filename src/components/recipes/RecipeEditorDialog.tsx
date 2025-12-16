@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Trash2, Save, X, Sparkles, RefreshCw, Loader2, ImageIcon, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -52,6 +53,7 @@ const formatCurrency = (value: number) => {
 };
 
 export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorDialogProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { data: availableIngredients } = useIngredients();
   const updateRecipe = useUpdateRecipe();
@@ -118,8 +120,8 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
       if (data?.success && data?.imageUrl) {
         setImageUrl(data.imageUrl);
         toast({
-          title: 'Image generated',
-          description: 'Recipe image has been created.',
+          title: t('recipeEditor.imageGenerated'),
+          description: t('recipeEditor.imageCreated'),
         });
       } else {
         throw new Error(data?.error || 'Failed to generate image');
@@ -127,7 +129,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
     } catch (error) {
       console.error('Failed to generate image:', error);
       toast({
-        title: 'Image generation failed',
+        title: t('recipeEditor.imageGenerationFailed'),
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });
@@ -142,8 +144,8 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
     // Validate file type
     if (!file.type.startsWith('image/')) {
       toast({
-        title: 'Invalid file type',
-        description: 'Please upload an image file.',
+        title: t('recipeEditor.invalidFileType'),
+        description: t('recipeEditor.pleaseUploadImage'),
         variant: 'destructive',
       });
       return;
@@ -152,8 +154,8 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast({
-        title: 'File too large',
-        description: 'Please upload an image under 5MB.',
+        title: t('recipeEditor.fileTooLarge'),
+        description: t('recipeEditor.uploadUnder5MB'),
         variant: 'destructive',
       });
       return;
@@ -177,13 +179,13 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
 
       setImageUrl(publicUrl.publicUrl);
       toast({
-        title: 'Image uploaded',
-        description: 'Your recipe image has been uploaded.',
+        title: t('recipeEditor.imageUploaded'),
+        description: t('recipeEditor.imageUploadedDesc'),
       });
     } catch (error) {
       console.error('Failed to upload image:', error);
       toast({
-        title: 'Upload failed',
+        title: t('recipeEditor.uploadFailed'),
         description: error instanceof Error ? error.message : 'Failed to upload image',
         variant: 'destructive',
       });
@@ -228,8 +230,8 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
   const handleAddIngredient = () => {
     if (!selectedIngredient || !newQuantity || !newUnit) {
       toast({
-        title: 'Missing fields',
-        description: 'Please select an ingredient and enter quantity and unit.',
+        title: t('recipeEditor.missingFields'),
+        description: t('recipeEditor.selectIngredientMsg'),
         variant: 'destructive',
       });
       return;
@@ -241,8 +243,8 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
     // Check if ingredient already exists
     if (ingredients.some((i) => i.ingredient_id === selectedIngredient)) {
       toast({
-        title: 'Duplicate ingredient',
-        description: 'This ingredient is already in the recipe.',
+        title: t('recipeEditor.duplicateIngredient'),
+        description: t('recipeEditor.ingredientExists'),
         variant: 'destructive',
       });
       return;
@@ -337,13 +339,13 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
       }
 
       toast({
-        title: 'Recipe updated',
-        description: 'Your changes have been saved.',
+        title: t('recipeEditor.recipeUpdated'),
+        description: t('recipeEditor.changesSaved'),
       });
       onOpenChange(false);
     } catch (error) {
       toast({
-        title: 'Error saving recipe',
+        title: t('recipeEditor.errorSaving'),
         description: error instanceof Error ? error.message : 'Unknown error',
         variant: 'destructive',
       });
@@ -365,13 +367,13 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Recipe</DialogTitle>
+          <DialogTitle>{t('recipeEditor.title')}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* Recipe Image */}
           <div className="space-y-3">
-            <Label>Recipe Image</Label>
+            <Label>{t('recipeEditor.recipeImage')}</Label>
             <input
               ref={fileInputRef}
               type="file"
@@ -392,12 +394,12 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
               {isDragging ? (
                 <div className="flex flex-col items-center gap-2 text-primary">
                   <Upload className="w-10 h-10" />
-                  <span className="text-sm font-medium">Drop image here</span>
+                  <span className="text-sm font-medium">{t('recipeEditor.dropImage')}</span>
                 </div>
               ) : isGeneratingImage || isUploadingImage ? (
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                  <span className="text-sm">{isGeneratingImage ? 'Generating image...' : 'Uploading image...'}</span>
+                  <span className="text-sm">{isGeneratingImage ? t('recipeEditor.generatingImage') : t('recipeEditor.uploadingImage')}</span>
                 </div>
               ) : imageUrl ? (
                 <>
@@ -414,7 +416,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
                       disabled={isUploadingImage}
                     >
                       <Upload className="w-4 h-4 mr-2" />
-                      Upload New
+                      {t('recipeEditor.uploadNew')}
                     </Button>
                     <Button 
                       variant="secondary" 
@@ -423,7 +425,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
                       disabled={isGeneratingImage}
                     >
                       <RefreshCw className="w-4 h-4 mr-2" />
-                      Regenerate
+                      {t('recipeEditor.regenerate')}
                     </Button>
                     <Button 
                       variant="destructive" 
@@ -431,14 +433,14 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
                       onClick={() => setImageUrl(null)}
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
-                      Remove
+                      {t('recipeEditor.remove')}
                     </Button>
                   </div>
                 </>
               ) : (
                 <div className="flex flex-col items-center gap-3 text-muted-foreground">
                   <ImageIcon className="w-10 h-10" />
-                  <p className="text-sm">Drag & drop an image or</p>
+                  <p className="text-sm">{t('recipeEditor.dragOrUpload')}</p>
                   <div className="flex gap-2">
                     <Button 
                       variant="outline" 
@@ -447,7 +449,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
                       disabled={isUploadingImage}
                     >
                       <Upload className="w-4 h-4 mr-2" />
-                      Upload Image
+                      {t('recipeEditor.uploadImage')}
                     </Button>
                     <Button 
                       variant="outline" 
@@ -456,7 +458,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
                       disabled={isGeneratingImage}
                     >
                       <Sparkles className="w-4 h-4 mr-2" />
-                      Generate with AI
+                      {t('recipeEditor.generateAI')}
                     </Button>
                   </div>
                 </div>
@@ -466,25 +468,25 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
           {/* Recipe Details */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Recipe Name</Label>
+              <Label htmlFor="name">{t('recipeEditor.recipeName')}</Label>
               <Input
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Recipe name"
+                placeholder={t('recipeEditor.recipeName')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category">{t('recipeEditor.category')}</Label>
               <Input
                 id="category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                placeholder="Category"
+                placeholder={t('recipeEditor.category')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="yield">Yield Amount</Label>
+              <Label htmlFor="yield">{t('recipeEditor.yieldAmount')}</Label>
               <Input
                 id="yield"
                 type="number"
@@ -495,7 +497,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="yieldUnit">Yield Unit</Label>
+              <Label htmlFor="yieldUnit">{t('recipeEditor.yieldUnit')}</Label>
               <Input
                 id="yieldUnit"
                 value={yieldUnit}
@@ -504,7 +506,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
               />
             </div>
             <div className="space-y-2 col-span-2">
-              <Label htmlFor="menuPrice">Menu Price ($)</Label>
+              <Label htmlFor="menuPrice">{t('recipeEditor.menuPrice')}</Label>
               <div className="flex items-center gap-4">
                 <Input
                   id="menuPrice"
@@ -513,12 +515,12 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
                   step="0.01"
                   value={menuPrice || ''}
                   onChange={(e) => setMenuPrice(e.target.value ? parseFloat(e.target.value) : undefined)}
-                  placeholder="Enter selling price"
+                  placeholder={t('recipeEditor.menuPrice')}
                   className="flex-1"
                 />
                 {foodCostPercentage !== undefined && (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Food Cost:</span>
+                    <span className="text-sm text-muted-foreground">{t('recipeEditor.foodCost')}</span>
                     <Badge 
                       variant={foodCostPercentage <= 30 ? 'success' : foodCostPercentage <= 35 ? 'warning' : 'destructive'}
                     >
@@ -533,10 +535,10 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
           {/* Current Ingredients */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label>Ingredients</Label>
+              <Label>{t('recipeEditor.ingredients')}</Label>
               {ingredients.length > 0 && (
                 <div className="text-sm">
-                  <span className="text-muted-foreground">Total: </span>
+                  <span className="text-muted-foreground">{t('common.total')}: </span>
                   <span className="font-semibold text-primary">{formatCurrency(totalCost)}</span>
                   {yieldAmount > 1 && (
                     <span className="text-muted-foreground ml-2">
@@ -548,7 +550,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
             </div>
             {ingredients.length === 0 ? (
               <p className="text-sm text-muted-foreground py-4 text-center border border-dashed rounded-lg">
-                No ingredients added yet
+                {t('recipeDialog.noIngredients')}
               </p>
             ) : (
               <div className="space-y-2">
@@ -579,7 +581,7 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
                         value={ing.unit}
                         onChange={(e) => handleUpdateUnit(ing.id, e.target.value)}
                         className="w-24"
-                        placeholder="unit"
+                        placeholder={t('recipeEditor.unit')}
                       />
                       <span className="text-sm text-muted-foreground w-20 text-right">
                         {formatCurrency(lineCost)}
@@ -601,12 +603,12 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
 
           {/* Add New Ingredient */}
           <div className="space-y-3 pt-4 border-t border-border">
-            <Label>Add Ingredient</Label>
+            <Label>{t('recipeEditor.addIngredient')}</Label>
             <div className="flex items-end gap-3">
               <div className="flex-1">
                 <Select value={selectedIngredient} onValueChange={setSelectedIngredient}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select ingredient" />
+                    <SelectValue placeholder={t('recipeEditor.selectIngredient')} />
                   </SelectTrigger>
                   <SelectContent>
                     {unusedIngredients?.map((ing) => (
@@ -624,14 +626,14 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
                   step="0.01"
                   value={newQuantity}
                   onChange={(e) => setNewQuantity(e.target.value)}
-                  placeholder="Qty"
+                  placeholder={t('recipeEditor.qty')}
                 />
               </div>
               <div className="w-24">
                 <Input
                   value={newUnit}
                   onChange={(e) => setNewUnit(e.target.value)}
-                  placeholder="Unit"
+                  placeholder={t('recipeEditor.unit')}
                 />
               </div>
               <Button variant="outline" onClick={handleAddIngredient}>
@@ -644,11 +646,11 @@ export function RecipeEditorDialog({ recipe, open, onOpenChange }: RecipeEditorD
           <div className="flex justify-end gap-3 pt-4 border-t border-border">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               <X className="h-4 w-4 mr-2" />
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button variant="accent" onClick={handleSave} disabled={isSaving}>
               <Save className="h-4 w-4 mr-2" />
-              {isSaving ? 'Saving...' : 'Save Changes'}
+              {isSaving ? t('recipeEditor.saving') : t('recipeEditor.save')}
             </Button>
           </div>
         </div>

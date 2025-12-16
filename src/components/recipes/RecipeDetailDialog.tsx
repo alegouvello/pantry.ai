@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChefHat, Clock, Package, DollarSign, TrendingUp, Sparkles, 
@@ -60,6 +61,7 @@ const formatCurrency = (value: number) => {
 };
 
 export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: RecipeDetailDialogProps) {
+  const { t } = useTranslation();
   const [steps, setSteps] = useState<RecipeStep[]>([]);
   const [stepsSource, setStepsSource] = useState<{ url: string; title: string } | null>(null);
   const [isEditingSteps, setIsEditingSteps] = useState(false);
@@ -195,12 +197,12 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
 
       setIsEditingSteps(false);
       toast({
-        title: "Steps saved",
-        description: "Cooking steps have been updated.",
+        title: t('recipeDetail.stepsSaved'),
+        description: t('recipeDetail.stepsUpdated'),
       });
     } catch (error) {
       toast({
-        title: "Error saving steps",
+        title: t('recipeDetail.errorSavingSteps'),
         description: error instanceof Error ? error.message : "Failed to save",
         variant: "destructive",
       });
@@ -299,16 +301,16 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="flex items-center gap-2 text-sm">
                 <Package className="h-4 w-4 text-primary" />
-                <span>{recipe.recipe_ingredients?.length || 0} ingredients</span>
+                <span>{recipe.recipe_ingredients?.length || 0} {t('recipeDetail.ingredients')}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <Clock className="h-4 w-4 text-primary" />
-                <span>Yields {recipe.yield_amount} {recipe.yield_unit}</span>
+                <span>{t('recipeDetail.yields', { amount: recipe.yield_amount, unit: recipe.yield_unit })}</span>
               </div>
               {recipe.prep_time_minutes && (
                 <div className="flex items-center gap-2 text-sm">
                   <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span>{recipe.prep_time_minutes} min prep</span>
+                  <span>{t('recipeDetail.minPrep', { minutes: recipe.prep_time_minutes })}</span>
                 </div>
               )}
               {recipe.menu_price && (
@@ -325,7 +327,7 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-5 w-5 text-primary" />
-                    <span className="font-medium">Cost per portion</span>
+                    <span className="font-medium">{t('recipeDetail.costPerPortion')}</span>
                   </div>
                   <div className="text-right">
                     <span className="text-lg font-bold">{formatCurrency(costPerPortion)}</span>
@@ -348,7 +350,7 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
             <div>
               <h3 className="font-semibold mb-3 flex items-center gap-2">
                 <Package className="h-4 w-4" />
-                Ingredients
+                {t('recipeDetail.ingredientsTitle')}
               </h3>
               <div className="grid gap-2">
                 {recipe.recipe_ingredients?.map((ri) => (
@@ -379,7 +381,7 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
               <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                 <h3 className="font-semibold flex items-center gap-2">
                   <ListOrdered className="h-4 w-4" />
-                  Cooking Steps
+                  {t('recipeDetail.cookingSteps')}
                   {stepsSource && !isEditingSteps && (
                     <a 
                       href={stepsSource.url} 
@@ -388,7 +390,7 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
                       className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 font-normal"
                     >
                       <ExternalLink className="h-3 w-3" />
-                      Source
+                      {t('recipeDetail.source')}
                     </a>
                   )}
                 </h3>
@@ -402,7 +404,7 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
                         disabled={isSavingSteps}
                       >
                         <X className="h-4 w-4 mr-2" />
-                        Cancel
+                        {t('recipeDetail.cancel')}
                       </Button>
                       <Button
                         variant="accent"
@@ -415,7 +417,7 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
                         ) : (
                           <Save className="h-4 w-4 mr-2" />
                         )}
-                        Save
+                        {t('recipeDetail.save')}
                       </Button>
                     </>
                   ) : (
@@ -427,7 +429,7 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
                           onClick={handleEditSteps}
                         >
                           <Pencil className="h-4 w-4 mr-2" />
-                          Edit
+                          {t('recipeDetail.edit')}
                         </Button>
                       )}
                       <Button
@@ -439,12 +441,12 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
                         {searchSteps.isPending ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Searching...
+                            {t('recipeDetail.searching')}
                           </>
                         ) : (
                           <>
                             <Globe className="h-4 w-4 mr-2" />
-                            Search Web
+                            {t('recipeDetail.searchWeb')}
                           </>
                         )}
                       </Button>
@@ -457,12 +459,12 @@ export function RecipeDetailDialog({ recipe, open, onOpenChange, onEdit }: Recip
                         {generateSteps.isPending ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Generating...
+                            {t('recipeDetail.generating')}
                           </>
                         ) : (
                           <>
                             <Sparkles className="h-4 w-4 mr-2" />
-                            Generate AI
+                            {t('recipeDetail.generateAI')}
                           </>
                         )}
                       </Button>
