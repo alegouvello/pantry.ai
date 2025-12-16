@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -36,6 +37,7 @@ interface SetupItem {
 
 export function Step8GoLive(props: StepProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { notify: syncNotify } = useSyncNotification();
   const [isSimulating, setIsSimulating] = useState(false);
@@ -181,16 +183,16 @@ export function Step8GoLive(props: StepProps) {
       props.updateHealthScore(completionPercentage - props.setupHealthScore);
       
       toast({
-        title: 'Setup complete!',
-        description: 'Welcome to your Pantry dashboard',
+        title: t('step8GoLive.setupComplete'),
+        description: t('step8GoLive.welcomeDashboard'),
       });
       
       navigate('/');
     } catch (error) {
       console.error('Failed to launch:', error);
       toast({
-        title: 'Launch failed',
-        description: 'Please try again',
+        title: t('step8GoLive.launchFailed'),
+        description: t('step6POS.tryAgain'),
         variant: 'destructive',
       });
     } finally {
@@ -212,25 +214,25 @@ export function Step8GoLive(props: StepProps) {
   const getImpactBadge = (impact: SetupItem['impact']) => {
     switch (impact) {
       case 'critical':
-        return <Badge variant="destructive" className="text-xs">Required</Badge>;
+        return <Badge variant="destructive" className="text-xs">{t('step8GoLive.required')}</Badge>;
       case 'recommended':
-        return <Badge variant="secondary" className="text-xs">Recommended</Badge>;
+        return <Badge variant="secondary" className="text-xs">{t('step8GoLive.recommendedBadge')}</Badge>;
       case 'optional':
-        return <Badge variant="outline" className="text-xs">Optional</Badge>;
+        return <Badge variant="outline" className="text-xs">{t('step8GoLive.optional')}</Badge>;
     }
   };
 
   return (
-    <OnboardingLayout {...props} title="You're Ready to Go Live!" subtitle="Review your setup and launch" nextLabel="Launch Dashboard">
+    <OnboardingLayout {...props} title={t('step8GoLive.title')} subtitle={t('step8GoLive.subtitle')} nextLabel={t('step8GoLive.nextLabel')}>
       <div className="max-w-3xl mx-auto space-y-8">
         {/* Setup Health Score */}
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold">Setup Health Score</h3>
+                <h3 className="text-lg font-semibold">{t('step8GoLive.healthScore')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {completionPercentage}% complete • {completeCount} of {totalCount} steps finished
+                  {t('step8GoLive.healthScoreDesc', { percent: completionPercentage, complete: completeCount, total: totalCount })}
                 </p>
               </div>
               <div className="text-2xl font-bold text-primary">{completionPercentage}%</div>
@@ -242,8 +244,8 @@ export function Step8GoLive(props: StepProps) {
         {/* Setup Checklist */}
         <Card>
           <CardHeader>
-            <CardTitle>Setup Checklist</CardTitle>
-            <CardDescription>Items with partial completion can be finished later</CardDescription>
+            <CardTitle>{t('step8GoLive.setupChecklist')}</CardTitle>
+            <CardDescription>{t('step8GoLive.checklistDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -434,14 +436,14 @@ export function Step8GoLive(props: StepProps) {
           ) : (
             <>
               <Rocket className="w-5 h-5 mr-2" />
-              Launch Dashboard
+              {t('step8GoLive.launchDashboard')}
               <ArrowRight className="w-5 h-5 ml-2" />
             </>
           )}
         </Button>
 
         <p className="text-center text-sm text-muted-foreground">
-          You can always complete remaining setup items from the dashboard.
+          {t('step8GoLive.completeFromDashboard')}
         </p>
       </div>
     </OnboardingLayout>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,7 @@ interface PosItem {
 }
 
 export function Step6POSConnect(props: StepProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { notify: syncNotify } = useSyncNotification();
   const [phase, setPhase] = useState<'select' | 'connect' | 'mapping'>('select');
@@ -140,8 +142,8 @@ export function Step6POSConnect(props: StepProps) {
       
       props.updateHealthScore(10);
       toast({
-        title: 'Connected successfully',
-        description: `${selectedIntegration === 'toast' ? 'Toast POS' : 'CSV Import'} connected`,
+        title: t('step6POS.connectedSuccessTitle'),
+        description: `${selectedIntegration === 'toast' ? 'Toast POS' : 'CSV Import'} ${t('step6POS.connectedSuccess').toLowerCase()}`,
       });
       
       setTimeout(() => setPhase('mapping'), 500);
@@ -149,8 +151,8 @@ export function Step6POSConnect(props: StepProps) {
       console.error('Failed to create integration:', error);
       isLocalUpdateRef.current = false;
       toast({
-        title: 'Connection failed',
-        description: 'Please try again',
+        title: t('step6POS.connectionFailed'),
+        description: t('step6POS.tryAgain'),
         variant: 'destructive',
       });
     } finally {
@@ -177,7 +179,7 @@ export function Step6POSConnect(props: StepProps) {
 
   if (phase === 'select') {
     return (
-      <OnboardingLayout {...props} title="Connect Your POS" subtitle="Link sales data for automatic inventory tracking">
+      <OnboardingLayout {...props} title={t('step6POS.title')} subtitle={t('step6POS.subtitle')}>
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="grid gap-4">
             <Card
@@ -192,19 +194,19 @@ export function Step6POSConnect(props: StepProps) {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">Toast POS</h3>
-                    <Badge>Recommended</Badge>
+                    <h3 className="font-semibold">{t('step6POS.toastPOS')}</h3>
+                    <Badge>{t('step6POS.recommended')}</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Connect directly to Toast for real-time sales sync
+                    {t('step6POS.toastDesc')}
                   </p>
                   <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
                     <Check className="w-3 h-3 text-green-500" />
-                    Real-time sync
+                    {t('step6POS.realTimeSync')}
                     <Check className="w-3 h-3 text-green-500 ml-2" />
-                    Menu import
+                    {t('step6POS.menuImport')}
                     <Check className="w-3 h-3 text-green-500 ml-2" />
-                    Modifiers
+                    {t('step6POS.modifiers')}
                   </div>
                 </div>
               </CardContent>
@@ -221,12 +223,12 @@ export function Step6POSConnect(props: StepProps) {
                   <FileSpreadsheet className="w-7 h-7 text-muted-foreground" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold">CSV Sales Import</h3>
+                  <h3 className="font-semibold">{t('step6POS.csvImport')}</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Upload sales data manually from any POS system
+                    {t('step6POS.csvDesc')}
                   </p>
                   <p className="text-xs text-muted-foreground mt-3">
-                    Works with Square, Clover, Lightspeed, and others
+                    {t('step6POS.csvCompat')}
                   </p>
                 </div>
               </CardContent>
@@ -239,11 +241,11 @@ export function Step6POSConnect(props: StepProps) {
             size="lg"
             disabled={!selectedIntegration}
           >
-            Continue
+            {t('step6POS.continue')}
           </Button>
 
           <Button variant="ghost" onClick={props.onNext} className="w-full text-muted-foreground">
-            Skip for now
+            {t('step6POS.skipForNow')}
           </Button>
         </div>
       </OnboardingLayout>
