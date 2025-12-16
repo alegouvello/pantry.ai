@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Upload, Link as LinkIcon, ShoppingBag, PenLine, FileText, Loader2, Sparkles, Check, X, ChevronRight, UtensilsCrossed, Pencil } from 'lucide-react';
+import { Upload, Link as LinkIcon, ShoppingBag, PenLine, FileText, Loader2, Sparkles, Check, X, ChevronRight, UtensilsCrossed, Pencil, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -279,6 +279,22 @@ export function Step2MenuImport({
     ));
   };
 
+  const addNewDish = () => {
+    const newDish: ParsedDish = {
+      id: `manual-${Date.now()}`,
+      name: '',
+      description: '',
+      price: 0,
+      section: 'Other',
+      tags: [],
+      confidence: 'high',
+      ingredients: [],
+    };
+    setPreviewDishes(prev => [...prev, newDish]);
+    setSelectedDishes(prev => new Set([...prev, newDish.id]));
+    setEditingDishId(newDish.id);
+  };
+
   const handleConfirmDishes = () => {
     const selectedDishList = previewDishes.filter(d => selectedDishes.has(d.id));
     setParsedDishes(selectedDishList);
@@ -342,6 +358,10 @@ export function Step2MenuImport({
               </Button>
               <Button variant="ghost" size="sm" onClick={deselectAllDishes}>
                 {t('step2Menu.deselectAll', 'Deselect All')}
+              </Button>
+              <Button variant="outline" size="sm" onClick={addNewDish}>
+                <Plus className="w-4 h-4 mr-1" />
+                {t('step2Menu.addDish', 'Add Dish')}
               </Button>
             </div>
           </div>
