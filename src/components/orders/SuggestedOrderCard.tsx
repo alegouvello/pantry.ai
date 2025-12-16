@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { TrendingDown, Package, ArrowRight, Sparkles, Minus, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +15,7 @@ interface SuggestedOrderCardProps {
 }
 
 export function SuggestedOrderCard({ suggestion, onCreateOrder }: SuggestedOrderCardProps) {
+  const { t } = useTranslation();
   const [editedItems, setEditedItems] = useState<Record<string, number>>(() => 
     Object.fromEntries(suggestion.items.map(item => [item.ingredientId, item.suggestedQuantity]))
   );
@@ -60,9 +62,9 @@ export function SuggestedOrderCard({ suggestion, onCreateOrder }: SuggestedOrder
   };
 
   const urgencyBadge = {
-    high: { variant: 'destructive' as const, label: 'Urgent' },
-    medium: { variant: 'warning' as const, label: 'Soon' },
-    low: { variant: 'secondary' as const, label: 'Optional' },
+    high: { variant: 'destructive' as const, labelKey: 'suggestedOrder.urgent' },
+    medium: { variant: 'warning' as const, labelKey: 'suggestedOrder.soon' },
+    low: { variant: 'secondary' as const, labelKey: 'suggestedOrder.optional' },
   };
 
   const activeItemCount = suggestion.items.filter(
@@ -91,12 +93,12 @@ export function SuggestedOrderCard({ suggestion, onCreateOrder }: SuggestedOrder
                   {suggestion.vendorName}
                 </CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {activeItemCount} item{activeItemCount !== 1 ? 's' : ''} in order
+                  {t('suggestedOrder.itemsInOrder', { count: activeItemCount })}
                 </p>
               </div>
             </div>
             <Badge variant={urgencyBadge[suggestion.urgency].variant}>
-              {urgencyBadge[suggestion.urgency].label}
+              {t(urgencyBadge[suggestion.urgency].labelKey)}
             </Badge>
           </div>
         </CardHeader>
@@ -134,8 +136,8 @@ export function SuggestedOrderCard({ suggestion, onCreateOrder }: SuggestedOrder
                         </TooltipTrigger>
                         <TooltipContent>
                           {item.reason === 'low_stock' 
-                            ? 'Below reorder point' 
-                            : 'Needed for forecasted demand'}
+                            ? t('suggestedOrder.belowReorder') 
+                            : t('suggestedOrder.neededForForecast')}
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -182,7 +184,7 @@ export function SuggestedOrderCard({ suggestion, onCreateOrder }: SuggestedOrder
           {/* Total & Action */}
           <div className="flex items-center justify-between pt-2 border-t border-border">
             <div>
-              <p className="text-xs text-muted-foreground">Estimated Total</p>
+              <p className="text-xs text-muted-foreground">{t('suggestedOrder.estimatedTotal')}</p>
               <p className="text-lg font-bold text-foreground">
                 ${getEditedTotal().toFixed(2)}
               </p>
@@ -193,7 +195,7 @@ export function SuggestedOrderCard({ suggestion, onCreateOrder }: SuggestedOrder
               onClick={handleCreateOrder}
               disabled={suggestion.vendorId === 'unassigned' || activeItemCount === 0}
             >
-              Create PO
+              {t('suggestedOrder.createPO')}
               <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
