@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ interface StepProps {
 }
 
 export function Step7Automation(props: StepProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { notify: syncNotify } = useSyncNotification();
   const [phase, setPhase] = useState<'settings' | 'pars'>('settings');
@@ -165,8 +167,8 @@ export function Step7Automation(props: StepProps) {
       });
       
       toast({
-        title: 'Settings saved',
-        description: 'Automation settings have been configured',
+        title: t('step7Automation.settingsSaved'),
+        description: t('step7Automation.settingsSavedDesc'),
       });
       
       setPhase('pars');
@@ -174,8 +176,8 @@ export function Step7Automation(props: StepProps) {
       console.error('Failed to save settings:', error);
       isLocalUpdateRef.current = false;
       toast({
-        title: 'Save failed',
-        description: 'Please try again',
+        title: t('step7Automation.saveFailed'),
+        description: t('step6POS.tryAgain'),
         variant: 'destructive',
       });
     } finally {
@@ -206,8 +208,8 @@ export function Step7Automation(props: StepProps) {
       
       props.updateHealthScore(10);
       toast({
-        title: 'Par levels saved',
-        description: 'Reorder rules have been configured',
+        title: t('step7Automation.parSaved'),
+        description: t('step7Automation.parSavedDesc'),
       });
       
       props.onNext();
@@ -215,8 +217,8 @@ export function Step7Automation(props: StepProps) {
       console.error('Failed to save par levels:', error);
       isLocalUpdateRef.current = false;
       toast({
-        title: 'Save failed',
-        description: 'Please try again',
+        title: t('step7Automation.saveFailed'),
+        description: t('step6POS.tryAgain'),
         variant: 'destructive',
       });
     } finally {
@@ -233,24 +235,24 @@ export function Step7Automation(props: StepProps) {
 
   if (phase === 'settings') {
     return (
-      <OnboardingLayout {...props} title="Set Your Autopilot" subtitle="Configure alerts and automation rules">
+      <OnboardingLayout {...props} title={t('step7Automation.title')} subtitle={t('step7Automation.subtitle')}>
         <div className="max-w-2xl mx-auto space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="w-5 h-5 text-primary" />
-                Alert Settings
+                {t('step7Automation.alertSettings')}
               </CardTitle>
               <CardDescription>
-                Get notified when inventory needs attention
+                {t('step7Automation.alertSettingsDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between py-2">
                 <div>
-                  <Label className="font-medium">Low stock alerts</Label>
+                  <Label className="font-medium">{t('step7Automation.lowStockAlerts')}</Label>
                   <p className="text-sm text-muted-foreground">
-                    Alert when projected to go below reorder point
+                    {t('step7Automation.lowStockAlertsDesc')}
                   </p>
                 </div>
                 <Switch checked={autoAlert} onCheckedChange={setAutoAlert} />
