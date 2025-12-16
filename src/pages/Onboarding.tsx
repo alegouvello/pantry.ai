@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useOnboardingProgress, useCreateOnboarding, useUpdateOnboardingProgress, useRestaurant } from '@/hooks/useOnboarding';
-import { OnboardingProvider } from '@/contexts/OnboardingContext';
+import { OnboardingProvider, useOnboardingContext } from '@/contexts/OnboardingContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -18,10 +18,11 @@ import { Step6POSConnect } from '@/components/onboarding/steps/Step6POSConnect';
 import { Step7Automation } from '@/components/onboarding/steps/Step7Automation';
 import { Step8GoLive } from '@/components/onboarding/steps/Step8GoLive';
 
-export default function Onboarding() {
+function OnboardingContent() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
+  const { setRestaurant, setConceptType } = useOnboardingContext();
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [setupHealthScore, setSetupHealthScore] = useState(0);
@@ -41,6 +42,24 @@ export default function Onboarding() {
   const updateProgress = useUpdateOnboardingProgress();
   
   const restaurantId = restaurant?.id || null;
+
+  // Sync restaurant data to context when loaded from database
+  useEffect(() => {
+    if (restaurant) {
+      setRestaurant({
+        name: restaurant.name,
+        address: restaurant.address as any,
+        phone: restaurant.phone || undefined,
+        website: restaurant.website || undefined,
+        instagram: restaurant.instagram || undefined,
+        concept_type: restaurant.concept_type as any,
+        services: restaurant.services as any[] || [],
+      });
+      if (restaurant.concept_type) {
+        setConceptType(restaurant.concept_type as any);
+      }
+    }
+  }, [restaurant, setRestaurant, setConceptType]);
 
   // Initialize from database
   useEffect(() => {
@@ -275,9 +294,13 @@ export default function Onboarding() {
     }
   };
 
+  return renderStep();
+}
+
+export default function Onboarding() {
   return (
     <OnboardingProvider>
-      {renderStep()}
+      <OnboardingContent />
     </OnboardingProvider>
   );
 }
