@@ -878,7 +878,18 @@
     "foundDishes": "Found {{count}} dishes.{{prep}} Review and approve recipes next.",
     "detectedPrep": " Detected {{count}} house-made prep items.",
     "parseFailed": "Failed to parse menu",
-    "tryManual": "Please try again or use manual entry."
+    "tryManual": "Please try again or use manual entry.",
+    "reviewDishes": "Review the imported dishes below.",
+    "reviewTitle": "Review Imported Menu",
+    "reviewSubtitle": "Select the dishes you want to include in your recipe library",
+    "dishesSelected": "dishes selected",
+    "prepRecipes": "prep recipes",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "prepRecipesTitle": "Prep Recipes (Auto-detected)",
+    "prepRecipesNote": "These house-made items will be created as sub-recipes:",
+    "confirmDishes": "Confirm {{count}} Dishes",
+    "importMenu": "Import Menu"
   },
   "step3Recipe": {
     "title": "Recipe Approval Studio",
