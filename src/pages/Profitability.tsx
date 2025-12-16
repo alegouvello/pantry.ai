@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, DollarSign, ArrowUpDown, ArrowUp, ArrowDown, LogIn, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,6 +66,7 @@ const getFoodCostBadgeVariant = (percentage: number): 'success' | 'warning' | 'd
 };
 
 export default function Profitability() {
+  const { t } = useTranslation();
   const { user, loading: authLoading } = useAuth();
   const { data: recipes, isLoading, error } = useRecipes();
   const [sortKey, setSortKey] = useState<SortKey>('foodCostPercentage');
@@ -75,15 +77,15 @@ export default function Profitability() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
         <div className="text-center space-y-2">
           <DollarSign className="h-16 w-16 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-foreground">Sign in required</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('auth.signInRequired')}</h1>
           <p className="text-muted-foreground">
-            Please sign in to view profitability analysis.
+            {t('auth.pleaseSignIn', { area: t('nav.profitability').toLowerCase() })}
           </p>
         </div>
         <Link to="/auth">
           <Button variant="accent" size="lg">
             <LogIn className="h-5 w-5 mr-2" />
-            Sign In
+            {t('auth.signIn')}
           </Button>
         </Link>
       </div>
@@ -180,10 +182,10 @@ export default function Profitability() {
         <div className="absolute inset-0 flex items-center px-8 md:px-12">
           <div className="space-y-3">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-              Recipe Profitability
+              {t('profitability.title')}
             </h1>
             <p className="text-muted-foreground max-w-md">
-              Analyze food costs and profit margins across your menu.
+              {t('profitability.subtitle')}
             </p>
           </div>
         </div>
@@ -196,7 +198,7 @@ export default function Profitability() {
       >
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Avg Food Cost</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('profitability.avgFoodCost')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -206,7 +208,7 @@ export default function Profitability() {
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold">{averageFoodCost.toFixed(1)}%</span>
                 <Badge variant={getFoodCostBadgeVariant(averageFoodCost)}>
-                  {averageFoodCost <= 30 ? 'Good' : averageFoodCost <= 35 ? 'Fair' : 'High'}
+                  {averageFoodCost <= 30 ? t('profitability.good') : averageFoodCost <= 35 ? t('profitability.fair') : t('profitability.high')}
                 </Badge>
               </div>
             )}
@@ -217,13 +219,13 @@ export default function Profitability() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                Combined Profit
+                {t('profitability.combinedProfit')}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Info className="h-3.5 w-3.5 text-muted-foreground/60 cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs">
-                    <p className="text-xs">Sum of profit margins (menu price minus ingredient cost) across all recipes. Represents total profit if you sold one of each item.</p>
+                    <p className="text-xs">{t('profitability.combinedProfitTooltip')}</p>
                   </TooltipContent>
                 </Tooltip>
               </CardTitle>
@@ -241,7 +243,7 @@ export default function Profitability() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Optimal Recipes (≤30%)</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('profitability.optimalRecipes')}</CardTitle>
             <TrendingDown className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
@@ -250,7 +252,7 @@ export default function Profitability() {
             ) : (
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold text-primary">{optimalRecipes}</span>
-                <span className="text-sm text-muted-foreground">of {profitableRecipes.length}</span>
+                <span className="text-sm text-muted-foreground">{t('profitability.of')} {profitableRecipes.length}</span>
               </div>
             )}
           </CardContent>
@@ -258,7 +260,7 @@ export default function Profitability() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">High Cost (&gt;35%)</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('profitability.highCost')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
@@ -267,7 +269,7 @@ export default function Profitability() {
             ) : (
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-bold text-destructive">{highCostRecipes}</span>
-                {highCostRecipes > 0 && <Badge variant="destructive">Needs Review</Badge>}
+                {highCostRecipes > 0 && <Badge variant="destructive">{t('profitability.needsReview')}</Badge>}
               </div>
             )}
           </CardContent>
@@ -278,7 +280,7 @@ export default function Profitability() {
       <motion.div variants={itemVariants}>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base font-medium">Recipe Analysis</CardTitle>
+            <CardTitle className="text-base font-medium">{t('profitability.recipeAnalysis')}</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -289,16 +291,16 @@ export default function Profitability() {
               </div>
             ) : error ? (
               <p className="text-destructive text-center py-8">
-                Error loading recipes: {error.message}
+                {t('common.errorLoading', { area: t('nav.recipes').toLowerCase(), message: error.message })}
               </p>
             ) : profitableRecipes.length === 0 ? (
               <div className="text-center py-12">
                 <DollarSign className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                 <p className="text-muted-foreground mb-4">
-                  No recipes with menu prices found. Add menu prices to see profitability.
+                  {t('profitability.noRecipesWithPrices')}
                 </p>
                 <Link to="/recipes">
-                  <Button variant="accent">Go to Recipes</Button>
+                  <Button variant="accent">{t('profitability.goToRecipes')}</Button>
                 </Link>
               </div>
             ) : (
@@ -308,32 +310,32 @@ export default function Profitability() {
                     <TableRow>
                       <TableHead>
                         <Button variant="ghost" size="sm" className="h-auto p-0 font-semibold hover:bg-transparent" onClick={() => handleSort('name')}>
-                          Recipe <SortIcon columnKey="name" />
+                          {t('profitability.table.recipe')} <SortIcon columnKey="name" />
                         </Button>
                       </TableHead>
                       <TableHead>
                         <Button variant="ghost" size="sm" className="h-auto p-0 font-semibold hover:bg-transparent" onClick={() => handleSort('category')}>
-                          Category <SortIcon columnKey="category" />
+                          {t('profitability.table.category')} <SortIcon columnKey="category" />
                         </Button>
                       </TableHead>
                       <TableHead className="text-right">
                         <Button variant="ghost" size="sm" className="h-auto p-0 font-semibold hover:bg-transparent ml-auto" onClick={() => handleSort('totalCost')}>
-                          Cost <SortIcon columnKey="totalCost" />
+                          {t('profitability.table.cost')} <SortIcon columnKey="totalCost" />
                         </Button>
                       </TableHead>
                       <TableHead className="text-right">
                         <Button variant="ghost" size="sm" className="h-auto p-0 font-semibold hover:bg-transparent ml-auto" onClick={() => handleSort('menuPrice')}>
-                          Menu Price <SortIcon columnKey="menuPrice" />
+                          {t('profitability.table.menuPrice')} <SortIcon columnKey="menuPrice" />
                         </Button>
                       </TableHead>
                       <TableHead className="text-right">
                         <Button variant="ghost" size="sm" className="h-auto p-0 font-semibold hover:bg-transparent ml-auto" onClick={() => handleSort('foodCostPercentage')}>
-                          Food Cost % <SortIcon columnKey="foodCostPercentage" />
+                          {t('profitability.table.foodCostPct')} <SortIcon columnKey="foodCostPercentage" />
                         </Button>
                       </TableHead>
                       <TableHead className="text-right">
                         <Button variant="ghost" size="sm" className="h-auto p-0 font-semibold hover:bg-transparent ml-auto" onClick={() => handleSort('profit')}>
-                          Profit <SortIcon columnKey="profit" />
+                          {t('profitability.table.profit')} <SortIcon columnKey="profit" />
                         </Button>
                       </TableHead>
                     </TableRow>
