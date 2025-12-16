@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Plus, FileText, LogIn, ShoppingCart, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ const itemVariants = {
 };
 
 export default function Orders() {
+  const { t } = useTranslation();
   const [forecastDays, setForecastDays] = useState(3);
   const [activeTab, setActiveTab] = useState('suggested');
   const { user, loading: authLoading } = useAuth();
@@ -68,15 +70,15 @@ export default function Orders() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
         <div className="text-center space-y-2">
           <ShoppingCart className="h-16 w-16 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-foreground">Sign in required</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('auth.signInRequired')}</h1>
           <p className="text-muted-foreground">
-            Please sign in to view and manage purchase orders.
+            {t('auth.pleaseSignIn', { area: t('orders.title').toLowerCase() })}
           </p>
         </div>
         <Link to="/auth">
           <Button variant="accent" size="lg">
             <LogIn className="h-5 w-5 mr-2" />
-            Sign In
+            {t('auth.signIn')}
           </Button>
         </Link>
       </div>
@@ -94,8 +96,8 @@ export default function Orders() {
   const handleCreateFromSuggestion = async (suggestion: SuggestedOrder) => {
     if (suggestion.vendorId === 'unassigned') {
       toast({
-        title: 'Cannot create order',
-        description: 'Please assign vendors to ingredients first.',
+        title: t('orders.cannotCreateOrder'),
+        description: t('orders.assignVendorsFirst'),
         variant: 'destructive',
       });
       return;
@@ -140,14 +142,14 @@ export default function Orders() {
       setActiveTab('drafts');
 
       toast({
-        title: 'Order created',
-        description: `Draft PO for ${suggestion.vendorName} with ${suggestion.items.length} items.`,
+        title: t('orders.orderCreated'),
+        description: t('orders.draftCreated', { vendor: suggestion.vendorName, items: suggestion.items.length }),
       });
     } catch (error) {
       console.error('Failed to create order:', error);
       toast({
-        title: 'Failed to create order',
-        description: 'Please try again.',
+        title: t('orders.failedCreate'),
+        description: t('orders.pleaseTryAgain'),
         variant: 'destructive',
       });
     }
@@ -198,19 +200,19 @@ export default function Orders() {
         <div className="absolute inset-0 flex items-center px-8 md:px-12">
           <div className="space-y-3">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-              Purchase Orders
+              {t('orders.title')}
             </h1>
             <p className="text-muted-foreground max-w-md">
-              Manage vendor orders and track deliveries.
+              {t('orders.subtitle')}
             </p>
             <div className="flex gap-3 pt-2">
               <Button variant="accent" size="sm">
                 <Plus className="h-4 w-4 mr-2" />
-                Create Order
+                {t('orders.createOrder')}
               </Button>
               <Button variant="outline" size="sm" className="bg-background/50 backdrop-blur-sm">
                 <FileText className="h-4 w-4 mr-2" />
-                Export
+                {t('common.export')}
               </Button>
             </div>
           </div>
@@ -223,7 +225,7 @@ export default function Orders() {
           <TabsList>
             <TabsTrigger value="suggested" className="gap-2">
               <Sparkles className="h-3.5 w-3.5" />
-              Suggested
+              {t('orders.suggested')}
               {suggestedItemCount > 0 && (
                 <Badge variant="accent" className="h-5 px-1.5 text-xs">
                   {suggestedItemCount}
@@ -231,7 +233,7 @@ export default function Orders() {
               )}
             </TabsTrigger>
             <TabsTrigger value="drafts" className="gap-2">
-              Drafts
+              {t('orders.drafts')}
               {draftOrders.length > 0 && (
                 <Badge variant="warning" className="h-5 px-1.5 text-xs">
                   {draftOrders.length}
@@ -239,23 +241,23 @@ export default function Orders() {
               )}
             </TabsTrigger>
             <TabsTrigger value="active" className="gap-2">
-              Active
+              {t('orders.active')}
               {activeOrders.length > 0 && (
                 <Badge variant="secondary" className="h-5 px-1.5 text-xs">
                   {activeOrders.length}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
+            <TabsTrigger value="completed">{t('orders.completed')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="suggested" className="space-y-6">
             {/* Forecast period selector */}
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <h3 className="text-lg font-semibold">AI-Suggested Orders</h3>
+                <h3 className="text-lg font-semibold">{t('orders.aiSuggested')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Based on current inventory and {forecastDays}-day demand forecast
+                  {t('orders.basedOn', { days: forecastDays })}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -264,9 +266,9 @@ export default function Orders() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="3">3 days</SelectItem>
-                    <SelectItem value="7">7 days</SelectItem>
-                    <SelectItem value="14">14 days</SelectItem>
+                    <SelectItem value="3">{t('orders.days.d3')}</SelectItem>
+                    <SelectItem value="7">{t('orders.days.d7')}</SelectItem>
+                    <SelectItem value="14">{t('orders.days.d14')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -285,9 +287,9 @@ export default function Orders() {
             ) : suggestions.length === 0 ? (
               <Card className="p-12 text-center">
                 <Sparkles className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                <h3 className="font-semibold text-foreground mb-2">All stocked up!</h3>
+                <h3 className="font-semibold text-foreground mb-2">{t('orders.allStocked')}</h3>
                 <p className="text-muted-foreground">
-                  No orders suggested. Inventory levels are sufficient for the {forecastDays}-day forecast.
+                  {t('orders.noSuggested', { days: forecastDays })}
                 </p>
               </Card>
             ) : (
@@ -317,7 +319,7 @@ export default function Orders() {
             ) : draftOrders.length === 0 ? (
               <Card className="p-12 text-center">
                 <ShoppingCart className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                <p className="text-muted-foreground">No draft orders</p>
+                <p className="text-muted-foreground">{t('orders.noDrafts')}</p>
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -339,7 +341,7 @@ export default function Orders() {
               </Card>
             ) : activeOrders.length === 0 ? (
               <Card className="p-12 text-center">
-                <p className="text-muted-foreground">No active orders</p>
+                <p className="text-muted-foreground">{t('orders.noActive')}</p>
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -357,7 +359,7 @@ export default function Orders() {
           <TabsContent value="completed" className="space-y-4">
             {completedOrders.length === 0 ? (
               <Card className="p-12 text-center">
-                <p className="text-muted-foreground">No completed orders yet</p>
+                <p className="text-muted-foreground">{t('orders.noCompleted')}</p>
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -377,10 +379,10 @@ export default function Orders() {
       <motion.div variants={itemVariants}>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="text-base font-medium">Active Vendors</CardTitle>
+            <CardTitle className="text-base font-medium">{t('orders.activeVendors')}</CardTitle>
             <Link to="/settings">
               <Button variant="ghost" size="sm">
-                Manage Vendors
+                {t('orders.manageVendors')}
               </Button>
             </Link>
           </CardHeader>
@@ -400,14 +402,14 @@ export default function Orders() {
                   >
                     <h4 className="font-medium text-foreground">{vendor.name}</h4>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {vendor.delivery_days?.join(', ') || 'No delivery schedule'}
+                      {vendor.delivery_days?.join(', ') || t('orders.noDeliverySchedule')}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       <Badge variant="secondary" className="text-xs">
-                        {vendor.lead_time_days || 2}d lead
+                        {t('orders.lead', { days: vendor.lead_time_days || 2 })}
                       </Badge>
                       <Badge variant="muted" className="text-xs">
-                        ${vendor.minimum_order || 0} min
+                        {t('orders.minOrder', { amount: vendor.minimum_order || 0 })}
                       </Badge>
                     </div>
                   </div>
@@ -415,7 +417,7 @@ export default function Orders() {
               </div>
             ) : (
               <p className="text-center text-muted-foreground py-4">
-                No vendors configured yet
+                {t('orders.noVendors')}
               </p>
             )}
           </CardContent>
