@@ -443,6 +443,8 @@
     "eventsFactored": "{{count}} events factored in",
     "weatherFor": "Weather for {{city}}",
     "cappedTo": "Capped to {{covers}} covers/day",
+    "seats": "seats",
+    "seatCapacity": "seat capacity",
     "predictedSales": "Predicted Sales (Next {{days}} Days)",
     "noRecipesFound": "No recipes found",
     "addRecipesToSee": "Add recipes to see forecasted sales",
@@ -456,7 +458,17 @@
     "orderNow": "Order Now",
     "monitor": "Monitor",
     "ok": "OK",
-    "usedIn": "Used in:"
+    "usedIn": "Used in:",
+    "andMore": "and {{count}} more",
+    "foundItems": "Found {{count}} items to order",
+    "noUrgentOrders": "No urgent orders needed based on current forecast",
+    "basedOnHistory": "Based on historical patterns",
+    "basedOnDefaults": "Based on category defaults",
+    "estRevenue": "Est. revenue: ${{amount}}",
+    "validationQueue": "Validation Queue",
+    "comingSoon": "Coming Soon",
+    "validationWillAppear": "Validation items will appear here",
+    "validationDescription": "When mismatches are detected between predicted and actual usage, you'll see suggestions to update recipes."
   },
   "alerts": {
     "title": "Command Center",

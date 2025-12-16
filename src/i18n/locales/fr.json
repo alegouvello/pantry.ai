@@ -443,6 +443,8 @@
     "eventsFactored": "{{count}} événements pris en compte",
     "weatherFor": "Météo pour {{city}}",
     "cappedTo": "Plafonné à {{covers}} couverts/jour",
+    "seats": "places",
+    "seatCapacity": "capacité en places",
     "predictedSales": "Ventes prévues ({{days}} prochains jours)",
     "noRecipesFound": "Aucune recette",
     "addRecipesToSee": "Ajoutez des recettes pour voir les prévisions",
@@ -456,7 +458,17 @@
     "orderNow": "Commander",
     "monitor": "Surveiller",
     "ok": "OK",
-    "usedIn": "Utilisé dans :"
+    "usedIn": "Utilisé dans :",
+    "andMore": "et {{count}} de plus",
+    "foundItems": "{{count}} articles à commander trouvés",
+    "noUrgentOrders": "Aucune commande urgente selon les prévisions",
+    "basedOnHistory": "Basé sur l'historique",
+    "basedOnDefaults": "Basé sur les valeurs par défaut",
+    "estRevenue": "Rev. estimé : {{amount}} $",
+    "validationQueue": "File de validation",
+    "comingSoon": "Bientôt disponible",
+    "validationWillAppear": "Les éléments de validation apparaîtront ici",
+    "validationDescription": "Lorsque des écarts sont détectés entre l'utilisation prévue et réelle, vous verrez des suggestions de mise à jour."
   },
   "alerts": {
     "title": "Centre de commande",
