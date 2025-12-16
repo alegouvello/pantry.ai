@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -43,6 +44,7 @@ export function Step1RestaurantBasics({
   onSave,
   updateHealthScore,
 }: Step1Props) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { setConceptType: setContextConceptType } = useOnboardingContext();
   const { data: existingRestaurant } = useRestaurant(orgId || undefined);
@@ -70,8 +72,8 @@ export function Step1RestaurantBasics({
   const handleFindDetails = async () => {
     if (!name.trim()) {
       toast({
-        title: 'Missing information',
-        description: 'Please enter your restaurant name first.',
+        title: t('step1Basics.missingInfo'),
+        description: t('step1Basics.enterNameFirst'),
         variant: 'destructive',
       });
       return;
@@ -116,16 +118,16 @@ export function Step1RestaurantBasics({
       }
       
       toast({
-        title: 'Details found!',
-        description: `AI found information with ${enriched.confidence} confidence. Please review and adjust as needed.`,
+        title: t('step1Basics.detailsFound'),
+        description: t('step1Basics.detailsFoundDesc', { confidence: enriched.confidence }),
       });
       updateHealthScore(5);
       
     } catch (error) {
       console.error('Error enriching restaurant:', error);
       toast({
-        title: 'Search failed',
-        description: error instanceof Error ? error.message : 'Could not find restaurant details. Please fill in manually.',
+        title: t('step1Basics.searchFailed'),
+        description: error instanceof Error ? error.message : t('step1Basics.couldNotFind'),
         variant: 'destructive',
       });
     } finally {
@@ -136,8 +138,8 @@ export function Step1RestaurantBasics({
   const handleContinue = async () => {
     if (!name.trim()) {
       toast({
-        title: 'Name required',
-        description: 'Please enter your restaurant name.',
+        title: t('step1Basics.nameRequired'),
+        description: t('step1Basics.enterName'),
         variant: 'destructive',
       });
       return;
@@ -145,8 +147,8 @@ export function Step1RestaurantBasics({
 
     if (!address.city) {
       toast({
-        title: 'Address required',
-        description: 'Please enter at least your city.',
+        title: t('step1Basics.addressRequired'),
+        description: t('step1Basics.enterCity'),
         variant: 'destructive',
       });
       return;
@@ -172,8 +174,8 @@ export function Step1RestaurantBasics({
       onNext();
     } catch (error) {
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to save',
+        title: t('step1Basics.error'),
+        description: error instanceof Error ? error.message : t('step1Basics.failedSave'),
         variant: 'destructive',
       });
     }
@@ -186,11 +188,11 @@ export function Step1RestaurantBasics({
       currentStep={currentStep}
       completedSteps={completedSteps}
       setupHealthScore={setupHealthScore}
-      title="Tell us about your restaurant"
-      subtitle="We'll use this to personalize your experience"
+      title={t('step1Basics.title')}
+      subtitle={t('step1Basics.subtitle')}
       onNext={handleContinue}
       onSave={onSave}
-      nextLabel={isLoading ? 'Saving...' : 'Continue'}
+      nextLabel={isLoading ? t('step1Basics.saving') : t('step1Basics.continue')}
       nextDisabled={isLoading || !name.trim() || !address.city}
       conceptType={conceptType}
     >
@@ -209,85 +211,85 @@ export function Step1RestaurantBasics({
         {/* Basic Info */}
         <motion.div variants={sectionVariants} className="grid gap-6 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="name">Restaurant Name *</Label>
+            <Label htmlFor="name">{t('step1Basics.restaurantName')} *</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="The Golden Fork"
+              placeholder={t('step1Basics.restaurantNamePlaceholder')}
               className="text-lg"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="street">Street Address</Label>
+            <Label htmlFor="street">{t('step1Basics.streetAddress')}</Label>
             <Input
               id="street"
               value={address.street || ''}
               onChange={(e) => setAddress({ ...address, street: e.target.value })}
-              placeholder="123 Main Street"
+              placeholder={t('step1Basics.streetPlaceholder')}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="city">City *</Label>
+            <Label htmlFor="city">{t('step1Basics.city')} *</Label>
             <Input
               id="city"
               value={address.city || ''}
               onChange={(e) => setAddress({ ...address, city: e.target.value })}
-              placeholder="New York"
+              placeholder={t('step1Basics.cityPlaceholder')}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="state">State</Label>
+            <Label htmlFor="state">{t('step1Basics.state')}</Label>
             <Input
               id="state"
               value={address.state || ''}
               onChange={(e) => setAddress({ ...address, state: e.target.value })}
-              placeholder="NY"
+              placeholder={t('step1Basics.statePlaceholder')}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="zip">ZIP Code</Label>
+            <Label htmlFor="zip">{t('step1Basics.zip')}</Label>
             <Input
               id="zip"
               value={address.zip || ''}
               onChange={(e) => setAddress({ ...address, zip: e.target.value })}
-              placeholder="10001"
+              placeholder={t('step1Basics.zipPlaceholder')}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone (optional)</Label>
+            <Label htmlFor="phone">{t('step1Basics.phone')}</Label>
             <Input
               id="phone"
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="(555) 123-4567"
+              placeholder={t('step1Basics.phonePlaceholder')}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="website">Website (optional)</Label>
+            <Label htmlFor="website">{t('step1Basics.website')}</Label>
             <Input
               id="website"
               type="url"
               value={website}
               onChange={(e) => setWebsite(e.target.value)}
-              placeholder="https://example.com"
+              placeholder={t('step1Basics.websitePlaceholder')}
             />
           </div>
 
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="instagram">Instagram (optional)</Label>
+            <Label htmlFor="instagram">{t('step1Basics.instagram')}</Label>
             <Input
               id="instagram"
               value={instagram}
               onChange={(e) => setInstagram(e.target.value)}
-              placeholder="@yourrestaurant"
+              placeholder={t('step1Basics.instagramPlaceholder')}
             />
           </div>
         </motion.div>
@@ -306,20 +308,20 @@ export function Step1RestaurantBasics({
               ) : (
                 <Sparkles className="w-4 h-4" />
               )}
-              {isSearching ? 'Searching...' : 'Find details online'}
+              {isSearching ? t('step1Basics.searching') : t('step1Basics.findDetails')}
             </Button>
           </motion.div>
         </motion.div>
 
         {/* Concept Type */}
         <motion.div variants={sectionVariants} className="space-y-4">
-          <Label>What type of establishment?</Label>
+          <Label>{t('step1Basics.whatType')}</Label>
           <ConceptSelector selected={conceptType} onSelect={setConceptType} />
         </motion.div>
 
         {/* Services */}
         <motion.div variants={sectionVariants} className="space-y-4">
-          <Label>What services do you offer?</Label>
+          <Label>{t('step1Basics.whatServices')}</Label>
           <ServiceChips selected={services} onChange={setServices} />
         </motion.div>
       </motion.div>
