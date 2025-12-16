@@ -13,7 +13,9 @@ import { useQuickReorder } from '@/hooks/useQuickReorder';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import heroImage from '@/assets/pages/hero-inventory.jpg';
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -32,6 +34,7 @@ const itemVariants = {
 };
 
 export default function Inventory() {
+  const { t } = useTranslation();
   const { user, loading: authLoading } = useAuth();
   const { data: ingredients, isLoading, error } = useIngredients();
   const updateIngredient = useUpdateIngredient();
@@ -51,15 +54,15 @@ export default function Inventory() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
         <div className="text-center space-y-2">
           <Package className="h-16 w-16 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-foreground">Sign in required</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('inventory.signInRequired')}</h1>
           <p className="text-muted-foreground">
-            Please sign in to view and manage inventory.
+            {t('inventory.signInToView')}
           </p>
         </div>
         <Link to="/auth">
           <Button variant="accent" size="lg">
             <LogIn className="h-5 w-5 mr-2" />
-            Sign In
+            {t('auth.signIn')}
           </Button>
         </Link>
       </div>
@@ -85,7 +88,7 @@ export default function Inventory() {
 
   const handleSuggestParLevels = async () => {
     if (!ingredients?.length) {
-      toast.error('No ingredients to analyze');
+      toast.error(t('inventory.noIngredientsToAnalyze'));
       return;
     }
 
@@ -104,12 +107,11 @@ export default function Inventory() {
 
       const result = await suggestParLevels.mutateAsync({
         ingredients: inputIngredients,
-        conceptType: 'casual dining', // Could be fetched from restaurant settings
+        conceptType: 'casual dining',
       });
 
       setSuggestions(result);
     } catch (error) {
-      // Error is handled by the mutation's onError
       console.error('Failed to get suggestions:', error);
     }
   };
@@ -145,10 +147,10 @@ export default function Inventory() {
     }
 
     if (successCount > 0) {
-      toast.success(`Updated par levels for ${successCount} ingredients`);
+      toast.success(t('inventory.parLevelsUpdated', { count: successCount }));
     }
     if (failCount > 0) {
-      toast.error(`Failed to update ${failCount} ingredients`);
+      toast.error(t('inventory.parLevelsUpdateFailed', { count: failCount }));
     }
     
     setSuggestions({});
@@ -177,22 +179,22 @@ export default function Inventory() {
       >
         <img 
           src={heroImage} 
-          alt="Inventory" 
+          alt={t('inventory.title')} 
           className="absolute inset-0 w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-transparent" />
         <div className="absolute inset-0 flex items-center px-8 md:px-12">
           <div className="space-y-3">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-              Inventory
+              {t('inventory.title')}
             </h1>
             <p className="text-muted-foreground max-w-md">
-              Manage your ingredients and stock levels.
+              {t('inventory.subtitle')}
             </p>
             <div className="flex gap-3 pt-2 flex-wrap">
               <Button variant="accent" size="sm">
                 <Plus className="h-4 w-4 mr-2" />
-                Add Item
+                {t('inventory.addItem')}
               </Button>
               {lowStockCount > 0 && (
                 <Button 
@@ -202,7 +204,7 @@ export default function Inventory() {
                   disabled={isCreating}
                 >
                   <ShoppingCart className="h-4 w-4 mr-2" />
-                  {isCreating ? 'Creating...' : `Quick Reorder (${lowStockCount})`}
+                  {isCreating ? t('inventory.creating') : t('inventory.quickReorder', { count: lowStockCount })}
                 </Button>
               )}
               <Button 
@@ -213,7 +215,7 @@ export default function Inventory() {
                 disabled={!ingredients?.length || isCheckingStock}
               >
                 <AlertTriangle className="h-4 w-4 mr-2" />
-                {isCheckingStock ? 'Checking...' : 'Check Stock'}
+                {isCheckingStock ? t('inventory.checking') : t('inventory.checkStock')}
               </Button>
               <Button 
                 variant="outline" 
@@ -223,15 +225,15 @@ export default function Inventory() {
                 disabled={!ingredients?.length || suggestParLevels.isPending}
               >
                 <Sparkles className="h-4 w-4 mr-2" />
-                {suggestParLevels.isPending ? 'Analyzing...' : 'AI Par Levels'}
+                {suggestParLevels.isPending ? t('inventory.analyzing') : t('inventory.aiParLevels')}
               </Button>
               <Button variant="outline" size="sm" className="bg-background/50 backdrop-blur-sm">
                 <Upload className="h-4 w-4 mr-2" />
-                Import
+                {t('common.import')}
               </Button>
               <Button variant="outline" size="sm" className="bg-background/50 backdrop-blur-sm">
                 <Download className="h-4 w-4 mr-2" />
-                Export
+                {t('common.export')}
               </Button>
             </div>
           </div>
@@ -249,17 +251,17 @@ export default function Inventory() {
           </Card>
         ) : error ? (
           <Card className="p-8 text-center">
-            <p className="text-destructive">Error loading inventory: {error.message}</p>
+            <p className="text-destructive">{t('inventory.errorLoading', { message: error.message })}</p>
           </Card>
         ) : mappedIngredients.length === 0 ? (
           <Card className="p-12 text-center">
             <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
             <p className="text-muted-foreground mb-4">
-              No ingredients yet. Add your first ingredient to get started!
+              {t('inventory.noIngredients')}
             </p>
             <Button variant="accent">
               <Plus className="h-4 w-4 mr-2" />
-              Add First Ingredient
+              {t('inventory.addFirstIngredient')}
             </Button>
           </Card>
         ) : (

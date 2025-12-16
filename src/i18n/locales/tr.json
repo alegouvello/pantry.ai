@@ -353,11 +353,19 @@
     "subtitle": "Malzemeleri ve stok seviyelerini yönetin.",
     "addItem": "Öğe ekle",
     "checkStock": "Stok kontrolü",
+    "checking": "Kontrol ediliyor...",
     "aiParLevels": "YZ Par Seviyesi",
+    "analyzing": "Analiz ediliyor...",
     "quickReorder": "Hızlı sipariş ({{count}})",
+    "creating": "Oluşturuluyor...",
     "noIngredients": "Henüz malzeme yok. Başlamak için ilk malzemeyi ekleyin!",
     "addFirstIngredient": "İlk malzemeyi ekle",
-    "noIngredientsToAnalyze": "Analiz edilecek malzeme yok"
+    "noIngredientsToAnalyze": "Analiz edilecek malzeme yok",
+    "errorLoading": "Yükleme hatası: {{message}}",
+    "parLevelsUpdated": "{{count}} malzeme için par seviyeleri güncellendi",
+    "parLevelsUpdateFailed": "{{count}} malzeme güncellenemedi",
+    "signInRequired": "Giriş gerekli",
+    "signInToView": "Envanteri görüntülemek için giriş yapın."
   },
   "recipes": {
     "title": "Tarifler",

@@ -353,11 +353,19 @@
     "subtitle": "Manage your ingredients and stock levels.",
     "addItem": "Add Item",
     "checkStock": "Check Stock",
+    "checking": "Checking...",
     "aiParLevels": "AI Par Levels",
+    "analyzing": "Analyzing...",
     "quickReorder": "Quick Reorder ({{count}})",
+    "creating": "Creating...",
     "noIngredients": "No ingredients yet. Add your first ingredient to get started!",
     "addFirstIngredient": "Add First Ingredient",
-    "noIngredientsToAnalyze": "No ingredients to analyze"
+    "noIngredientsToAnalyze": "No ingredients to analyze",
+    "errorLoading": "Error loading inventory: {{message}}",
+    "parLevelsUpdated": "Updated par levels for {{count}} ingredients",
+    "parLevelsUpdateFailed": "Failed to update {{count}} ingredients",
+    "signInRequired": "Sign in required",
+    "signInToView": "Please sign in to view and manage inventory."
   },
   "recipes": {
     "title": "Recipes",
