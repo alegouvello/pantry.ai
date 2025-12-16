@@ -65,7 +65,34 @@
     "activeAlerts": "Alertas activas",
     "viewAll": "Ver todo",
     "allClear": "¡Todo bien!",
-    "inventoryLooksGreat": "Tu inventario se ve genial."
+    "inventoryLooksGreat": "Tu inventario se ve genial.",
+    "foodCost": {
+      "title": "Resumen de costos",
+      "noPricingData": "Sin datos de precios",
+      "addPrices": "Agrega precios de menú para ver el análisis",
+      "snapshot": "Captura",
+      "currentAverage": "Promedio actual",
+      "weeklyTrend": "Tendencia semanal",
+      "avgFoodCost": "Costo promedio",
+      "recipes": "recetas",
+      "count": "Cantidad",
+      "onTarget": "En objetivo:",
+      "needsReview": "A revisar:",
+      "excellent": "Excelente",
+      "average": "Promedio",
+      "high": "Alto",
+      "snapshotSaved": "Captura guardada exitosamente",
+      "snapshotFailed": "Error al guardar captura"
+    },
+    "recentActivity": {
+      "title": "Actividad reciente",
+      "noActivity": "Sin actividad reciente",
+      "depleted": "Agotado",
+      "received": "Recibido",
+      "adjusted": "Ajustado",
+      "deliveryReceived": "Entrega recibida de {{vendor}}",
+      "poStatus": "OC {{status}} - {{vendor}}"
+    }
   },
   "common": {
     "checking": "Verificando...",

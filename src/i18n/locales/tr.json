@@ -65,7 +65,34 @@
     "activeAlerts": "Aktif uyarılar",
     "viewAll": "Tümünü gör",
     "allClear": "Her şey yolunda!",
-    "inventoryLooksGreat": "Envanter harika görünüyor."
+    "inventoryLooksGreat": "Envanter harika görünüyor.",
+    "foodCost": {
+      "title": "Yiyecek Maliyeti Özeti",
+      "noPricingData": "Fiyat verisi yok",
+      "addPrices": "Analiz için menü fiyatları ekleyin",
+      "snapshot": "Anlık Kayıt",
+      "currentAverage": "Mevcut ortalama",
+      "weeklyTrend": "Haftalık trend",
+      "avgFoodCost": "Ort. maliyet",
+      "recipes": "tarif",
+      "count": "Sayı",
+      "onTarget": "Hedefte:",
+      "needsReview": "İncelenmeli:",
+      "excellent": "Mükemmel",
+      "average": "Ortalama",
+      "high": "Yüksek",
+      "snapshotSaved": "Anlık kayıt başarıyla kaydedildi",
+      "snapshotFailed": "Kayıt başarısız oldu"
+    },
+    "recentActivity": {
+      "title": "Son Aktivite",
+      "noActivity": "Son aktivite yok",
+      "depleted": "Tükendi",
+      "received": "Alındı",
+      "adjusted": "Düzeltildi",
+      "deliveryReceived": "{{vendor}}'dan teslimat alındı",
+      "poStatus": "SŞ {{status}} - {{vendor}}"
+    }
   },
   "common": {
     "checking": "Kontrol ediliyor...",

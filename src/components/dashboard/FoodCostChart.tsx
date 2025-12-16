@@ -9,8 +9,10 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Ba
 import { DollarSign, TrendingDown, TrendingUp, Minus, Camera, RefreshCw } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 export function FoodCostChart() {
+  const { t } = useTranslation();
   const { data: recipes, isLoading: recipesLoading } = useRecipes();
   const { data: snapshots, isLoading: snapshotsLoading } = useCostSnapshotSummaries(4);
   const createSnapshot = useCreateCostSnapshot();
@@ -87,9 +89,9 @@ export function FoodCostChart() {
 
   // Get status color and icon based on average
   const getStatusInfo = () => {
-    if (currentAvgFoodCost <= 28) return { color: 'success', icon: TrendingDown, label: 'Excellent' };
-    if (currentAvgFoodCost <= 32) return { color: 'warning', icon: Minus, label: 'Average' };
-    return { color: 'destructive', icon: TrendingUp, label: 'High' };
+    if (currentAvgFoodCost <= 28) return { color: 'success', icon: TrendingDown, label: t('dashboard.foodCost.excellent') };
+    if (currentAvgFoodCost <= 32) return { color: 'warning', icon: Minus, label: t('dashboard.foodCost.average') };
+    return { color: 'destructive', icon: TrendingUp, label: t('dashboard.foodCost.high') };
   };
 
   const status = getStatusInfo();
@@ -98,9 +100,9 @@ export function FoodCostChart() {
   const handleTakeSnapshot = async () => {
     try {
       await createSnapshot.mutateAsync(recipesCosts);
-      toast.success('Cost snapshot saved successfully');
+      toast.success(t('dashboard.foodCost.snapshotSaved'));
     } catch (error) {
-      toast.error('Failed to save snapshot');
+      toast.error(t('dashboard.foodCost.snapshotFailed'));
     }
   };
 
@@ -112,14 +114,14 @@ export function FoodCostChart() {
             <div className="p-1.5 rounded-lg bg-primary/10">
               <DollarSign className="h-4 w-4 text-primary" />
             </div>
-            Food Cost Overview
+            {t('dashboard.foodCost.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
             <DollarSign className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm font-medium text-foreground">No pricing data</p>
-            <p className="text-xs mt-1">Add menu prices to see food cost analysis</p>
+            <p className="text-sm font-medium text-foreground">{t('dashboard.foodCost.noPricingData')}</p>
+            <p className="text-xs mt-1">{t('dashboard.foodCost.addPrices')}</p>
           </div>
         </CardContent>
       </Card>
@@ -133,10 +135,10 @@ export function FoodCostChart() {
           <div className="p-1.5 rounded-lg bg-primary/10">
             <DollarSign className="h-4 w-4 text-primary" />
           </div>
-          Food Cost Overview
+          {t('dashboard.foodCost.title')}
         </CardTitle>
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Button 
+          <Button
             variant="ghost" 
             size="sm" 
             onClick={handleTakeSnapshot}
@@ -148,7 +150,7 @@ export function FoodCostChart() {
             ) : (
               <Camera className="h-3 w-3" />
             )}
-            <span className="ml-1 text-xs">Snapshot</span>
+            <span className="ml-1 text-xs">{t('dashboard.foodCost.snapshot')}</span>
           </Button>
         </motion.div>
       </CardHeader>
@@ -156,7 +158,7 @@ export function FoodCostChart() {
         {/* Average Food Cost with Trend */}
         <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/30">
           <div>
-            <p className="text-xs text-muted-foreground">Current Average</p>
+            <p className="text-xs text-muted-foreground">{t('dashboard.foodCost.currentAverage')}</p>
             <div className="flex items-baseline gap-2">
               <p className="text-3xl font-bold text-foreground">{currentAvgFoodCost.toFixed(1)}%</p>
               {weekOverWeekChange !== null && (
@@ -184,7 +186,7 @@ export function FoodCostChart() {
         {/* Week-over-Week Trend Chart */}
         {trendData.length > 1 && (
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground font-medium">Weekly Trend</p>
+            <p className="text-xs text-muted-foreground font-medium">{t('dashboard.foodCost.weeklyTrend')}</p>
             <div className="h-24">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={trendData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
@@ -203,7 +205,7 @@ export function FoodCostChart() {
                     tickFormatter={(value) => `${value}%`}
                   />
                   <Tooltip 
-                    formatter={(value: number) => [`${value}%`, 'Avg Food Cost']}
+                    formatter={(value: number) => [`${value}%`, t('dashboard.foodCost.avgFoodCost')]}
                     contentStyle={{ 
                       backgroundColor: 'hsl(var(--card))', 
                       border: '1px solid hsl(var(--border))',
@@ -241,7 +243,7 @@ export function FoodCostChart() {
                   ))}
                 </Pie>
                 <Tooltip 
-                  formatter={(value: number) => [`${value} recipes`, 'Count']}
+                  formatter={(value: number) => [`${value} ${t('dashboard.foodCost.recipes')}`, t('dashboard.foodCost.count')]}
                   contentStyle={{ 
                     backgroundColor: 'hsl(var(--card))', 
                     border: '1px solid hsl(var(--border))',
@@ -263,12 +265,12 @@ export function FoodCostChart() {
         <div className="grid grid-cols-2 gap-3 text-xs">
           <div className="flex items-center gap-2 p-2 rounded-lg bg-success/5 border border-success/20">
             <div className="w-2 h-2 rounded-full bg-success" />
-            <span className="text-muted-foreground">On target:</span>
+            <span className="text-muted-foreground">{t('dashboard.foodCost.onTarget')}</span>
             <span className="font-semibold text-foreground">{excellent + good}</span>
           </div>
           <div className="flex items-center gap-2 p-2 rounded-lg bg-destructive/5 border border-destructive/20">
             <div className="w-2 h-2 rounded-full bg-destructive" />
-            <span className="text-muted-foreground">Needs review:</span>
+            <span className="text-muted-foreground">{t('dashboard.foodCost.needsReview')}</span>
             <span className="font-semibold text-foreground">{warning + high}</span>
           </div>
         </div>
