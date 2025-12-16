@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { AlertTriangle, Check, Filter, LogIn, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ const itemVariants = {
 };
 
 export default function Alerts() {
+  const { t } = useTranslation();
   const { user, loading: authLoading } = useAuth();
   const { data: activeAlerts, isLoading: activeLoading } = useActiveAlerts();
   const { data: resolvedAlerts, isLoading: resolvedLoading } = useResolvedAlerts();
@@ -39,15 +41,15 @@ export default function Alerts() {
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
         <div className="text-center space-y-2">
           <Shield className="h-16 w-16 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-foreground">Sign in required</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t('auth.signInRequired')}</h1>
           <p className="text-muted-foreground">
-            Please sign in to view alerts.
+            {t('auth.pleaseSignIn', { area: t('nav.alerts').toLowerCase() })}
           </p>
         </div>
         <Link to="/auth">
           <Button variant="accent" size="lg">
             <LogIn className="h-5 w-5 mr-2" />
-            Sign In
+            {t('auth.signIn')}
           </Button>
         </Link>
       </div>
@@ -95,10 +97,10 @@ export default function Alerts() {
         <div className="absolute inset-0 flex items-center px-8 md:px-12">
           <div className="space-y-3">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-              Command Center
+              {t('alerts.title')}
             </h1>
             <p className="text-muted-foreground max-w-md">
-              Monitor alerts and take action on critical items.
+              {t('alerts.subtitle')}
             </p>
             <div className="flex gap-3 pt-2">
               <Button 
@@ -107,11 +109,11 @@ export default function Alerts() {
                 disabled={!activeAlerts || activeAlerts.length === 0}
               >
                 <Check className="h-4 w-4 mr-2" />
-                Resolve All
+                {t('alerts.resolveAll')}
               </Button>
               <Button variant="outline" size="sm" className="bg-background/50 backdrop-blur-sm">
                 <Filter className="h-4 w-4 mr-2" />
-                Filter
+                {t('alerts.filter')}
               </Button>
             </div>
           </div>
@@ -127,7 +129,7 @@ export default function Alerts() {
           <div className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-destructive" />
-              <span className="font-medium text-foreground">High Priority</span>
+              <span className="font-medium text-foreground">{t('alerts.highPriority')}</span>
             </div>
             <Badge variant="low">{highPriority.length}</Badge>
           </div>
@@ -137,7 +139,7 @@ export default function Alerts() {
           <div className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-warning" />
-              <span className="font-medium text-foreground">Medium</span>
+              <span className="font-medium text-foreground">{t('alerts.medium')}</span>
             </div>
             <Badge variant="medium">{mediumPriority.length}</Badge>
           </div>
@@ -147,7 +149,7 @@ export default function Alerts() {
           <div className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Check className="h-5 w-5 text-success" />
-              <span className="font-medium text-foreground">Low Priority</span>
+              <span className="font-medium text-foreground">{t('alerts.lowPriority')}</span>
             </div>
             <Badge variant="high">{lowPriority.length}</Badge>
           </div>
@@ -159,7 +161,7 @@ export default function Alerts() {
         <Tabs defaultValue="active" className="space-y-6">
           <TabsList>
             <TabsTrigger value="active" className="gap-2">
-              Active
+              {t('alerts.active')}
               {activeAlerts && activeAlerts.length > 0 && (
                 <Badge variant="warning" className="h-5 px-1.5 text-xs">
                   {activeAlerts.length}
@@ -167,7 +169,7 @@ export default function Alerts() {
               )}
             </TabsTrigger>
             <TabsTrigger value="resolved" className="gap-2">
-              Resolved
+              {t('alerts.resolved')}
               <Badge variant="muted" className="h-5 px-1.5 text-xs">
                 {resolvedAlerts?.length || 0}
               </Badge>
@@ -184,9 +186,9 @@ export default function Alerts() {
             ) : !activeAlerts || activeAlerts.length === 0 ? (
               <Card className="p-12 text-center border-success/50 bg-success/5">
                 <Check className="h-12 w-12 text-success mx-auto mb-4" />
-                <p className="text-lg font-medium text-foreground">All clear!</p>
+                <p className="text-lg font-medium text-foreground">{t('dashboard.allClear')}</p>
                 <p className="text-muted-foreground">
-                  No active alerts at this time.
+                  {t('alerts.noActive')}
                 </p>
               </Card>
             ) : (
@@ -211,7 +213,7 @@ export default function Alerts() {
               </div>
             ) : !resolvedAlerts || resolvedAlerts.length === 0 ? (
               <Card className="p-12 text-center">
-                <p className="text-muted-foreground">No resolved alerts yet</p>
+                <p className="text-muted-foreground">{t('alerts.noResolved')}</p>
               </Card>
             ) : (
               <div className="space-y-4">
