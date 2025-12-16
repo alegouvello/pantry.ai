@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Upload, Link as LinkIcon, ShoppingBag, PenLine, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,34 +26,6 @@ interface Step2Props {
 
 type ImportMethod = 'upload' | 'url' | 'pos' | 'manual';
 
-const importMethods = [
-  {
-    id: 'upload' as ImportMethod,
-    title: 'Upload Menu',
-    description: 'PDF, JPG, or PNG of your menu',
-    icon: Upload,
-    recommended: true,
-  },
-  {
-    id: 'url' as ImportMethod,
-    title: 'Paste URL',
-    description: 'Link to your online menu',
-    icon: LinkIcon,
-  },
-  {
-    id: 'pos' as ImportMethod,
-    title: 'Import from POS',
-    description: 'Connect to Toast',
-    icon: ShoppingBag,
-  },
-  {
-    id: 'manual' as ImportMethod,
-    title: 'Manual Entry',
-    description: 'Add items one by one',
-    icon: PenLine,
-  },
-];
-
 export function Step2MenuImport({
   currentStep,
   completedSteps,
@@ -62,6 +35,7 @@ export function Step2MenuImport({
   onSave,
   updateHealthScore,
 }: Step2Props) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { conceptType, setParsedDishes, setPrepRecipes } = useOnboardingContext();
   const [method, setMethod] = useState<ImportMethod | null>(null);
@@ -71,13 +45,41 @@ export function Step2MenuImport({
   const [processingStatus, setProcessingStatus] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
+  const importMethods = [
+    {
+      id: 'upload' as ImportMethod,
+      title: t('step2Menu.uploadMenu'),
+      description: t('step2Menu.uploadDesc'),
+      icon: Upload,
+      recommended: true,
+    },
+    {
+      id: 'url' as ImportMethod,
+      title: t('step2Menu.pasteUrl'),
+      description: t('step2Menu.urlDesc'),
+      icon: LinkIcon,
+    },
+    {
+      id: 'pos' as ImportMethod,
+      title: t('step2Menu.importPos'),
+      description: t('step2Menu.posDesc'),
+      icon: ShoppingBag,
+    },
+    {
+      id: 'manual' as ImportMethod,
+      title: t('step2Menu.manualEntry'),
+      description: t('step2Menu.manualDesc'),
+      icon: PenLine,
+    },
+  ];
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setUploadedFile(file);
       toast({
-        title: 'File uploaded',
-        description: `${file.name} is ready for processing.`,
+        title: t('step2Menu.fileUploaded'),
+        description: t('step2Menu.fileReady', { name: file.name }),
       });
     }
   };
@@ -136,8 +138,8 @@ export function Step2MenuImport({
 
     if (method === 'upload' && !uploadedFile) {
       toast({
-        title: 'No file selected',
-        description: 'Please upload a menu file.',
+        title: t('step2Menu.noFileSelected'),
+        description: t('step2Menu.uploadFile'),
         variant: 'destructive',
       });
       return;
@@ -145,8 +147,8 @@ export function Step2MenuImport({
 
     if (method === 'url' && !menuUrl) {
       toast({
-        title: 'No URL provided',
-        description: 'Please enter your menu URL.',
+        title: t('step2Menu.noUrlProvided'),
+        description: t('step2Menu.enterUrl'),
         variant: 'destructive',
       });
       return;
@@ -158,13 +160,13 @@ export function Step2MenuImport({
       let menuContent = '';
 
       if (method === 'upload' && uploadedFile) {
-        setProcessingStatus('Extracting menu content...');
+        setProcessingStatus(t('step2Menu.extracting'));
         menuContent = await extractTextFromFile(uploadedFile);
-        setProcessingStatus('Analyzing menu with AI...');
+        setProcessingStatus(t('step2Menu.analyzingAI'));
       } else if (method === 'url') {
-        setProcessingStatus('Fetching menu from website...');
+        setProcessingStatus(t('step2Menu.fetching'));
         menuContent = await scrapeMenuUrl(menuUrl);
-        setProcessingStatus('Analyzing menu with AI...');
+        setProcessingStatus(t('step2Menu.analyzingAI'));
       }
 
       // Call the parse-menu edge function
@@ -191,12 +193,12 @@ export function Step2MenuImport({
       setPrepRecipes(prepRecipes);
 
       const prepMessage = prepRecipes.length > 0 
-        ? ` Detected ${prepRecipes.length} house-made prep items.`
+        ? t('step2Menu.detectedPrep', { count: prepRecipes.length })
         : '';
       
       toast({
-        title: 'Menu parsed successfully!',
-        description: `Found ${dishes.length} dishes.${prepMessage} Review and approve recipes next.`,
+        title: t('step2Menu.parseSuccess'),
+        description: t('step2Menu.foundDishes', { count: dishes.length, prep: prepMessage }),
       });
 
       updateHealthScore(15);
@@ -205,8 +207,8 @@ export function Step2MenuImport({
     } catch (error) {
       console.error('Menu parsing error:', error);
       toast({
-        title: 'Failed to parse menu',
-        description: error instanceof Error ? error.message : 'Please try again or use manual entry.',
+        title: t('step2Menu.parseFailed'),
+        description: error instanceof Error ? error.message : t('step2Menu.tryManual'),
         variant: 'destructive',
       });
     } finally {
@@ -220,12 +222,12 @@ export function Step2MenuImport({
       currentStep={currentStep}
       completedSteps={completedSteps}
       setupHealthScore={setupHealthScore}
-      title="Bring your menu"
-      subtitle="We'll extract your dishes and generate recipe drafts"
+      title={t('step2Menu.title')}
+      subtitle={t('step2Menu.subtitle')}
       onNext={handleContinue}
       onBack={onBack}
       onSave={onSave}
-      nextLabel={isProcessing ? 'Processing...' : 'Continue'}
+      nextLabel={isProcessing ? t('step2Menu.processing') : t('step1Basics.continue')}
       nextDisabled={!method || isProcessing}
       conceptType={conceptType}
     >
@@ -247,7 +249,7 @@ export function Step2MenuImport({
             >
               {m.recommended && (
                 <span className="absolute top-2 right-2 sm:top-3 sm:right-3 text-[10px] sm:text-xs bg-primary text-primary-foreground px-1.5 sm:px-2 py-0.5 rounded-full">
-                  Best
+                  {t('step2Menu.best')}
                 </span>
               )}
               <m.icon className={cn(
@@ -280,17 +282,17 @@ export function Step2MenuImport({
                     <FileText className="w-12 h-12 text-primary mb-4" />
                     <p className="font-medium text-foreground">{uploadedFile.name}</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Click to change file
+                      {t('step2Menu.clickToChange')}
                     </p>
                   </>
                 ) : (
                   <>
                     <Upload className="w-12 h-12 text-muted-foreground mb-4" />
                     <p className="font-medium text-foreground">
-                      Drop your menu here or click to browse
+                      {t('step2Menu.dropMenu')}
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      PDF, JPG, PNG, or TXT up to 10MB
+                      {t('step2Menu.fileTypes')}
                     </p>
                   </>
                 )}
@@ -304,23 +306,23 @@ export function Step2MenuImport({
           <Card variant="elevated" className="p-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="menu-url">Menu URL</Label>
+                <Label htmlFor="menu-url">{t('step2Menu.menuUrl')}</Label>
                 <Input
                   id="menu-url"
                   type="url"
                   value={menuUrl}
                   onChange={(e) => setMenuUrl(e.target.value)}
-                  placeholder="https://yourrestaurant.com/menu"
+                  placeholder={t('step2Menu.menuUrlPlaceholder')}
                 />
                 <p className="text-xs text-muted-foreground">
-                  We'll scrape the menu content from your website
+                  {t('step2Menu.scrapeNote')}
                 </p>
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-foreground">Monitor for changes</p>
+                  <p className="text-sm font-medium text-foreground">{t('step2Menu.monitorChanges')}</p>
                   <p className="text-xs text-muted-foreground">
-                    Get notified when your menu updates
+                    {t('step2Menu.monitorDesc')}
                   </p>
                 </div>
                 <Switch
@@ -340,12 +342,12 @@ export function Step2MenuImport({
                 <span className="text-2xl">🍞</span>
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-foreground">Toast POS</h3>
+                <h3 className="font-semibold text-foreground">{t('step2Menu.toastPos')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Connect to import your menu automatically
+                  {t('step2Menu.connectToImport')}
                 </p>
               </div>
-              <Button variant="outline">Connect</Button>
+              <Button variant="outline">{t('step2Menu.connect')}</Button>
             </div>
           </Card>
         )}
@@ -354,10 +356,9 @@ export function Step2MenuImport({
         {method === 'manual' && !isProcessing && (
           <Card variant="elevated" className="p-6 text-center">
             <PenLine className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="font-semibold text-foreground mb-2">Manual Entry</h3>
+            <h3 className="font-semibold text-foreground mb-2">{t('step2Menu.manualEntryTitle')}</h3>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              You'll be able to add menu items and recipes one by one. 
-              This takes longer but gives you full control.
+              {t('step2Menu.manualEntryDesc')}
             </p>
           </Card>
         )}
@@ -366,8 +367,8 @@ export function Step2MenuImport({
         {isProcessing && (
           <div className="flex flex-col items-center py-8">
             <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-            <p className="font-medium text-foreground">Processing your menu...</p>
-            <p className="text-sm text-muted-foreground">{processingStatus || 'This may take a moment'}</p>
+            <p className="font-medium text-foreground">{t('step2Menu.processingMenu')}</p>
+            <p className="text-sm text-muted-foreground">{processingStatus || t('step2Menu.thisMayTake')}</p>
           </div>
         )}
       </div>
