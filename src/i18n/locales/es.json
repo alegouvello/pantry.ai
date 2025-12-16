@@ -231,5 +231,46 @@
   "notFound": {
     "title": "¡Ups! Página no encontrada",
     "returnHome": "Volver al inicio"
+  },
+  "profitability": {
+    "title": "Rentabilidad",
+    "subtitle": "Analiza costos de alimentos, márgenes y rendimiento de recetas.",
+    "overview": "Resumen",
+    "byRecipe": "Por receta",
+    "byCategory": "Por categoría",
+    "trends": "Tendencias",
+    "avgFoodCost": "Costo alimentario promedio",
+    "targetFoodCost": "Costo alimentario objetivo",
+    "margin": "Margen",
+    "revenue": "Ingresos",
+    "costBreakdown": "Desglose de costos",
+    "menuEngineering": "Ingeniería de menú",
+    "stars": "Estrellas",
+    "puzzles": "Rompecabezas",
+    "plowhorses": "Caballos de tiro",
+    "dogs": "Perros",
+    "optimizeSuggestions": "Sugerencias de optimización",
+    "highMargin": "Margen alto",
+    "lowMargin": "Margen bajo",
+    "profitable": "Rentable",
+    "needsAttention": "Requiere atención"
+  },
+  "salesHistory": {
+    "title": "Historial de ventas",
+    "subtitle": "Revisa las ventas pasadas e identifica tendencias.",
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "thisWeek": "Esta semana",
+    "thisMonth": "Este mes",
+    "custom": "Rango personalizado",
+    "totalSales": "Ventas totales",
+    "transactions": "Transacciones",
+    "avgTicket": "Ticket promedio",
+    "topItems": "Artículos más vendidos",
+    "salesByHour": "Ventas por hora",
+    "salesByDay": "Ventas por día",
+    "comparison": "Comparación de períodos",
+    "exportData": "Exportar datos",
+    "noSalesData": "No hay datos de venta para este período."
   }
 }

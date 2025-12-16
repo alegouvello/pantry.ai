@@ -231,5 +231,46 @@
   "notFound": {
     "title": "Oops! Page not found",
     "returnHome": "Return to Home"
+  },
+  "profitability": {
+    "title": "Profitability",
+    "subtitle": "Analyze food costs, margins, and recipe performance.",
+    "overview": "Overview",
+    "byRecipe": "By Recipe",
+    "byCategory": "By Category",
+    "trends": "Trends",
+    "avgFoodCost": "Average Food Cost",
+    "targetFoodCost": "Target Food Cost",
+    "margin": "Margin",
+    "revenue": "Revenue",
+    "costBreakdown": "Cost Breakdown",
+    "menuEngineering": "Menu Engineering",
+    "stars": "Stars",
+    "puzzles": "Puzzles",
+    "plowhorses": "Plowhorses",
+    "dogs": "Dogs",
+    "optimizeSuggestions": "Optimization Suggestions",
+    "highMargin": "High Margin",
+    "lowMargin": "Low Margin",
+    "profitable": "Profitable",
+    "needsAttention": "Needs Attention"
+  },
+  "salesHistory": {
+    "title": "Sales History",
+    "subtitle": "Review past sales data and identify trends.",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "custom": "Custom Range",
+    "totalSales": "Total Sales",
+    "transactions": "Transactions",
+    "avgTicket": "Average Ticket",
+    "topItems": "Top Selling Items",
+    "salesByHour": "Sales by Hour",
+    "salesByDay": "Sales by Day",
+    "comparison": "Period Comparison",
+    "exportData": "Export Data",
+    "noSalesData": "No sales data available for this period."
   }
 }
