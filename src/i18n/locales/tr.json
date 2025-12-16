@@ -565,6 +565,7 @@
     "password": "Şifre",
     "changePassword": "Şifre değiştir",
     "deleteAccount": "Hesabı sil",
+    "language": "Dil",
     "settingsSaved": "Ayarlar kaydedildi",
     "failedSave": "Kaydedilemedi: {{message}}",
     "notifications": {

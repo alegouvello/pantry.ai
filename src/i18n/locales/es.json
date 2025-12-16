@@ -565,6 +565,7 @@
     "password": "Contraseña",
     "changePassword": "Cambiar contraseña",
     "deleteAccount": "Eliminar cuenta",
+    "language": "Idioma",
     "settingsSaved": "Configuración guardada",
     "failedSave": "No se pudo guardar: {{message}}",
     "notifications": {
