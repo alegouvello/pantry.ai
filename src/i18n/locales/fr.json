@@ -493,5 +493,36 @@
     "comparison": "Comparaison de périodes",
     "exportData": "Exporter les données",
     "noSalesData": "Aucune donnée de vente pour cette période."
+  },
+  "parLevelDialog": {
+    "title": "Suggestions IA de niveaux PAR",
+    "description": "Niveaux PAR standards basés sur votre type de restaurant et catégories d'ingrédients.",
+    "analyzing": "Analyse de l'inventaire et génération des suggestions...",
+    "selected": "{{selected}} sur {{total}} sélectionnés",
+    "selectAll": "Tout sélectionner",
+    "clear": "Effacer",
+    "reorderAt": "Réappro. à :",
+    "apply": "Appliquer {{count}} suggestions",
+    "noSuggestions": "Aucune suggestion disponible. Réessayez ou vérifiez vos articles.",
+    "close": "Fermer"
+  },
+  "marginDialog": {
+    "title": "Optimisation des marges :",
+    "analyzing": "Analyse des coûts de recette...",
+    "target": "Objectif :",
+    "potentialSavings": "Économies potentielles :",
+    "perPortion": "/portion",
+    "recommendations": "Recommandations",
+    "impact": "impact",
+    "getNewSuggestions": "Nouvelles suggestions",
+    "noSuggestions": "Aucune suggestion disponible",
+    "tryAgain": "Réessayer",
+    "types": {
+      "substitution": "Substitution",
+      "portion": "Portion",
+      "pricing": "Prix",
+      "sourcing": "Approvisionnement",
+      "technique": "Technique"
+    }
   }
 }

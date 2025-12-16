@@ -493,5 +493,36 @@
     "comparison": "Dönem karşılaştırması",
     "exportData": "Verileri dışa aktar",
     "noSalesData": "Bu dönem için satış verisi yok."
+  },
+  "parLevelDialog": {
+    "title": "AI PAR Seviyesi Önerileri",
+    "description": "Restoran türünüze ve malzeme kategorilerinize göre endüstri standardı PAR seviyeleri.",
+    "analyzing": "Envanter analiz ediliyor ve öneriler oluşturuluyor...",
+    "selected": "{{total}} öğeden {{selected}} tanesi seçildi",
+    "selectAll": "Tümünü seç",
+    "clear": "Temizle",
+    "reorderAt": "Sipariş noktası:",
+    "apply": "{{count}} Öneriyi Uygula",
+    "noSuggestions": "Öneri yok. Tekrar deneyin veya öğelerinizi kontrol edin.",
+    "close": "Kapat"
+  },
+  "marginDialog": {
+    "title": "Marj Optimizasyonu:",
+    "analyzing": "Tarif maliyetleri analiz ediliyor...",
+    "target": "Hedef:",
+    "potentialSavings": "Potansiyel tasarruf:",
+    "perPortion": "/porsiyon",
+    "recommendations": "Öneriler",
+    "impact": "etki",
+    "getNewSuggestions": "Yeni Öneriler Al",
+    "noSuggestions": "Öneri yok",
+    "tryAgain": "Tekrar Dene",
+    "types": {
+      "substitution": "İkame",
+      "portion": "Porsiyon",
+      "pricing": "Fiyatlandırma",
+      "sourcing": "Tedarik",
+      "technique": "Teknik"
+    }
   }
 }
