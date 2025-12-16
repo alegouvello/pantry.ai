@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { OnboardingLayout } from '../OnboardingLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,6 +54,7 @@ const fallbackIngredients = [
 ];
 
 export function Step5VendorSetup(props: StepProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { notify: syncNotify } = useSyncNotification();
   const [phase, setPhase] = useState<'vendors' | 'mapping'>('vendors');
@@ -239,8 +241,8 @@ export function Step5VendorSetup(props: StepProps) {
       } catch (error) {
         console.error('Failed to delete vendor:', error);
         toast({
-          title: 'Error',
-          description: 'Failed to delete vendor.',
+          title: t('step5Vendor.error'),
+          description: t('step5Vendor.failedDeleteVendor'),
           variant: 'destructive',
         });
         return;
@@ -293,8 +295,8 @@ export function Step5VendorSetup(props: StepProps) {
       console.error('Failed to save vendors:', error);
       isLocalUpdateRef.current = false;
       toast({
-        title: 'Error saving vendors',
-        description: 'Failed to save vendor data.',
+        title: t('step5Vendor.errorSavingVendors'),
+        description: t('step5Vendor.failedSaveVendorData'),
         variant: 'destructive',
       });
       return false;
@@ -307,7 +309,7 @@ export function Step5VendorSetup(props: StepProps) {
 
   if (phase === 'vendors') {
     return (
-      <OnboardingLayout {...props} title="Add Your Vendors" subtitle="Set up supplier information for automated ordering">
+      <OnboardingLayout {...props} title={t('step5Vendor.title')} subtitle={t('step5Vendor.subtitle')}>
         <div className="max-w-3xl mx-auto space-y-6">
           {vendors.length > 0 && (
             <div className="grid gap-4">
@@ -328,25 +330,25 @@ export function Step5VendorSetup(props: StepProps) {
                             )}
                             <Badge variant="outline">
                               <Clock className="w-3 h-3 mr-1" />
-                              {vendor.leadTimeDays} day lead time
+                              {t('step5Vendor.dayLeadTime', { days: vendor.leadTimeDays })}
                             </Badge>
                             {vendor.minimumOrder > 0 && (
                               <Badge variant="outline">
                                 <DollarSign className="w-3 h-3 mr-1" />
-                                ${vendor.minimumOrder} min
+                                {t('step5Vendor.minAmount', { amount: vendor.minimumOrder })}
                               </Badge>
                             )}
                           </div>
                           {vendor.deliveryDays.length > 0 && (
                             <p className="text-xs text-muted-foreground mt-2">
-                              Delivers: {vendor.deliveryDays.join(', ')}
+                              {t('step5Vendor.delivers')} {vendor.deliveryDays.join(', ')}
                             </p>
                           )}
                         </div>
                       </div>
                       <div className="flex gap-2">
                         <Button variant="ghost" size="sm" onClick={() => handleEditVendor(vendor)}>
-                          Edit
+                          {t('step5Vendor.edit')}
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => handleDeleteVendor(vendor)}>
                           <Trash2 className="w-4 h-4 text-destructive" />
@@ -363,30 +365,30 @@ export function Step5VendorSetup(props: StepProps) {
             <DialogTrigger asChild>
               <Button variant="outline" className="w-full border-dashed py-8">
                 <Plus className="w-5 h-5 mr-2" />
-                Add Vendor
+                {t('step5Vendor.addVendor')}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
               <DialogHeader>
-                <DialogTitle>{editingVendor ? 'Edit Vendor' : 'Add New Vendor'}</DialogTitle>
+                <DialogTitle>{editingVendor ? t('step5Vendor.editVendor') : t('step5Vendor.addNewVendor')}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
-                    <Label>Vendor Name *</Label>
+                    <Label>{t('step5Vendor.vendorName')} *</Label>
                     <div className="relative mt-1">
                       <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
                         className="pl-10"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="e.g., Sysco, US Foods"
+                        placeholder={t('step5Vendor.vendorPlaceholder')}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <Label>Email *</Label>
+                    <Label>{t('step5Vendor.email')} *</Label>
                     <div className="relative mt-1">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
@@ -394,13 +396,13 @@ export function Step5VendorSetup(props: StepProps) {
                         className="pl-10"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        placeholder="orders@vendor.com"
+                        placeholder={t('step5Vendor.emailPlaceholder')}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <Label>Phone</Label>
+                    <Label>{t('step5Vendor.phone')}</Label>
                     <div className="relative mt-1">
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
@@ -413,7 +415,7 @@ export function Step5VendorSetup(props: StepProps) {
                   </div>
 
                   <div>
-                    <Label>Lead Time (days)</Label>
+                    <Label>{t('step5Vendor.leadTime')}</Label>
                     <Input
                       type="number"
                       className="mt-1"
@@ -423,7 +425,7 @@ export function Step5VendorSetup(props: StepProps) {
                   </div>
 
                   <div>
-                    <Label>Minimum Order ($)</Label>
+                    <Label>{t('step5Vendor.minOrder')}</Label>
                     <Input
                       type="number"
                       className="mt-1"
@@ -433,13 +435,13 @@ export function Step5VendorSetup(props: StepProps) {
                   </div>
 
                   <div className="col-span-2">
-                    <Label>Category</Label>
+                    <Label>{t('step5Vendor.category')}</Label>
                     <Select
                       value={formData.category}
                       onValueChange={(value) => setFormData({ ...formData, category: value })}
                     >
                       <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Select category" />
+                        <SelectValue placeholder={t('step5Vendor.selectCategory')} />
                       </SelectTrigger>
                       <SelectContent>
                         {suggestedCategories.map(cat => (
@@ -450,7 +452,7 @@ export function Step5VendorSetup(props: StepProps) {
                   </div>
 
                   <div className="col-span-2">
-                    <Label>Delivery Days</Label>
+                    <Label>{t('step5Vendor.deliveryDays')}</Label>
                     <div className="flex flex-wrap gap-2 mt-2">
                       {deliveryDayOptions.map(day => (
                         <Badge
@@ -468,10 +470,10 @@ export function Step5VendorSetup(props: StepProps) {
 
                 <div className="flex justify-end gap-3 pt-4">
                   <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Cancel
+                    {t('step5Vendor.cancel')}
                   </Button>
                   <Button onClick={handleSaveVendor} disabled={!formData.name || !formData.email}>
-                    {editingVendor ? 'Save Changes' : 'Add Vendor'}
+                    {editingVendor ? t('step5Vendor.saveChanges') : t('step5Vendor.addVendor')}
                   </Button>
                 </div>
               </div>
@@ -491,12 +493,12 @@ export function Step5VendorSetup(props: StepProps) {
               disabled={isSaving}
             >
               {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              {isSaving ? 'Saving...' : 'Continue to Item Mapping'}
+              {isSaving ? t('common.saving') : t('step5Vendor.continueMapping')}
             </Button>
           )}
 
           <Button variant="ghost" onClick={props.onNext} className="w-full text-muted-foreground">
-            Skip for now
+            {t('step5Vendor.skipForNow')}
           </Button>
         </div>
       </OnboardingLayout>
@@ -504,15 +506,15 @@ export function Step5VendorSetup(props: StepProps) {
   }
 
   return (
-    <OnboardingLayout {...props} title="Map Ingredients to Vendors" subtitle={`Map your top ${topIngredients.length} high-impact ingredients`}>
+    <OnboardingLayout {...props} title={t('step5Vendor.mappingTitle')} subtitle={t('step5Vendor.mappingSubtitle', { count: topIngredients.length })}>
       <div className="space-y-6">
         {dbIngredients && dbIngredients.length > 0 ? (
           <div className="bg-primary/10 rounded-lg p-4 text-sm text-primary">
-            ✓ Found {dbIngredients.length} ingredients in your database. Showing top 25 for mapping.
+            ✓ {t('step5Vendor.foundIngredients', { count: dbIngredients.length })}
           </div>
         ) : (
           <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
-            💡 No ingredients found yet. Showing sample ingredients - add real ingredients in Recipes step.
+            💡 {t('step5Vendor.noIngredientsYet')}
           </div>
         )}
 
@@ -525,11 +527,11 @@ export function Step5VendorSetup(props: StepProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Ingredient</TableHead>
-                  <TableHead>Vendor</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Pack Size</TableHead>
-                  <TableHead>Unit Cost</TableHead>
+                  <TableHead>{t('step3Recipe.ingredient')}</TableHead>
+                  <TableHead>{t('step5Vendor.vendor')}</TableHead>
+                  <TableHead>{t('step5Vendor.sku')}</TableHead>
+                  <TableHead>{t('step5Vendor.packSize')}</TableHead>
+                  <TableHead>{t('step5Vendor.unitCost')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -547,7 +549,7 @@ export function Step5VendorSetup(props: StepProps) {
                       onValueChange={(value) => updateMapping(ingredient.id, 'vendorId', value)}
                     >
                       <SelectTrigger className="w-40">
-                        <SelectValue placeholder="Select vendor" />
+                        <SelectValue placeholder={t('step5Vendor.selectVendor')} />
                       </SelectTrigger>
                       <SelectContent>
                         {vendors.map(vendor => (
@@ -559,7 +561,7 @@ export function Step5VendorSetup(props: StepProps) {
                   <TableCell>
                     <Input
                       className="w-28"
-                      placeholder="SKU"
+                      placeholder={t('step5Vendor.sku')}
                       value={ingredientMappings[ingredient.id]?.sku || ''}
                       onChange={(e) => updateMapping(ingredient.id, 'sku', e.target.value)}
                     />
@@ -567,7 +569,7 @@ export function Step5VendorSetup(props: StepProps) {
                   <TableCell>
                     <Input
                       className="w-28"
-                      placeholder="e.g., 6x1kg"
+                      placeholder={t('step5Vendor.packSizePlaceholder')}
                       value={ingredientMappings[ingredient.id]?.packSize || ''}
                       onChange={(e) => updateMapping(ingredient.id, 'packSize', e.target.value)}
                     />
@@ -593,11 +595,11 @@ export function Step5VendorSetup(props: StepProps) {
 
         <div className="flex justify-between">
           <Button variant="outline" onClick={() => setPhase('vendors')}>
-            Back to Vendors
+            {t('step5Vendor.backToVendors')}
           </Button>
           <div className="flex gap-3">
             <Button variant="outline" onClick={props.onNext}>
-              Finish Later
+              {t('step5Vendor.finishLater')}
             </Button>
             <Button 
               onClick={async () => {
@@ -622,8 +624,8 @@ export function Step5VendorSetup(props: StepProps) {
                 } catch (error) {
                   console.error('Failed to save mappings:', error);
                   toast({
-                    title: 'Error',
-                    description: 'Failed to save ingredient mappings.',
+                    title: t('step5Vendor.error'),
+                    description: t('step5Vendor.failedSaveMappings'),
                     variant: 'destructive',
                   });
                 } finally {
@@ -633,7 +635,7 @@ export function Step5VendorSetup(props: StepProps) {
               disabled={isSavingMappings}
             >
               {isSavingMappings ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              {isSavingMappings ? 'Saving...' : 'Save Mappings & Continue'}
+              {isSavingMappings ? t('common.saving') : t('step5Vendor.saveMappings')}
             </Button>
           </div>
         </div>
