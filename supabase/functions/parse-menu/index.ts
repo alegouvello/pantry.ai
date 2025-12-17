@@ -1,11 +1,19 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema - menuContent can be large for images
+const InputSchema = z.object({
+  menuContent: z.string().min(1).max(10000000), // Allow up to 10MB for base64 images
+  menuType: z.enum(['text', 'image', 'pdf']).optional(),
+  detailLevel: z.enum(['basic', 'standard', 'advanced']).default('standard'),
+});
 
 interface ParsedIngredient {
   name: string;
@@ -245,18 +253,24 @@ serve(async (req) => {
     }
     
     console.log('Authenticated user:', user.id);
+    
+    // Parse and validate input
+    const rawInput = await req.json();
+    const parseResult = InputSchema.safeParse(rawInput);
+    
+    if (!parseResult.success) {
+      console.error('Validation error:', parseResult.error.errors);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid input: ' + parseResult.error.errors.map(e => e.message).join(', ') }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { menuContent, menuType, detailLevel } = parseResult.data;
+    
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
-    }
-
-    const { menuContent, menuType, detailLevel = 'standard' } = await req.json();
-
-    if (!menuContent) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Menu content is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
     }
 
     console.log('Parsing menu with detail level:', detailLevel);
@@ -279,7 +293,7 @@ For each dish, provide:
 6. Confidence level (high/medium/low) based on how certain you are
 7. Tags (vegetarian, vegan, gluten-free, seafood, popular, spicy, etc.)
 
-${detailInstructions[detailLevel as keyof typeof detailInstructions] || detailInstructions.standard}
+${detailInstructions[detailLevel] || detailInstructions.standard}
 
 For ingredients, estimate typical restaurant portion quantities. Use common units: g, kg, ml, L, oz, lb, piece, tbsp, tsp, cup.
 
@@ -341,11 +355,13 @@ Return a JSON array with this exact structure:
       ];
     } else {
       console.log('Processing text-based menu...');
-      console.log('Menu content preview:', menuContent.substring(0, 500));
+      // Truncate text content to prevent excessive payload sizes
+      const truncatedContent = menuContent.substring(0, 100000);
+      console.log('Menu content preview:', truncatedContent.substring(0, 500));
       
       messages = [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `${userPrompt}\n\nMenu content:\n${menuContent}` },
+        { role: 'user', content: `${userPrompt}\n\nMenu content:\n${truncatedContent}` },
       ];
     }
 
@@ -445,58 +461,46 @@ Return a JSON array with this exact structure:
         optional: Boolean(ing.optional),
         confidence: (['high', 'medium', 'low'].includes(ing.confidence) ? ing.confidence : 'medium') as 'high' | 'medium' | 'low',
       }));
-      
-      // Detect house-made items
+
+      // Detect house-made ingredients
       const { updatedIngredients, detectedPrepRecipes } = detectHouseMadeIngredients(rawIngredients);
       
-      // Add unique prep recipes to the collection
-      for (const prep of detectedPrepRecipes) {
-        if (!seenPrepRecipes.has(prep.name)) {
-          allPrepRecipes.push(prep);
-          seenPrepRecipes.add(prep.name);
+      // Add unique prep recipes
+      for (const prepRecipe of detectedPrepRecipes) {
+        if (!seenPrepRecipes.has(prepRecipe.name)) {
+          allPrepRecipes.push(prepRecipe);
+          seenPrepRecipes.add(prepRecipe.name);
         }
       }
-      
+
       return {
         id: `dish-${Date.now()}-${index}`,
-        name: dish.name || 'Unnamed Dish',
+        name: dish.name || 'Unknown Dish',
         section: dish.section || 'Other',
         description: dish.description || '',
         price: typeof dish.price === 'number' ? dish.price : null,
         confidence: (['high', 'medium', 'low'].includes(dish.confidence) ? dish.confidence : 'medium') as 'high' | 'medium' | 'low',
         tags: Array.isArray(dish.tags) ? dish.tags : [],
         ingredients: updatedIngredients,
+        hasHouseMade: updatedIngredients.some(ing => ing.isHouseMade),
       };
     });
-    
+
     // Format prep recipes with IDs
-    const formattedPrepRecipes = allPrepRecipes.map((prep, index) => ({
+    const formattedPrepRecipes = allPrepRecipes.map((pr, index) => ({
       id: `prep-${Date.now()}-${index}`,
-      name: prep.name,
-      section: 'Prep',
-      description: `House-made ${prep.name.toLowerCase()}`,
-      price: null,
-      confidence: 'high' as const,
-      tags: ['prep', 'house-made'],
-      yieldAmount: prep.yieldAmount,
-      yieldUnit: prep.yieldUnit,
-      isPrep: true,
-      ingredients: prep.ingredients.map((ing, ingIndex) => ({
-        id: `prep-ing-${Date.now()}-${index}-${ingIndex}`,
-        ...ing,
-      })),
+      ...pr,
     }));
 
-    console.log(`Successfully parsed ${validatedDishes.length} dishes and ${formattedPrepRecipes.length} prep recipes`);
+    console.log(`Parsed ${validatedDishes.length} dishes, detected ${formattedPrepRecipes.length} prep recipes`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         dishes: validatedDishes,
         prepRecipes: formattedPrepRecipes,
-        count: validatedDishes.length,
-        prepCount: formattedPrepRecipes.length,
-        isImageBased: isImage,
+        dishCount: validatedDishes.length,
+        prepRecipeCount: formattedPrepRecipes.length,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -504,9 +508,11 @@ Return a JSON array with this exact structure:
   } catch (error) {
     console.error('Error parsing menu:', error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to parse menu' 
+      JSON.stringify({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to parse menu',
+        dishes: [],
+        prepRecipes: [],
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

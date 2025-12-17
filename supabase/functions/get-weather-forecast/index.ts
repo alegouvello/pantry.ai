@@ -1,11 +1,21 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const InputSchema = z.object({
+  lat: z.number().min(-90).max(90).optional(),
+  lon: z.number().min(-180).max(180).optional(),
+  city: z.string().min(1).max(200).trim().optional(),
+  days: z.number().min(1).max(14).default(7),
+}).refine(data => data.city || (data.lat !== undefined && data.lon !== undefined), {
+  message: "Either city name or lat/lon coordinates required"
+});
 
 interface WeatherData {
   date: string;
@@ -57,8 +67,19 @@ serve(async (req) => {
   }
 
   try {
-    // Weather data is public - no auth required
-    const { lat, lon, city, days = 7 } = await req.json();
+    // Parse and validate input
+    const rawInput = await req.json();
+    const parseResult = InputSchema.safeParse(rawInput);
+    
+    if (!parseResult.success) {
+      console.error('Validation error:', parseResult.error.errors);
+      return new Response(
+        JSON.stringify({ error: 'Invalid input: ' + parseResult.error.errors.map(e => e.message).join(', '), forecast: [] }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { lat, lon, city, days } = parseResult.data;
     
     const apiKey = Deno.env.get('OPENWEATHER_API_KEY');
     if (!apiKey) {
@@ -69,7 +90,7 @@ serve(async (req) => {
     let url: string;
     if (city) {
       url = `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&appid=${apiKey}&units=imperial`;
-    } else if (lat && lon) {
+    } else if (lat !== undefined && lon !== undefined) {
       url = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apiKey}&units=imperial`;
     } else {
       throw new Error('Either city name or lat/lon coordinates required');

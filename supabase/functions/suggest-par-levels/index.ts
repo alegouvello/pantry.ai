@@ -1,19 +1,26 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface IngredientInput {
-  id: string;
-  name: string;
-  category: string;
-  unit: string;
-  currentStock: number;
-  storageLocation?: string;
-}
+// Input validation schema
+const IngredientInputSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(200),
+  category: z.string().max(100),
+  unit: z.string().max(50),
+  currentStock: z.number().min(0).max(1000000),
+  storageLocation: z.string().max(100).optional(),
+});
+
+const InputSchema = z.object({
+  ingredients: z.array(IngredientInputSchema).min(1).max(500),
+  conceptType: z.string().max(100).optional(),
+});
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -47,7 +54,20 @@ serve(async (req) => {
     }
     
     console.log('Authenticated user:', user.id);
-    const { ingredients, conceptType } = await req.json();
+    
+    // Parse and validate input
+    const rawInput = await req.json();
+    const parseResult = InputSchema.safeParse(rawInput);
+    
+    if (!parseResult.success) {
+      console.error('Validation error:', parseResult.error.errors);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid input: ' + parseResult.error.errors.map(e => e.message).join(', ') }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { ingredients, conceptType } = parseResult.data;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -73,7 +93,7 @@ For each ingredient, suggest:
 
 IMPORTANT: Return ONLY a valid JSON array with no additional text. Each object must have: id, par_level (number), reorder_point (number), reasoning (string).`;
 
-    const ingredientList = (ingredients as IngredientInput[]).map(ing => 
+    const ingredientList = ingredients.map(ing => 
       `- ${ing.name} (${ing.category}, stored in ${ing.storageLocation || 'dry storage'}, unit: ${ing.unit}, current: ${ing.currentStock})`
     ).join('\n');
 
@@ -136,7 +156,7 @@ IMPORTANT: Return ONLY a valid JSON array with no additional text. Each object m
     const suggestionsMap: Record<string, { par_level: number; reorder_point: number; reasoning: string }> = {};
     
     for (let i = 0; i < ingredients.length; i++) {
-      const ing = ingredients[i] as IngredientInput;
+      const ing = ingredients[i];
       const suggestion = suggestions[i] || suggestions.find((s: any) => s.id === ing.id);
       
       if (suggestion) {

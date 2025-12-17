@@ -1,10 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const InputSchema = z.object({
+  restaurantName: z.string().min(1).max(200).trim(),
+  location: z.string().max(200).trim().optional(),
+});
 
 interface DayHours {
   open: string;
@@ -44,35 +51,6 @@ function parseTime(timeStr: string, inferredPeriod?: string): string {
   if (period === 'am' && hours === 12) hours = 0;
   
   return `${hours.toString().padStart(2, '0')}:${minutes}`;
-}
-
-// Parse a time range like "5:30-11 PM" or "5:30 PM - 11 PM"
-function parseTimeRange(rangeStr: string): { open: string; close: string } | null {
-  if (!rangeStr) return null;
-  
-  const cleaned = rangeStr.trim();
-  
-  // Match patterns like "5:30-11 PM", "5:30 PM - 11 PM", "5:30–11PM"
-  const rangeMatch = cleaned.match(/(\d{1,2}(?::\d{2})?)\s*(am|pm)?\s*[-–—to]+\s*(\d{1,2}(?::\d{2})?)\s*(am|pm)?/i);
-  
-  if (!rangeMatch) return null;
-  
-  const openTimeStr = rangeMatch[1];
-  const openPeriod = rangeMatch[2]?.toLowerCase();
-  const closeTimeStr = rangeMatch[3];
-  const closePeriod = rangeMatch[4]?.toLowerCase();
-  
-  // If only closing time has AM/PM, infer same for opening (common pattern: "5:30-11 PM")
-  const inferredOpenPeriod = openPeriod || closePeriod;
-  
-  const openTime = parseTime(openTimeStr + (openPeriod ? ' ' + openPeriod : ''), inferredOpenPeriod);
-  const closeTime = parseTime(closeTimeStr + (closePeriod ? ' ' + closePeriod : ''), closePeriod);
-  
-  if (openTime && closeTime) {
-    return { open: openTime, close: closeTime };
-  }
-  
-  return null;
 }
 
 // Extract business hours from scraped content
@@ -218,14 +196,20 @@ serve(async (req) => {
     }
     
     console.log('Authenticated user:', user.id);
-    const { restaurantName, location } = await req.json();
-
-    if (!restaurantName) {
+    
+    // Parse and validate input
+    const rawInput = await req.json();
+    const parseResult = InputSchema.safeParse(rawInput);
+    
+    if (!parseResult.success) {
+      console.error('Validation error:', parseResult.error.errors);
       return new Response(
-        JSON.stringify({ success: false, error: 'Restaurant name is required' }),
+        JSON.stringify({ success: false, error: 'Invalid input: ' + parseResult.error.errors.map(e => e.message).join(', ') }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    const { restaurantName, location } = parseResult.data;
 
     const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY');
     if (!FIRECRAWL_API_KEY) {

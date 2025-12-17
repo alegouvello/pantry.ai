@@ -1,10 +1,20 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const InputSchema = z.object({
+  dishName: z.string().min(1).max(200).trim(),
+  description: z.string().max(500).trim().optional(),
+  section: z.string().max(100).trim().optional(),
+  tags: z.array(z.string().max(50)).max(20).optional(),
+  recipeId: z.string().uuid().optional(),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -38,6 +48,21 @@ serve(async (req) => {
     }
     
     console.log('Authenticated user:', user.id);
+    
+    // Parse and validate input
+    const rawInput = await req.json();
+    const parseResult = InputSchema.safeParse(rawInput);
+    
+    if (!parseResult.success) {
+      console.error('Validation error:', parseResult.error.errors);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid input: ' + parseResult.error.errors.map(e => e.message).join(', ') }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { dishName, description, section, tags, recipeId } = parseResult.data;
+    
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -51,19 +76,10 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { dishName, description, section, tags, recipeId } = await req.json();
-
-    if (!dishName) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Dish name is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     console.log('Generating image for:', dishName);
 
     // Build a detailed prompt for the food image
-    const tagString = tags?.length > 0 ? tags.join(', ') : '';
+    const tagString = tags?.length ? tags.join(', ') : '';
     const prompt = `Professional food photography of "${dishName}"${description ? `, ${description}` : ''}. ${section ? `${section} dish.` : ''} ${tagString ? `Style: ${tagString}.` : ''} Beautiful plating, soft natural lighting, shallow depth of field, high-end restaurant presentation, appetizing and delicious looking, 4K quality, food magazine style.`;
 
     console.log('Image prompt:', prompt);

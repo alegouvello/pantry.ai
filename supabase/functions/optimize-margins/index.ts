@@ -1,28 +1,36 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface RecipeData {
-  name: string;
-  category: string;
-  totalCost: number;
-  menuPrice: number | null;
-  foodCostPct: number | null;
-  yieldAmount: number;
-  yieldUnit: string;
-  ingredients: {
-    name: string;
-    quantity: number;
-    unit: string;
-    unitCost: number;
-    lineCost: number;
-    percentage: number;
-  }[];
-}
+// Input validation schema
+const IngredientSchema = z.object({
+  name: z.string().min(1).max(200),
+  quantity: z.number().min(0).max(100000),
+  unit: z.string().max(50),
+  unitCost: z.number().min(0).max(100000),
+  lineCost: z.number().min(0).max(100000),
+  percentage: z.number().min(0).max(100),
+});
+
+const RecipeSchema = z.object({
+  name: z.string().min(1).max(200).trim(),
+  category: z.string().max(100).trim(),
+  totalCost: z.number().min(0).max(100000),
+  menuPrice: z.number().min(0).max(100000).nullable(),
+  foodCostPct: z.number().min(0).max(100).nullable(),
+  yieldAmount: z.number().min(0).max(10000),
+  yieldUnit: z.string().max(50),
+  ingredients: z.array(IngredientSchema).max(100),
+});
+
+const InputSchema = z.object({
+  recipe: RecipeSchema,
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -55,7 +63,20 @@ serve(async (req) => {
     }
     
     console.log('Authenticated user:', user.id);
-    const { recipe } = await req.json() as { recipe: RecipeData };
+    
+    // Parse and validate input
+    const rawInput = await req.json();
+    const parseResult = InputSchema.safeParse(rawInput);
+    
+    if (!parseResult.success) {
+      console.error('Validation error:', parseResult.error.errors);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid input: ' + parseResult.error.errors.map(e => e.message).join(', ') }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { recipe } = parseResult.data;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
