@@ -1,10 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const InputSchema = z.object({
+  restaurantName: z.string().min(1).max(200).trim(),
+  website: z.string().url().max(500).optional().or(z.literal('')),
+  city: z.string().max(100).trim().optional(),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -37,14 +45,20 @@ serve(async (req) => {
     }
     
     console.log('Authenticated user:', user.id);
-    const { restaurantName, website, city } = await req.json();
     
-    if (!restaurantName) {
+    // Parse and validate input
+    const rawInput = await req.json();
+    const parseResult = InputSchema.safeParse(rawInput);
+    
+    if (!parseResult.success) {
+      console.error('Validation error:', parseResult.error.errors);
       return new Response(
-        JSON.stringify({ success: false, error: 'Restaurant name is required' }),
+        JSON.stringify({ success: false, error: 'Invalid input: ' + parseResult.error.errors.map(e => e.message).join(', ') }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    const { restaurantName, website, city } = parseResult.data;
 
     const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY');
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -222,4 +236,3 @@ serve(async (req) => {
     );
   }
 });
-

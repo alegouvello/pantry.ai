@@ -1,11 +1,28 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const IngredientSchema = z.object({
+  name: z.string().min(1).max(200),
+  quantity: z.number().min(0).max(100000),
+  unit: z.string().max(50),
+});
+
+const InputSchema = z.object({
+  recipeName: z.string().min(1).max(200).trim(),
+  category: z.string().max(100).trim(),
+  ingredients: z.array(IngredientSchema).max(100),
+  yieldAmount: z.number().min(0).max(10000),
+  yieldUnit: z.string().max(50),
+  prepTime: z.number().min(0).max(10000).optional(),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -38,7 +55,20 @@ serve(async (req) => {
     }
     
     console.log('Authenticated user:', user.id);
-    const { recipeName, category, ingredients, yieldAmount, yieldUnit, prepTime } = await req.json();
+    
+    // Parse and validate input
+    const rawInput = await req.json();
+    const parseResult = InputSchema.safeParse(rawInput);
+    
+    if (!parseResult.success) {
+      console.error('Validation error:', parseResult.error.errors);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid input: ' + parseResult.error.errors.map(e => e.message).join(', ') }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const { recipeName, category, ingredients, yieldAmount, yieldUnit, prepTime } = parseResult.data;
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -46,9 +76,7 @@ serve(async (req) => {
     }
 
     const ingredientsList = ingredients
-      .map((i: { name: string; quantity: number; unit: string }) => 
-        `${i.quantity} ${i.unit} ${i.name}`
-      )
+      .map((i) => `${i.quantity} ${i.unit} ${i.name}`)
       .join('\n');
 
     const prompt = `Generate professional cooking instructions for this recipe:
