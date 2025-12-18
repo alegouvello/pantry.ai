@@ -365,6 +365,17 @@
     "takeAction": "Take action"
   },
   "alerts": {
+    "title": "Command Center",
+    "subtitle": "Monitor alerts and take action on critical items.",
+    "resolveAll": "Resolve All",
+    "filter": "Filter",
+    "highPriority": "High Priority",
+    "medium": "Medium",
+    "lowPriority": "Low Priority",
+    "active": "Active",
+    "resolved": "Resolved",
+    "noActive": "No active alerts at this time.",
+    "noResolved": "No resolved alerts yet",
     "lowStock": {
       "title": "Low Stock: {{name}}",
       "description": "{{name}} is at {{current}}, below the reorder point of {{reorderPoint}}.",
@@ -505,19 +516,6 @@
     "comingSoon": "Coming Soon",
     "validationWillAppear": "Validation items will appear here",
     "validationDescription": "When mismatches are detected between predicted and actual usage, you'll see suggestions to update recipes."
-  },
-  "alerts": {
-    "title": "Command Center",
-    "subtitle": "Monitor alerts and take action on critical items.",
-    "resolveAll": "Resolve All",
-    "filter": "Filter",
-    "highPriority": "High Priority",
-    "medium": "Medium",
-    "lowPriority": "Low Priority",
-    "active": "Active",
-    "resolved": "Resolved",
-    "noActive": "No active alerts at this time.",
-    "noResolved": "No resolved alerts yet"
   },
   "integrations": {
     "title": "Integrations",

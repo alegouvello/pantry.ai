@@ -365,6 +365,17 @@
     "takeAction": "Agir"
   },
   "alerts": {
+    "title": "Centre de commande",
+    "subtitle": "Surveillez les alertes et agissez sur les éléments critiques.",
+    "resolveAll": "Tout résoudre",
+    "filter": "Filtrer",
+    "highPriority": "Priorité haute",
+    "medium": "Moyenne",
+    "lowPriority": "Priorité basse",
+    "active": "Actives",
+    "resolved": "Résolues",
+    "noActive": "Aucune alerte active.",
+    "noResolved": "Aucune alerte résolue",
     "lowStock": {
       "title": "Stock bas : {{name}}",
       "description": "{{name}} est à {{current}}, en dessous du seuil de réapprovisionnement de {{reorderPoint}}.",
@@ -505,19 +516,6 @@
     "comingSoon": "Bientôt disponible",
     "validationWillAppear": "Les éléments de validation apparaîtront ici",
     "validationDescription": "Lorsque des écarts sont détectés entre l'utilisation prévue et réelle, vous verrez des suggestions de mise à jour."
-  },
-  "alerts": {
-    "title": "Centre de commande",
-    "subtitle": "Surveillez les alertes et agissez sur les éléments critiques.",
-    "resolveAll": "Tout résoudre",
-    "filter": "Filtrer",
-    "highPriority": "Priorité haute",
-    "medium": "Moyenne",
-    "lowPriority": "Priorité basse",
-    "active": "Actives",
-    "resolved": "Résolues",
-    "noActive": "Aucune alerte active.",
-    "noResolved": "Aucune alerte résolue"
   },
   "integrations": {
     "title": "Intégrations",
