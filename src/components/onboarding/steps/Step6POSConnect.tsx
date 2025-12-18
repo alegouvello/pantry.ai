@@ -143,7 +143,7 @@ export function Step6POSConnect(props: StepProps) {
       props.updateHealthScore(10);
       toast({
         title: t('step6POS.connectedSuccessTitle'),
-        description: `${selectedIntegration === 'toast' ? 'Toast POS' : 'CSV Import'} ${t('step6POS.connectedSuccess').toLowerCase()}`,
+        description: t('step6POS.connectedSuccess'),
       });
       
       setTimeout(() => setPhase('mapping'), 500);
@@ -254,18 +254,18 @@ export function Step6POSConnect(props: StepProps) {
 
   if (phase === 'connect') {
     return (
-      <OnboardingLayout {...props} title="Connect Toast POS" subtitle="Authorize access to sync your sales data">
+      <OnboardingLayout {...props} title={t('step6POS.connectTitle')} subtitle={t('step6POS.connectSubtitle')}>
         <div className="max-w-lg mx-auto space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-orange-500" />
-                {selectedIntegration === 'toast' ? 'Toast Integration' : 'CSV Import'}
+                {selectedIntegration === 'toast' ? t('step6POS.toastIntegration') : t('step6POS.csvImportTitle')}
               </CardTitle>
               <CardDescription>
                 {selectedIntegration === 'toast' 
-                  ? "We'll request read-only access to your menu and sales data"
-                  : "Set up CSV import for your sales data"}
+                  ? t('step6POS.toastAccessDesc')
+                  : t('step6POS.csvSetupDesc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -273,8 +273,8 @@ export function Step6POSConnect(props: StepProps) {
                 <div className="flex items-center gap-3 p-4 bg-green-500/10 rounded-lg">
                   <Check className="w-5 h-5 text-green-500" />
                   <div>
-                    <p className="font-medium text-green-700">Connected successfully!</p>
-                    <p className="text-sm text-green-600">Found {posItems.length} menu items</p>
+                    <p className="font-medium text-green-700">{t('step6POS.connectedSuccess')}</p>
+                    <p className="text-sm text-green-600">{t('step6POS.foundItems', { count: posItems.length })}</p>
                   </div>
                 </div>
               ) : (
@@ -282,15 +282,15 @@ export function Step6POSConnect(props: StepProps) {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-sm">
                       <Check className="w-4 h-4 text-green-500" />
-                      View menu items
+                      {t('step6POS.viewMenu')}
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Check className="w-4 h-4 text-green-500" />
-                      Read sales transactions
+                      {t('step6POS.readSales')}
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Check className="w-4 h-4 text-green-500" />
-                      Access modifiers & categories
+                      {t('step6POS.accessModifiers')}
                     </div>
                   </div>
 
@@ -307,7 +307,7 @@ export function Step6POSConnect(props: StepProps) {
                       ) : (
                         <>
                           <Link className="w-4 h-4 mr-2" />
-                          Connect to {selectedIntegration === 'toast' ? 'Toast' : 'CSV Import'}
+                          {t('step6POS.connectTo', { name: selectedIntegration === 'toast' ? 'Toast' : 'CSV Import' })}
                         </>
                       )}
                     </Button>
@@ -364,10 +364,10 @@ export function Step6POSConnect(props: StepProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>POS Item</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Mapped Recipe</TableHead>
-                <TableHead className="w-24">Status</TableHead>
+                <TableHead>{t('step6POS.posItem')}</TableHead>
+                <TableHead>{t('step6POS.category')}</TableHead>
+                <TableHead>{t('step6POS.mappedRecipe')}</TableHead>
+                <TableHead className="w-24">{t('step6POS.status')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -394,10 +394,10 @@ export function Step6POSConnect(props: StepProps) {
                         onValueChange={(value) => updateMapping(posItem.id, value === 'unmapped' ? '' : value)}
                       >
                         <SelectTrigger className="w-56">
-                          <SelectValue placeholder="Select recipe..." />
+                          <SelectValue placeholder={t('step6POS.selectRecipe')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="unmapped">-- Unmapped --</SelectItem>
+                          <SelectItem value="unmapped">{t('step6POS.unmapped')}</SelectItem>
                           {recipes?.filter(r => r.id).map(recipe => (
                             <SelectItem key={recipe.id} value={recipe.id}>{recipe.name}</SelectItem>
                           ))}
@@ -406,9 +406,9 @@ export function Step6POSConnect(props: StepProps) {
                     </TableCell>
                     <TableCell>
                       {currentMapping ? (
-                        <Badge variant="default">Mapped</Badge>
+                        <Badge variant="default">{t('step6POS.mapped')}</Badge>
                       ) : (
-                        <Badge variant="outline">Pending</Badge>
+                        <Badge variant="outline">{t('step6POS.pending')}</Badge>
                       )}
                     </TableCell>
                   </TableRow>
@@ -421,14 +421,14 @@ export function Step6POSConnect(props: StepProps) {
         {/* Test Sync Preview - shows actual mapped recipes with their ingredients */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Test Sync Preview</CardTitle>
+            <CardTitle className="text-base">{t('step6POS.testSync')}</CardTitle>
             <CardDescription>
-              See how a sample order would affect inventory
+              {t('step6POS.testSyncDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="bg-muted/50 rounded-lg p-4 text-sm">
-              <p className="font-medium mb-2">Sample Order #1234</p>
+              <p className="font-medium mb-2">{t('step6POS.sampleOrder', { id: '1234' })}</p>
               <ul className="space-y-1 text-muted-foreground">
                 {(() => {
                   // Get first 2 mapped recipes to show as sample
