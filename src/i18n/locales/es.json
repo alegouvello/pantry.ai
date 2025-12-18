@@ -365,6 +365,17 @@
     "takeAction": "Tomar acción"
   },
   "alerts": {
+    "title": "Centro de mando",
+    "subtitle": "Monitorea alertas y actúa sobre lo crítico.",
+    "resolveAll": "Resolver todo",
+    "filter": "Filtrar",
+    "highPriority": "Alta prioridad",
+    "medium": "Media",
+    "lowPriority": "Baja prioridad",
+    "active": "Activas",
+    "resolved": "Resueltas",
+    "noActive": "No hay alertas activas.",
+    "noResolved": "No hay alertas resueltas",
     "lowStock": {
       "title": "Stock bajo: {{name}}",
       "description": "{{name}} está en {{current}}, por debajo del punto de reorden de {{reorderPoint}}.",
@@ -505,19 +516,6 @@
     "comingSoon": "Próximamente",
     "validationWillAppear": "Los elementos de validación aparecerán aquí",
     "validationDescription": "Cuando se detecten discrepancias entre el uso previsto y real, verás sugerencias para actualizar recetas."
-  },
-  "alerts": {
-    "title": "Centro de mando",
-    "subtitle": "Monitorea alertas y actúa sobre lo crítico.",
-    "resolveAll": "Resolver todo",
-    "filter": "Filtrar",
-    "highPriority": "Alta prioridad",
-    "medium": "Media",
-    "lowPriority": "Baja prioridad",
-    "active": "Activas",
-    "resolved": "Resueltas",
-    "noActive": "No hay alertas activas.",
-    "noResolved": "No hay alertas resueltas"
   },
   "integrations": {
     "title": "Integraciones",

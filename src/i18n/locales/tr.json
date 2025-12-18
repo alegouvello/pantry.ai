@@ -365,6 +365,17 @@
     "takeAction": "Aksiyon al"
   },
   "alerts": {
+    "title": "Komuta merkezi",
+    "subtitle": "Uyarıları izleyin ve kritik kalemlerde aksiyon alın.",
+    "resolveAll": "Hepsini çöz",
+    "filter": "Filtrele",
+    "highPriority": "Yüksek öncelik",
+    "medium": "Orta",
+    "lowPriority": "Düşük öncelik",
+    "active": "Aktif",
+    "resolved": "Çözülen",
+    "noActive": "Aktif uyarı yok.",
+    "noResolved": "Henüz çözülen uyarı yok",
     "lowStock": {
       "title": "Düşük Stok: {{name}}",
       "description": "{{name}} {{current}} seviyesinde, {{reorderPoint}} sipariş noktasının altında.",
@@ -505,19 +516,6 @@
     "comingSoon": "Yakında",
     "validationWillAppear": "Doğrulama öğeleri burada görünecek",
     "validationDescription": "Tahmini ve gerçek kullanım arasında uyumsuzluklar tespit edildiğinde, tarifleri güncelleme önerileri göreceksiniz."
-  },
-  "alerts": {
-    "title": "Komuta merkezi",
-    "subtitle": "Uyarıları izleyin ve kritik kalemlerde aksiyon alın.",
-    "resolveAll": "Hepsini çöz",
-    "filter": "Filtrele",
-    "highPriority": "Yüksek öncelik",
-    "medium": "Orta",
-    "lowPriority": "Düşük öncelik",
-    "active": "Aktif",
-    "resolved": "Çözülen",
-    "noActive": "Aktif uyarı yok.",
-    "noResolved": "Henüz çözülen uyarı yok"
   },
   "integrations": {
     "title": "Entegrasyonlar",
