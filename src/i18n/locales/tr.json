@@ -364,6 +364,16 @@
   "alertCard": {
     "takeAction": "Aksiyon al"
   },
+  "alerts": {
+    "lowStock": {
+      "title": "Düşük Stok: {{name}}",
+      "description": "{{name}} {{current}} seviyesinde, {{reorderPoint}} sipariş noktasının altında.",
+      "suggestedAction": "{{name}} için optimal stok seviyesine ({{parLevel}}) ulaşmak üzere satın alma siparişi oluşturun."
+    },
+    "expiring": {
+      "title": "Son kullanma yaklaşıyor: {{name}}"
+    }
+  },
   "suggestedOrder": {
     "itemsInOrder": "Siparişte {{count}} öğe",
     "urgent": "Acil",
