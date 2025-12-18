@@ -50,11 +50,10 @@ export function useLogInventoryEvent() {
   
   return useMutation({
     mutationFn: async (event: InventoryEventInsert) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      // Note: user_id is automatically set by database trigger
       const { data, error } = await supabase
         .from('inventory_events')
-        .insert({ ...event, user_id: user?.id })
+        .insert(event)
         .select()
         .single();
       
