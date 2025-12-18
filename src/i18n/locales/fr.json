@@ -364,6 +364,16 @@
   "alertCard": {
     "takeAction": "Agir"
   },
+  "alerts": {
+    "lowStock": {
+      "title": "Stock bas : {{name}}",
+      "description": "{{name}} est à {{current}}, en dessous du seuil de réapprovisionnement de {{reorderPoint}}.",
+      "suggestedAction": "Créer une commande pour {{name}} afin d'atteindre le niveau de stock optimal ({{parLevel}})."
+    },
+    "expiring": {
+      "title": "Expire bientôt : {{name}}"
+    }
+  },
   "suggestedOrder": {
     "itemsInOrder": "{{count}} article(s) dans la commande",
     "urgent": "Urgent",

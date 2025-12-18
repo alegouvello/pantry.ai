@@ -11,6 +11,32 @@ interface AlertCardProps {
   onResolve?: (id: string) => void;
 }
 
+// Helper to extract ingredient name from low_stock alert title
+function extractIngredientName(title: string): string | null {
+  const match = title.match(/^Low Stock:\s*(.+)$/i);
+  return match ? match[1] : null;
+}
+
+// Helper to parse low_stock description values
+function parseLowStockDescription(description: string): { current: string; reorderPoint: string } | null {
+  // Pattern: "X is at Y, below the reorder point of Z."
+  const match = description.match(/is at ([\d.,]+\s*\w+), below the reorder point of ([\d.,]+\s*\w+)/i);
+  if (match) {
+    return { current: match[1], reorderPoint: match[2] };
+  }
+  return null;
+}
+
+// Helper to parse suggested action values
+function parseSuggestedAction(action: string): { parLevel: string } | null {
+  // Pattern: "Create a purchase order for X to bring stock up to par level (Y)."
+  const match = action.match(/par level \(([\d.,]+\s*\w+)\)/i);
+  if (match) {
+    return { parLevel: match[1] };
+  }
+  return null;
+}
+
 export function AlertCard({ alert, onResolve }: AlertCardProps) {
   const { t } = useTranslation();
 
@@ -38,6 +64,51 @@ export function AlertCard({ alert, onResolve }: AlertCardProps) {
   const config = severityConfig[alert.severity];
   const Icon = config.icon;
 
+  // Translate alert content based on type
+  const getTranslatedContent = () => {
+    if (alert.type === 'low_stock') {
+      const ingredientName = extractIngredientName(alert.title);
+      const descValues = parseLowStockDescription(alert.description);
+      const actionValues = parseSuggestedAction(alert.suggestedAction);
+
+      if (ingredientName) {
+        return {
+          title: t('alerts.lowStock.title', { name: ingredientName }),
+          description: descValues 
+            ? t('alerts.lowStock.description', { 
+                name: ingredientName, 
+                current: descValues.current, 
+                reorderPoint: descValues.reorderPoint 
+              })
+            : alert.description,
+          suggestedAction: actionValues
+            ? t('alerts.lowStock.suggestedAction', { 
+                name: ingredientName, 
+                parLevel: actionValues.parLevel 
+              })
+            : alert.suggestedAction,
+        };
+      }
+    }
+
+    if (alert.type === 'expiring') {
+      return {
+        title: t('alerts.expiring.title', { defaultValue: alert.title }),
+        description: alert.description,
+        suggestedAction: alert.suggestedAction,
+      };
+    }
+
+    // Default: return original values
+    return {
+      title: alert.title,
+      description: alert.description,
+      suggestedAction: alert.suggestedAction,
+    };
+  };
+
+  const content = getTranslatedContent();
+
   return (
     <Card
       className={cn(
@@ -53,9 +124,9 @@ export function AlertCard({ alert, onResolve }: AlertCardProps) {
         <div className="flex-1 space-y-2">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <h4 className="font-medium text-foreground">{alert.title}</h4>
+              <h4 className="font-medium text-foreground">{content.title}</h4>
               <p className="text-sm text-muted-foreground mt-1">
-                {alert.description}
+                {content.description}
               </p>
             </div>
             <Badge variant={config.badgeVariant} className="shrink-0">
@@ -64,7 +135,7 @@ export function AlertCard({ alert, onResolve }: AlertCardProps) {
           </div>
           <div className="flex items-center justify-between pt-2">
             <p className="text-xs text-muted-foreground">
-              {alert.suggestedAction}
+              {content.suggestedAction}
             </p>
             {!alert.isResolved && onResolve && (
               <Button

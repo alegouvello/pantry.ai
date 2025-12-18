@@ -364,6 +364,16 @@
   "alertCard": {
     "takeAction": "Take action"
   },
+  "alerts": {
+    "lowStock": {
+      "title": "Low Stock: {{name}}",
+      "description": "{{name}} is at {{current}}, below the reorder point of {{reorderPoint}}.",
+      "suggestedAction": "Create a purchase order for {{name}} to bring stock up to par level ({{parLevel}})."
+    },
+    "expiring": {
+      "title": "Expiring Soon: {{name}}"
+    }
+  },
   "suggestedOrder": {
     "itemsInOrder": "{{count}} item(s) in order",
     "urgent": "Urgent",
