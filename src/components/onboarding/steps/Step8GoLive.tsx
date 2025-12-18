@@ -291,10 +291,10 @@ export function Step8GoLive(props: StepProps) {
                 <div className="flex items-start gap-3">
                   <Check className="w-5 h-5 text-green-500 mt-0.5" />
                   <div>
-                    <p className="font-medium text-green-700">Simulation successful!</p>
+                    <p className="font-medium text-green-700">{t('step8GoLive.simulationSuccess')}</p>
                     <p className="text-sm text-green-600 mt-1">
-                      Processed {recipes?.length || 0} recipes. Inventory depletion tracked correctly.
-                      {vendors?.length ? ` ${vendors.length} vendor(s) configured for ordering.` : ''}
+                      {t('step8GoLive.simulationResult', { recipes: recipes?.length || 0, vendors: vendors?.length ? t('step8GoLive.vendorsConfiguredText', { count: vendors.length }) : '' })}
+                    </p>
                     </p>
                   </div>
                 </div>
@@ -342,8 +342,8 @@ export function Step8GoLive(props: StepProps) {
             <CardContent>
               <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">Draft PO for {vendors[0]?.name || 'Vendor'}</span>
-                  <Badge variant="outline">Draft</Badge>
+                  <span className="font-medium">{t('step8GoLive.draftPOFor', { vendor: vendors[0]?.name || 'Vendor' })}</span>
+                  <Badge variant="outline">{t('step8GoLive.draft')}</Badge>
                 </div>
                 <div className="text-sm space-y-1">
                   {(() => {
@@ -391,7 +391,7 @@ export function Step8GoLive(props: StepProps) {
                   })()}
                 </div>
                 <div className="flex justify-between pt-2 border-t font-medium">
-                  <span>Total Estimate</span>
+                  <span>{t('step8GoLive.totalEstimate')}</span>
                   <span>
                     ${(() => {
                       const sampleOrders = [

@@ -308,24 +308,24 @@ export function Step7Automation(props: StepProps) {
                 <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
                   <RadioGroupItem value="low" id="low" />
                   <div className="flex-1">
-                    <Label htmlFor="low" className="font-medium cursor-pointer">Low</Label>
-                    <p className="text-sm text-muted-foreground">Minimal buffer, higher risk of stockouts</p>
+                    <Label htmlFor="low" className="font-medium cursor-pointer">{t('step7Automation.low')}</Label>
+                    <p className="text-sm text-muted-foreground">{t('step7Automation.lowDesc')}</p>
                   </div>
                   <Badge variant="outline">-10%</Badge>
                 </div>
                 <div className="flex items-center space-x-3 p-3 border rounded-lg bg-primary/5 border-primary/20">
                   <RadioGroupItem value="medium" id="medium" />
                   <div className="flex-1">
-                    <Label htmlFor="medium" className="font-medium cursor-pointer">Medium</Label>
-                    <p className="text-sm text-muted-foreground">Balanced approach for most operations</p>
+                    <Label htmlFor="medium" className="font-medium cursor-pointer">{t('step7Automation.medium')}</Label>
+                    <p className="text-sm text-muted-foreground">{t('step7Automation.mediumDesc')}</p>
                   </div>
-                  <Badge>Recommended</Badge>
+                  <Badge>{t('step6POS.recommended')}</Badge>
                 </div>
                 <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
                   <RadioGroupItem value="high" id="high" />
                   <div className="flex-1">
-                    <Label htmlFor="high" className="font-medium cursor-pointer">High</Label>
-                    <p className="text-sm text-muted-foreground">Extra cushion, higher carrying costs</p>
+                    <Label htmlFor="high" className="font-medium cursor-pointer">{t('step7Automation.high')}</Label>
+                    <p className="text-sm text-muted-foreground">{t('step7Automation.highDesc')}</p>
                   </div>
                   <Badge variant="outline">+20%</Badge>
                 </div>
@@ -377,7 +377,7 @@ export function Step7Automation(props: StepProps) {
   }
 
   return (
-    <OnboardingLayout {...props} title="Set Par Levels & Reorder Points" subtitle="Configure stocking targets for your top ingredients">
+    <OnboardingLayout {...props} title={t('step7Automation.parTitle')} subtitle={t('step7Automation.parSubtitle')}>
       <div className="space-y-6">
         <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground flex items-start gap-2">
           <Settings2 className="w-4 h-4 mt-0.5 shrink-0" />
