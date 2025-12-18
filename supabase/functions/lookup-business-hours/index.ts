@@ -333,10 +333,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error looking up hours:', error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to lookup hours' 
-      }),
+      JSON.stringify({ success: false, error: 'An error occurred processing your request' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

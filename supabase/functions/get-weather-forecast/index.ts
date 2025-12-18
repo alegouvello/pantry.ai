@@ -83,7 +83,11 @@ serve(async (req) => {
     
     const apiKey = Deno.env.get('OPENWEATHER_API_KEY');
     if (!apiKey) {
-      throw new Error('Weather API key not configured');
+      console.error('OPENWEATHER_API_KEY not configured');
+      return new Response(
+        JSON.stringify({ error: 'Service temporarily unavailable', forecast: [] }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Build the API URL
@@ -101,8 +105,11 @@ serve(async (req) => {
     const response = await fetch(url);
     if (!response.ok) {
       const error = await response.text();
-      console.error('OpenWeather API error:', error);
-      throw new Error(`Weather API error: ${response.status}`);
+      console.error('Weather API error:', error);
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch weather data', forecast: [] }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const data = await response.json();
@@ -169,9 +176,8 @@ serve(async (req) => {
 
   } catch (error: unknown) {
     console.error('Weather function error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ 
-      error: errorMessage,
+      error: 'An error occurred fetching weather data',
       forecast: [] 
     }), {
       status: 500,

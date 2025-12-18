@@ -69,16 +69,16 @@ serve(async (req) => {
     if (!FIRECRAWL_API_KEY) {
       console.error('FIRECRAWL_API_KEY not configured');
       return new Response(
-        JSON.stringify({ success: false, error: 'Firecrawl API not configured. Please add your FIRECRAWL_API_KEY.' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: 'Service temporarily unavailable' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     if (!LOVABLE_API_KEY) {
       console.error('LOVABLE_API_KEY not configured');
       return new Response(
-        JSON.stringify({ success: false, error: 'AI service not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: 'Service temporarily unavailable' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -260,23 +260,17 @@ IMPORTANT: Only return actual data found. Leave fields EMPTY (empty string "") i
     });
 
     if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error('AI gateway error:', aiResponse.status, errorText);
       if (aiResponse.status === 429) {
         return new Response(
-          JSON.stringify({ success: false, error: 'Rate limit exceeded. Please try again later.' }),
+          JSON.stringify({ success: false, error: 'Please try again later' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      if (aiResponse.status === 402) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'AI service credits exhausted. Please add credits.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      const errorText = await aiResponse.text();
-      console.error('AI gateway error:', aiResponse.status, errorText);
       return new Response(
-        JSON.stringify({ success: false, error: 'AI service error' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: 'Service temporarily unavailable' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -329,7 +323,7 @@ IMPORTANT: Only return actual data found. Leave fields EMPTY (empty string "") i
   } catch (error) {
     console.error('Error enriching restaurant:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ success: false, error: 'An error occurred processing your request' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

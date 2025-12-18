@@ -71,7 +71,11 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+      console.error('LOVABLE_API_KEY not configured');
+      return new Response(
+        JSON.stringify({ error: 'Service temporarily unavailable' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log(`Generating par level suggestions for ${ingredients.length} ingredients`);
@@ -115,21 +119,18 @@ IMPORTANT: Return ONLY a valid JSON array with no additional text. Each object m
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error("AI service error:", response.status, errorText);
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
+        return new Response(JSON.stringify({ error: "Please try again later" }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits depleted. Please add credits to continue." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
+      return new Response(JSON.stringify({ error: "Service temporarily unavailable" }), {
+        status: 503,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const data = await response.json();
@@ -176,9 +177,7 @@ IMPORTANT: Return ONLY a valid JSON array with no additional text. Each object m
 
   } catch (error) {
     console.error("Error in suggest-par-levels:", error);
-    return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : "Failed to generate suggestions" 
-    }), {
+    return new Response(JSON.stringify({ error: "Failed to generate suggestions" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
