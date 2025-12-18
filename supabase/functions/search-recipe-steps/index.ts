@@ -61,13 +61,14 @@ serve(async (req) => {
     const { recipeName, category } = parseResult.data;
 
     const FIRECRAWL_API_KEY = Deno.env.get('FIRECRAWL_API_KEY');
-    if (!FIRECRAWL_API_KEY) {
-      throw new Error('FIRECRAWL_API_KEY is not configured');
-    }
-
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+    
+    if (!FIRECRAWL_API_KEY || !LOVABLE_API_KEY) {
+      console.error('Required environment variables not configured');
+      return new Response(
+        JSON.stringify({ error: 'Service temporarily unavailable' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log(`Searching web for recipe: ${recipeName}`);
@@ -91,8 +92,11 @@ serve(async (req) => {
 
     if (!searchResponse.ok) {
       const errorText = await searchResponse.text();
-      console.error('Firecrawl search error:', searchResponse.status, errorText);
-      throw new Error('Failed to search for recipe');
+      console.error('Search error:', searchResponse.status, errorText);
+      return new Response(
+        JSON.stringify({ error: 'Failed to search for recipe' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const searchData = await searchResponse.json();
@@ -151,19 +155,18 @@ Important:
     });
 
     if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error('AI service error:', aiResponse.status, errorText);
       if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: 'Rate limit exceeded, please try again later.' }), {
+        return new Response(JSON.stringify({ error: 'Please try again later' }), {
           status: 429,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: 'Payment required, please add credits.' }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      throw new Error('Failed to parse recipe steps');
+      return new Response(JSON.stringify({ error: 'Service temporarily unavailable' }), {
+        status: 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const aiData = await aiResponse.json();
@@ -195,8 +198,7 @@ Important:
 
   } catch (error) {
     console.error('Error searching recipe steps:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to search recipes';
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    return new Response(JSON.stringify({ error: 'Failed to search recipes' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
