@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -84,6 +85,7 @@ const processSalesData = (events: SalesEvent[]) => {
 };
 
 export default function SalesComparisonView({ onClose }: SalesComparisonViewProps) {
+  const { t } = useTranslation();
   const [period1Range, setPeriod1Range] = React.useState<DateRangeOption>(7);
   const [period2Range, setPeriod2Range] = React.useState<DateRangeOption>(7);
 
@@ -167,17 +169,13 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
   }, [period1Data.topDishes, period2Data.topDishes]);
 
   const renderChangeIndicator = (change: number) => {
-    if (change === 0) return <Badge variant="secondary">No change</Badge>;
+    if (change === 0) return <Badge variant="secondary">{t('salesHistory.comparisonView.noChange')}</Badge>;
     return (
       <div className={`flex items-center gap-1 ${change > 0 ? 'text-green-600' : 'text-red-600'}`}>
         {change > 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
         <span className="font-medium">{Math.abs(change).toFixed(1)}%</span>
       </div>
     );
-  };
-
-  const getPeriodLabel = (range: DateRangeOption) => {
-    return `Last ${range} days`;
   };
 
   return (
@@ -194,19 +192,19 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-muted-foreground" />
-                Period Comparison
+                {t('salesHistory.comparisonView.periodComparison')}
               </CardTitle>
-              <CardDescription>Compare sales performance between two time periods</CardDescription>
+              <CardDescription>{t('salesHistory.comparisonView.periodComparisonDesc')}</CardDescription>
             </div>
             <Button variant="outline" onClick={onClose}>
-              Back to Overview
+              {t('salesHistory.comparisonView.backToOverview')}
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Current:</span>
+              <span className="text-sm text-muted-foreground">{t('salesHistory.comparisonView.current')}</span>
               <Select 
                 value={period1Range.toString()} 
                 onValueChange={(v) => setPeriod1Range(Number(v) as DateRangeOption)}
@@ -215,9 +213,9 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="7">Last 7 days</SelectItem>
-                  <SelectItem value="14">Last 14 days</SelectItem>
-                  <SelectItem value="30">Last 30 days</SelectItem>
+                  <SelectItem value="7">{t('salesHistory.comparisonView.lastDays', { days: 7 })}</SelectItem>
+                  <SelectItem value="14">{t('salesHistory.comparisonView.lastDays', { days: 14 })}</SelectItem>
+                  <SelectItem value="30">{t('salesHistory.comparisonView.lastDays', { days: 30 })}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -225,7 +223,7 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
             <ArrowRight className="h-4 w-4 text-muted-foreground" />
 
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">vs Previous:</span>
+              <span className="text-sm text-muted-foreground">{t('salesHistory.comparisonView.vsPrevious')}</span>
               <Select 
                 value={period2Range.toString()} 
                 onValueChange={(v) => setPeriod2Range(Number(v) as DateRangeOption)}
@@ -234,9 +232,9 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="7">7 days before</SelectItem>
-                  <SelectItem value="14">14 days before</SelectItem>
-                  <SelectItem value="30">30 days before</SelectItem>
+                  <SelectItem value="7">{t('salesHistory.comparisonView.daysBefore', { days: 7 })}</SelectItem>
+                  <SelectItem value="14">{t('salesHistory.comparisonView.daysBefore', { days: 14 })}</SelectItem>
+                  <SelectItem value="30">{t('salesHistory.comparisonView.daysBefore', { days: 30 })}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -249,7 +247,7 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
         {/* Revenue Comparison */}
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground mb-2">Revenue</p>
+            <p className="text-sm text-muted-foreground mb-2">{t('salesHistory.comparisonView.revenue')}</p>
             {isLoading ? (
               <Skeleton className="h-16 w-full" />
             ) : (
@@ -259,7 +257,7 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
                   {renderChangeIndicator(revenueChange)}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  vs ${period2Data.totalRevenue.toLocaleString()} prev
+                  {t('salesHistory.comparisonView.vsPrev', { amount: `$${period2Data.totalRevenue.toLocaleString()}` })}
                 </div>
               </div>
             )}
@@ -269,7 +267,7 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
         {/* Orders Comparison */}
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground mb-2">Orders</p>
+            <p className="text-sm text-muted-foreground mb-2">{t('salesHistory.comparisonView.orders')}</p>
             {isLoading ? (
               <Skeleton className="h-16 w-full" />
             ) : (
@@ -279,7 +277,7 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
                   {renderChangeIndicator(ordersChange)}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  vs {period2Data.totalOrders.toLocaleString()} prev
+                  {t('salesHistory.comparisonView.vsPrev', { amount: period2Data.totalOrders.toLocaleString() })}
                 </div>
               </div>
             )}
@@ -289,7 +287,7 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
         {/* Items Sold Comparison */}
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground mb-2">Items Sold</p>
+            <p className="text-sm text-muted-foreground mb-2">{t('salesHistory.comparisonView.itemsSold')}</p>
             {isLoading ? (
               <Skeleton className="h-16 w-full" />
             ) : (
@@ -299,7 +297,7 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
                   {renderChangeIndicator(itemsChange)}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  vs {period2Data.totalItems.toLocaleString()} prev
+                  {t('salesHistory.comparisonView.vsPrev', { amount: period2Data.totalItems.toLocaleString() })}
                 </div>
               </div>
             )}
@@ -309,7 +307,7 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
         {/* Avg Order Value Comparison */}
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground mb-2">Avg Order Value</p>
+            <p className="text-sm text-muted-foreground mb-2">{t('salesHistory.comparisonView.avgOrderValue')}</p>
             {isLoading ? (
               <Skeleton className="h-16 w-full" />
             ) : (
@@ -319,7 +317,7 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
                   {renderChangeIndicator(avgOrderChange)}
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  vs ${period2Data.avgOrderValue.toFixed(0)} prev
+                  {t('salesHistory.comparisonView.vsPrev', { amount: `$${period2Data.avgOrderValue.toFixed(0)}` })}
                 </div>
               </div>
             )}
@@ -332,8 +330,8 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
         {/* Dish Comparison Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Dishes Comparison</CardTitle>
-            <CardDescription>How top-selling dishes performed across periods</CardDescription>
+            <CardTitle>{t('salesHistory.comparisonView.topDishesComparison')}</CardTitle>
+            <CardDescription>{t('salesHistory.comparisonView.topDishesComparisonDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -359,11 +357,13 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
                   <Legend />
                   <Bar
                     dataKey="Current Period"
+                    name={t('salesHistory.comparisonView.currentPeriod')}
                     fill="hsl(var(--primary))"
                     radius={[0, 4, 4, 0]}
                   />
                   <Bar
                     dataKey="Previous Period"
+                    name={t('salesHistory.comparisonView.previousPeriod')}
                     fill="hsl(var(--muted-foreground))"
                     radius={[0, 4, 4, 0]}
                   />
@@ -371,7 +371,7 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
               </ResponsiveContainer>
             ) : (
               <div className="flex h-[300px] items-center justify-center text-muted-foreground">
-                No data available for comparison
+                {t('salesHistory.comparisonView.noDataComparison')}
               </div>
             )}
           </CardContent>
@@ -380,8 +380,8 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
         {/* Performance Summary */}
         <Card>
           <CardHeader>
-            <CardTitle>Performance Summary</CardTitle>
-            <CardDescription>Key insights from the comparison</CardDescription>
+            <CardTitle>{t('salesHistory.comparisonView.performanceSummary')}</CardTitle>
+            <CardDescription>{t('salesHistory.comparisonView.performanceSummaryDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -405,10 +405,13 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
                   </div>
                   <div>
                     <p className="font-medium">
-                      Revenue {revenueChange >= 0 ? 'increased' : 'decreased'} by {Math.abs(revenueChange).toFixed(1)}%
+                      {t('salesHistory.comparisonView.revenueChanged', { 
+                        direction: revenueChange >= 0 ? t('salesHistory.comparisonView.increased') : t('salesHistory.comparisonView.decreased'),
+                        percent: Math.abs(revenueChange).toFixed(1)
+                      })}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      ${Math.abs(period1Data.totalRevenue - period2Data.totalRevenue).toLocaleString()} difference
+                      {t('salesHistory.comparisonView.difference', { amount: `$${Math.abs(period1Data.totalRevenue - period2Data.totalRevenue).toLocaleString()}` })}
                     </p>
                   </div>
                 </div>
@@ -426,10 +429,13 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
                   </div>
                   <div>
                     <p className="font-medium">
-                      {Math.abs(period1Data.totalOrders - period2Data.totalOrders)} {ordersChange >= 0 ? 'more' : 'fewer'} orders
+                      {t('salesHistory.comparisonView.ordersChanged', { 
+                        count: Math.abs(period1Data.totalOrders - period2Data.totalOrders),
+                        direction: ordersChange >= 0 ? t('salesHistory.comparisonView.more') : t('salesHistory.comparisonView.fewer')
+                      })}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {ordersChange >= 0 ? 'Increased' : 'Decreased'} customer activity
+                      {ordersChange >= 0 ? t('salesHistory.comparisonView.increasedActivity') : t('salesHistory.comparisonView.decreasedActivity')}
                     </p>
                   </div>
                 </div>
@@ -441,9 +447,9 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
                       <span className="text-lg">🏆</span>
                     </div>
                     <div>
-                      <p className="font-medium">Top seller: {period1Data.topDishes[0].name}</p>
+                      <p className="font-medium">{t('salesHistory.comparisonView.topSeller', { name: period1Data.topDishes[0].name })}</p>
                       <p className="text-sm text-muted-foreground">
-                        {period1Data.topDishes[0].count} items sold in current period
+                        {t('salesHistory.comparisonView.itemsSoldPeriod', { count: period1Data.topDishes[0].count })}
                       </p>
                     </div>
                   </div>
@@ -462,10 +468,13 @@ export default function SalesComparisonView({ onClose }: SalesComparisonViewProp
                   </div>
                   <div>
                     <p className="font-medium">
-                      Average order value {avgOrderChange >= 0 ? 'up' : 'down'} ${Math.abs(period1Data.avgOrderValue - period2Data.avgOrderValue).toFixed(0)}
+                      {avgOrderChange >= 0 
+                        ? t('salesHistory.comparisonView.avgOrderUp', { amount: Math.abs(period1Data.avgOrderValue - period2Data.avgOrderValue).toFixed(0) })
+                        : t('salesHistory.comparisonView.avgOrderDown', { amount: Math.abs(period1Data.avgOrderValue - period2Data.avgOrderValue).toFixed(0) })
+                      }
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {avgOrderChange >= 0 ? 'Customers spending more per visit' : 'Smaller orders on average'}
+                      {avgOrderChange >= 0 ? t('salesHistory.comparisonView.spendingMore') : t('salesHistory.comparisonView.smallerOrders')}
                     </p>
                   </div>
                 </div>
