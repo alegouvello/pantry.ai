@@ -295,7 +295,6 @@ export function Step8GoLive(props: StepProps) {
                     <p className="text-sm text-green-600 mt-1">
                       {t('step8GoLive.simulationResult', { recipes: recipes?.length || 0, vendors: vendors?.length ? t('step8GoLive.vendorsConfiguredText', { count: vendors.length }) : '' })}
                     </p>
-                    </p>
                   </div>
                 </div>
               </div>
