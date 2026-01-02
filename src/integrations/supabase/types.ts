@@ -1497,6 +1497,7 @@ export type Database = {
           progress_id: string
         }[]
       }
+      get_user_restaurant_id: { Args: { _user_id: string }; Returns: string }
       has_any_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
